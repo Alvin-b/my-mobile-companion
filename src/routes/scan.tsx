@@ -47,8 +47,6 @@ function Scan() {
           customerId = data.id;
         }
       }
-      const insert: Parameters<typeof supabase.from>[0] extends "packages" ? never : never = null as never; // typing helper
-      void insert;
       const trackingNumber = tracking || `PKG-${Date.now().toString(36).toUpperCase()}`;
       const { data: pkg, error: pErr } = await supabase.from("packages").insert({
         tracking_number: trackingNumber,

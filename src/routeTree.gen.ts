@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ScanRouteImport } from './routes/scan'
 import { Route as PackagesRouteImport } from './routes/packages'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as CommissionsRouteImport } from './routes/commissions'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PackagesIdRouteImport } from './routes/packages.$id'
@@ -29,6 +30,11 @@ const PackagesRoute = PackagesRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommissionsRoute = CommissionsRouteImport.update({
+  id: '/commissions',
+  path: '/commissions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -50,6 +56,7 @@ const PackagesIdRoute = PackagesIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/commissions': typeof CommissionsRoute
   '/dashboard': typeof DashboardRoute
   '/packages': typeof PackagesRouteWithChildren
   '/scan': typeof ScanRoute
@@ -58,6 +65,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/commissions': typeof CommissionsRoute
   '/dashboard': typeof DashboardRoute
   '/packages': typeof PackagesRouteWithChildren
   '/scan': typeof ScanRoute
@@ -67,6 +75,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/commissions': typeof CommissionsRoute
   '/dashboard': typeof DashboardRoute
   '/packages': typeof PackagesRouteWithChildren
   '/scan': typeof ScanRoute
@@ -77,16 +86,25 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/commissions'
     | '/dashboard'
     | '/packages'
     | '/scan'
     | '/packages/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/packages' | '/scan' | '/packages/$id'
+  to:
+    | '/'
+    | '/auth'
+    | '/commissions'
+    | '/dashboard'
+    | '/packages'
+    | '/scan'
+    | '/packages/$id'
   id:
     | '__root__'
     | '/'
     | '/auth'
+    | '/commissions'
     | '/dashboard'
     | '/packages'
     | '/scan'
@@ -96,6 +114,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  CommissionsRoute: typeof CommissionsRoute
   DashboardRoute: typeof DashboardRoute
   PackagesRoute: typeof PackagesRouteWithChildren
   ScanRoute: typeof ScanRoute
@@ -122,6 +141,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/commissions': {
+      id: '/commissions'
+      path: '/commissions'
+      fullPath: '/commissions'
+      preLoaderRoute: typeof CommissionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -163,6 +189,7 @@ const PackagesRouteWithChildren = PackagesRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  CommissionsRoute: CommissionsRoute,
   DashboardRoute: DashboardRoute,
   PackagesRoute: PackagesRouteWithChildren,
   ScanRoute: ScanRoute,

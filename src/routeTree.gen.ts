@@ -9,38 +9,194 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ScanRouteImport } from './routes/scan'
+import { Route as PackagesRouteImport } from './routes/packages'
+import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as CustomersRouteImport } from './routes/customers'
+import { Route as CommissionsRouteImport } from './routes/commissions'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PackagesIdRouteImport } from './routes/packages.$id'
 
+const ScanRoute = ScanRouteImport.update({
+  id: '/scan',
+  path: '/scan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PackagesRoute = PackagesRouteImport.update({
+  id: '/packages',
+  path: '/packages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CustomersRoute = CustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommissionsRoute = CommissionsRouteImport.update({
+  id: '/commissions',
+  path: '/commissions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PackagesIdRoute = PackagesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => PackagesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/commissions': typeof CommissionsRoute
+  '/customers': typeof CustomersRoute
+  '/dashboard': typeof DashboardRoute
+  '/notifications': typeof NotificationsRoute
+  '/packages': typeof PackagesRouteWithChildren
+  '/scan': typeof ScanRoute
+  '/packages/$id': typeof PackagesIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/commissions': typeof CommissionsRoute
+  '/customers': typeof CustomersRoute
+  '/dashboard': typeof DashboardRoute
+  '/notifications': typeof NotificationsRoute
+  '/packages': typeof PackagesRouteWithChildren
+  '/scan': typeof ScanRoute
+  '/packages/$id': typeof PackagesIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/commissions': typeof CommissionsRoute
+  '/customers': typeof CustomersRoute
+  '/dashboard': typeof DashboardRoute
+  '/notifications': typeof NotificationsRoute
+  '/packages': typeof PackagesRouteWithChildren
+  '/scan': typeof ScanRoute
+  '/packages/$id': typeof PackagesIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/commissions'
+    | '/customers'
+    | '/dashboard'
+    | '/notifications'
+    | '/packages'
+    | '/scan'
+    | '/packages/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/commissions'
+    | '/customers'
+    | '/dashboard'
+    | '/notifications'
+    | '/packages'
+    | '/scan'
+    | '/packages/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/commissions'
+    | '/customers'
+    | '/dashboard'
+    | '/notifications'
+    | '/packages'
+    | '/scan'
+    | '/packages/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
+  CommissionsRoute: typeof CommissionsRoute
+  CustomersRoute: typeof CustomersRoute
+  DashboardRoute: typeof DashboardRoute
+  NotificationsRoute: typeof NotificationsRoute
+  PackagesRoute: typeof PackagesRouteWithChildren
+  ScanRoute: typeof ScanRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/scan': {
+      id: '/scan'
+      path: '/scan'
+      fullPath: '/scan'
+      preLoaderRoute: typeof ScanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/packages': {
+      id: '/packages'
+      path: '/packages'
+      fullPath: '/packages'
+      preLoaderRoute: typeof PackagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/customers': {
+      id: '/customers'
+      path: '/customers'
+      fullPath: '/customers'
+      preLoaderRoute: typeof CustomersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/commissions': {
+      id: '/commissions'
+      path: '/commissions'
+      fullPath: '/commissions'
+      preLoaderRoute: typeof CommissionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +204,38 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/packages/$id': {
+      id: '/packages/$id'
+      path: '/$id'
+      fullPath: '/packages/$id'
+      preLoaderRoute: typeof PackagesIdRouteImport
+      parentRoute: typeof PackagesRoute
+    }
   }
 }
 
+interface PackagesRouteChildren {
+  PackagesIdRoute: typeof PackagesIdRoute
+}
+
+const PackagesRouteChildren: PackagesRouteChildren = {
+  PackagesIdRoute: PackagesIdRoute,
+}
+
+const PackagesRouteWithChildren = PackagesRoute._addFileChildren(
+  PackagesRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
+  CommissionsRoute: CommissionsRoute,
+  CustomersRoute: CustomersRoute,
+  DashboardRoute: DashboardRoute,
+  NotificationsRoute: NotificationsRoute,
+  PackagesRoute: PackagesRouteWithChildren,
+  ScanRoute: ScanRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

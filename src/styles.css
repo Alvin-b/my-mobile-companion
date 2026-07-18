@@ -4,20 +4,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/*
- * Design system definition.
- *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
- *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
- */
-
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -59,29 +45,64 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-surface-1: var(--s1);
+  --color-surface-2: var(--s2);
+  --color-surface-3: var(--s3);
+  --color-surface-4: var(--s4);
+  --color-brand: var(--blue);
+  --color-accent-orange: var(--orange);
+  --color-success: var(--green);
+  --color-danger: var(--red);
+  --color-purple: var(--purple);
+  --color-teal: var(--teal);
+  --font-display: var(--fd);
+  --font-body: var(--fb);
+  --font-mono: var(--fm);
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
+  /* DEXCARGO Ops dark palette (ported from prototype) */
+  --radius: 0.75rem;
+  --bg: #070A12;
+  --s1: #111827;
+  --s2: #161F30;
+  --s3: #1C2639;
+  --s4: #243047;
+  --b1: rgba(148,163,184,.12);
+  --b2: rgba(148,163,184,.22);
+  --blue: #3B6BF5;
+  --orange: #F59E0B;
+  --green: #10B981;
+  --red: #F43F5E;
+  --purple: #8B5CF6;
+  --teal: #14B8A6;
+  --t1: #F8FAFC;
+  --t2: #94A3B8;
+  --t3: #64748B;
+  --t4: #334155;
+  --fd: "Plus Jakarta Sans", system-ui, sans-serif;
+  --fb: "Inter", system-ui, sans-serif;
+  --fm: "JetBrains Mono", ui-monospace, monospace;
+
+  --background: #070A12;
+  --foreground: #F8FAFC;
+  --card: #161F30;
+  --card-foreground: #F8FAFC;
+  --popover: #1C2639;
+  --popover-foreground: #F8FAFC;
+  --primary: #3B6BF5;
+  --primary-foreground: #FFFFFF;
+  --secondary: #1C2639;
+  --secondary-foreground: #F8FAFC;
+  --muted: #111827;
+  --muted-foreground: #94A3B8;
+  --accent: #F59E0B;
+  --accent-foreground: #0B0F1A;
+  --destructive: #F43F5E;
+  --destructive-foreground: #FFFFFF;
+  --border: rgba(148,163,184,.15);
+  --input: rgba(148,163,184,.18);
+  --ring: rgba(245,158,11,.35);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -138,7 +159,33 @@
   }
 
   body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(59,107,245,.12), transparent 55%),
+      radial-gradient(900px 500px at 90% 10%, rgba(245,158,11,.06), transparent 50%),
+      var(--bg);
+    color: var(--t1);
+    font-family: var(--fb);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
   }
+
+  html, body { overscroll-behavior: none; }
+
+  h1, h2, h3, h4 { font-family: var(--fd); letter-spacing: -0.01em; }
+}
+
+/* App-specific mobile utilities */
+@utility card-surface {
+  background: var(--s2);
+  border: 1px solid var(--b1);
+  border-radius: var(--radius);
+}
+@utility card-elevated {
+  background: linear-gradient(180deg, var(--s3), var(--s2));
+  border: 1px solid var(--b1);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(0,0,0,.35);
+}
+@utility mono {
+  font-family: var(--fm);
 }

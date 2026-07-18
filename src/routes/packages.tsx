@@ -38,7 +38,7 @@ function PackagesList() {
         .order("created_at", { ascending: false })
         .limit(50);
       const status = FILTERS.find((f) => f.key === filter)?.status;
-      if (status) query = query.eq("status", status);
+      if (status) query = query.eq("status", status as never);
       if (q.trim()) query = query.ilike("tracking_number", `%${q.trim()}%`);
       const { data } = await query;
       return data ?? [];

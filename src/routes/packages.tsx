@@ -34,7 +34,7 @@ function PackagesList() {
     queryKey: ["pkg-list", filter, q],
     queryFn: async () => {
       let query = supabase.from("packages")
-        .select("id, tracking_number, status, created_at, weight_kg, total_charges, customers(full_name, phone)")
+        .select("id, tracking_number, status, created_at, weight_kg, amount_due, customers(full_name, phone)")
         .order("created_at", { ascending: false })
         .limit(50);
       const status = FILTERS.find((f) => f.key === filter)?.status;

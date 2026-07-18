@@ -13,6 +13,7 @@ import { Route as PackagesRouteImport } from './routes/packages'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PackagesIdRouteImport } from './routes/packages.$id'
 
 const PackagesRoute = PackagesRouteImport.update({
   id: '/packages',
@@ -34,39 +35,47 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PackagesIdRoute = PackagesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => PackagesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
-  '/packages': typeof PackagesRoute
+  '/packages': typeof PackagesRouteWithChildren
+  '/packages/$id': typeof PackagesIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
-  '/packages': typeof PackagesRoute
+  '/packages': typeof PackagesRouteWithChildren
+  '/packages/$id': typeof PackagesIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRoute
-  '/packages': typeof PackagesRoute
+  '/packages': typeof PackagesRouteWithChildren
+  '/packages/$id': typeof PackagesIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard' | '/packages'
+  fullPaths: '/' | '/auth' | '/dashboard' | '/packages' | '/packages/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/packages'
-  id: '__root__' | '/' | '/auth' | '/dashboard' | '/packages'
+  to: '/' | '/auth' | '/dashboard' | '/packages' | '/packages/$id'
+  id: '__root__' | '/' | '/auth' | '/dashboard' | '/packages' | '/packages/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   DashboardRoute: typeof DashboardRoute
-  PackagesRoute: typeof PackagesRoute
+  PackagesRoute: typeof PackagesRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -99,14 +108,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/packages/$id': {
+      id: '/packages/$id'
+      path: '/$id'
+      fullPath: '/packages/$id'
+      preLoaderRoute: typeof PackagesIdRouteImport
+      parentRoute: typeof PackagesRoute
+    }
   }
 }
+
+interface PackagesRouteChildren {
+  PackagesIdRoute: typeof PackagesIdRoute
+}
+
+const PackagesRouteChildren: PackagesRouteChildren = {
+  PackagesIdRoute: PackagesIdRoute,
+}
+
+const PackagesRouteWithChildren = PackagesRoute._addFileChildren(
+  PackagesRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   DashboardRoute: DashboardRoute,
-  PackagesRoute: PackagesRoute,
+  PackagesRoute: PackagesRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

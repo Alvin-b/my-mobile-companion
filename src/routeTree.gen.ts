@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ScanRouteImport } from './routes/scan'
 import { Route as PackagesRouteImport } from './routes/packages'
+import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CommissionsRouteImport } from './routes/commissions'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -25,6 +26,11 @@ const ScanRoute = ScanRouteImport.update({
 const PackagesRoute = PackagesRouteImport.update({
   id: '/packages',
   path: '/packages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/commissions': typeof CommissionsRoute
   '/dashboard': typeof DashboardRoute
+  '/notifications': typeof NotificationsRoute
   '/packages': typeof PackagesRouteWithChildren
   '/scan': typeof ScanRoute
   '/packages/$id': typeof PackagesIdRoute
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/commissions': typeof CommissionsRoute
   '/dashboard': typeof DashboardRoute
+  '/notifications': typeof NotificationsRoute
   '/packages': typeof PackagesRouteWithChildren
   '/scan': typeof ScanRoute
   '/packages/$id': typeof PackagesIdRoute
@@ -77,6 +85,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/commissions': typeof CommissionsRoute
   '/dashboard': typeof DashboardRoute
+  '/notifications': typeof NotificationsRoute
   '/packages': typeof PackagesRouteWithChildren
   '/scan': typeof ScanRoute
   '/packages/$id': typeof PackagesIdRoute
@@ -88,6 +97,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/commissions'
     | '/dashboard'
+    | '/notifications'
     | '/packages'
     | '/scan'
     | '/packages/$id'
@@ -97,6 +107,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/commissions'
     | '/dashboard'
+    | '/notifications'
     | '/packages'
     | '/scan'
     | '/packages/$id'
@@ -106,6 +117,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/commissions'
     | '/dashboard'
+    | '/notifications'
     | '/packages'
     | '/scan'
     | '/packages/$id'
@@ -116,6 +128,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CommissionsRoute: typeof CommissionsRoute
   DashboardRoute: typeof DashboardRoute
+  NotificationsRoute: typeof NotificationsRoute
   PackagesRoute: typeof PackagesRouteWithChildren
   ScanRoute: typeof ScanRoute
 }
@@ -134,6 +147,13 @@ declare module '@tanstack/react-router' {
       path: '/packages'
       fullPath: '/packages'
       preLoaderRoute: typeof PackagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -191,6 +211,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CommissionsRoute: CommissionsRoute,
   DashboardRoute: DashboardRoute,
+  NotificationsRoute: NotificationsRoute,
   PackagesRoute: PackagesRouteWithChildren,
   ScanRoute: ScanRoute,
 }

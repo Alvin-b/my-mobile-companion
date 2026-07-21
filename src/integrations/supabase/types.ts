@@ -58,6 +58,96 @@ export type Database = {
           },
         ]
       }
+      cargo_packages: {
+        Row: {
+          collected_at: string | null
+          collector_id: string | null
+          collector_name: string | null
+          collector_phone: string | null
+          consignee: string
+          cost: number | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          dest: string | null
+          id: string
+          mode: string | null
+          origin: string | null
+          package_photo_captured_at: string | null
+          package_photo_captured_by: string | null
+          package_photo_url: string | null
+          paid_at: string | null
+          payment_method: string | null
+          payment_ref: string | null
+          pcs: number | null
+          phone: string | null
+          registered_at: string
+          sales_rep: string | null
+          signature_points: string | null
+          status: string
+          updated_at: string
+          weight: number | null
+        }
+        Insert: {
+          collected_at?: string | null
+          collector_id?: string | null
+          collector_name?: string | null
+          collector_phone?: string | null
+          consignee: string
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          dest?: string | null
+          id: string
+          mode?: string | null
+          origin?: string | null
+          package_photo_captured_at?: string | null
+          package_photo_captured_by?: string | null
+          package_photo_url?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_ref?: string | null
+          pcs?: number | null
+          phone?: string | null
+          registered_at?: string
+          sales_rep?: string | null
+          signature_points?: string | null
+          status?: string
+          updated_at?: string
+          weight?: number | null
+        }
+        Update: {
+          collected_at?: string | null
+          collector_id?: string | null
+          collector_name?: string | null
+          collector_phone?: string | null
+          consignee?: string
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          dest?: string | null
+          id?: string
+          mode?: string | null
+          origin?: string | null
+          package_photo_captured_at?: string | null
+          package_photo_captured_by?: string | null
+          package_photo_url?: string | null
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_ref?: string | null
+          pcs?: number | null
+          phone?: string | null
+          registered_at?: string
+          sales_rep?: string | null
+          signature_points?: string | null
+          status?: string
+          updated_at?: string
+          weight?: number | null
+        }
+        Relationships: []
+      }
       commission_rules: {
         Row: {
           active: boolean
@@ -587,6 +677,98 @@ export type Database = {
           },
         ]
       }
+      payment_allocations: {
+        Row: {
+          allocated_amount: number
+          created_at: string
+          id: string
+          linked_at: string
+          linked_by: string | null
+          notification_number: string | null
+          order_id: string
+          payment_notification_id: string
+          tracking_number: string
+        }
+        Insert: {
+          allocated_amount: number
+          created_at?: string
+          id: string
+          linked_at?: string
+          linked_by?: string | null
+          notification_number?: string | null
+          order_id: string
+          payment_notification_id: string
+          tracking_number: string
+        }
+        Update: {
+          allocated_amount?: number
+          created_at?: string
+          id?: string
+          linked_at?: string
+          linked_by?: string | null
+          notification_number?: string | null
+          order_id?: string
+          payment_notification_id?: string
+          tracking_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_allocations_payment_notification_id_fkey"
+            columns: ["payment_notification_id"]
+            isOneToOne: false
+            referencedRelation: "payment_notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_notifications: {
+        Row: {
+          amount: number | null
+          created_at: string
+          evidence_type: string
+          id: string
+          image_url: string | null
+          notification_number: string
+          sender_phone: string | null
+          status: string
+          text_content: string | null
+          timestamp: string | null
+          updated_at: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          evidence_type: string
+          id: string
+          image_url?: string | null
+          notification_number: string
+          sender_phone?: string | null
+          status?: string
+          text_content?: string | null
+          timestamp?: string | null
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          evidence_type?: string
+          id?: string
+          image_url?: string | null
+          notification_number?: string
+          sender_phone?: string | null
+          status?: string
+          text_content?: string | null
+          timestamp?: string | null
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
@@ -652,6 +834,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profiles: {
+        Row: {
+          biometric_enabled: boolean
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string | null
+          pin_hash: string | null
+          updated_at: string
+        }
+        Insert: {
+          biometric_enabled?: boolean
+          created_at?: string
+          email?: string | null
+          id: string
+          is_active?: boolean
+          name?: string | null
+          pin_hash?: string | null
+          updated_at?: string
+        }
+        Update: {
+          biometric_enabled?: boolean
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string | null
+          pin_hash?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       settings: {
         Row: {
@@ -842,6 +1057,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_commission: {
+        Args: { _id: string }
+        Returns: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          employee_id: string
+          id: string
+          package_id: string | null
+          payment_id: string | null
+          percentage: number | null
+          status: Database["public"]["Enums"]["commission_status"]
+          trigger: Database["public"]["Enums"]["commission_trigger"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "commissions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       generate_tracking_number: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -852,6 +1089,28 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      mark_commission_paid: {
+        Args: { _id: string; _reference: string }
+        Returns: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          employee_id: string
+          id: string
+          package_id: string | null
+          payment_id: string | null
+          percentage: number | null
+          status: Database["public"]["Enums"]["commission_status"]
+          trigger: Database["public"]["Enums"]["commission_trigger"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "commissions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       transition_package_status: {
         Args: {
           _by?: string
@@ -903,7 +1162,14 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "sales_manager" | "logistics_manager" | "sales_rep"
+      app_role:
+        | "admin"
+        | "sales_manager"
+        | "logistics_manager"
+        | "sales_rep"
+        | "sr"
+        | "lm"
+        | "sm"
       commission_status: "pending" | "approved" | "paid"
       commission_trigger: "received" | "payment" | "delivery"
       image_kind:
@@ -1050,7 +1316,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "sales_manager", "logistics_manager", "sales_rep"],
+      app_role: [
+        "admin",
+        "sales_manager",
+        "logistics_manager",
+        "sales_rep",
+        "sr",
+        "lm",
+        "sm",
+      ],
       commission_status: ["pending", "approved", "paid"],
       commission_trigger: ["received", "payment", "delivery"],
       image_kind: [

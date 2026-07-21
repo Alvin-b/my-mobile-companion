@@ -50,6 +50,14 @@ function TopBar({ employee, onLogout }: { employee: ReturnType<typeof useEmploye
         </div>
       </div>
       <div className="flex items-center gap-2">
+        {employee?.role === "admin" && (
+          <Link
+            to="/admin/employees"
+            className="text-[10px] font-semibold uppercase tracking-wider text-[--blue] hover:text-[--t1] border border-[--b1] rounded-md px-2 py-1"
+          >
+            Admin
+          </Link>
+        )}
         <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[--blue] to-[--orange] flex items-center justify-center text-[11px] font-bold text-white">
           {initials}
         </div>

@@ -18,6 +18,7 @@ import { Route as CommissionsRouteImport } from './routes/commissions'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PackagesIdRouteImport } from './routes/packages.$id'
+import { Route as AdminEmployeesRouteImport } from './routes/admin.employees'
 
 const ScanRoute = ScanRouteImport.update({
   id: '/scan',
@@ -64,6 +65,11 @@ const PackagesIdRoute = PackagesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => PackagesRoute,
 } as any)
+const AdminEmployeesRoute = AdminEmployeesRouteImport.update({
+  id: '/admin/employees',
+  path: '/admin/employees',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -74,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof NotificationsRoute
   '/packages': typeof PackagesRouteWithChildren
   '/scan': typeof ScanRoute
+  '/admin/employees': typeof AdminEmployeesRoute
   '/packages/$id': typeof PackagesIdRoute
 }
 export interface FileRoutesByTo {
@@ -85,6 +92,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof NotificationsRoute
   '/packages': typeof PackagesRouteWithChildren
   '/scan': typeof ScanRoute
+  '/admin/employees': typeof AdminEmployeesRoute
   '/packages/$id': typeof PackagesIdRoute
 }
 export interface FileRoutesById {
@@ -97,6 +105,7 @@ export interface FileRoutesById {
   '/notifications': typeof NotificationsRoute
   '/packages': typeof PackagesRouteWithChildren
   '/scan': typeof ScanRoute
+  '/admin/employees': typeof AdminEmployeesRoute
   '/packages/$id': typeof PackagesIdRoute
 }
 export interface FileRouteTypes {
@@ -110,6 +119,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/packages'
     | '/scan'
+    | '/admin/employees'
     | '/packages/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/packages'
     | '/scan'
+    | '/admin/employees'
     | '/packages/$id'
   id:
     | '__root__'
@@ -132,6 +143,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/packages'
     | '/scan'
+    | '/admin/employees'
     | '/packages/$id'
   fileRoutesById: FileRoutesById
 }
@@ -144,6 +156,7 @@ export interface RootRouteChildren {
   NotificationsRoute: typeof NotificationsRoute
   PackagesRoute: typeof PackagesRouteWithChildren
   ScanRoute: typeof ScanRoute
+  AdminEmployeesRoute: typeof AdminEmployeesRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -211,6 +224,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PackagesIdRouteImport
       parentRoute: typeof PackagesRoute
     }
+    '/admin/employees': {
+      id: '/admin/employees'
+      path: '/admin/employees'
+      fullPath: '/admin/employees'
+      preLoaderRoute: typeof AdminEmployeesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -235,6 +255,7 @@ const rootRouteChildren: RootRouteChildren = {
   NotificationsRoute: NotificationsRoute,
   PackagesRoute: PackagesRouteWithChildren,
   ScanRoute: ScanRoute,
+  AdminEmployeesRoute: AdminEmployeesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

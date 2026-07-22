@@ -19,6 +19,9 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PackagesIdRouteImport } from './routes/packages.$id'
 import { Route as AdminEmployeesRouteImport } from './routes/admin.employees'
+import { Route as ApiPublicSendSmsRouteImport } from './routes/api/public/send-sms'
+import { Route as ApiPublicMpesaWebhookRouteImport } from './routes/api/public/mpesa-webhook'
+import { Route as ApiPublicGeminiOcrRouteImport } from './routes/api/public/gemini-ocr'
 
 const ScanRoute = ScanRouteImport.update({
   id: '/scan',
@@ -70,6 +73,21 @@ const AdminEmployeesRoute = AdminEmployeesRouteImport.update({
   path: '/admin/employees',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicSendSmsRoute = ApiPublicSendSmsRouteImport.update({
+  id: '/api/public/send-sms',
+  path: '/api/public/send-sms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicMpesaWebhookRoute = ApiPublicMpesaWebhookRouteImport.update({
+  id: '/api/public/mpesa-webhook',
+  path: '/api/public/mpesa-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicGeminiOcrRoute = ApiPublicGeminiOcrRouteImport.update({
+  id: '/api/public/gemini-ocr',
+  path: '/api/public/gemini-ocr',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -82,6 +100,9 @@ export interface FileRoutesByFullPath {
   '/scan': typeof ScanRoute
   '/admin/employees': typeof AdminEmployeesRoute
   '/packages/$id': typeof PackagesIdRoute
+  '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
+  '/api/public/mpesa-webhook': typeof ApiPublicMpesaWebhookRoute
+  '/api/public/send-sms': typeof ApiPublicSendSmsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +115,9 @@ export interface FileRoutesByTo {
   '/scan': typeof ScanRoute
   '/admin/employees': typeof AdminEmployeesRoute
   '/packages/$id': typeof PackagesIdRoute
+  '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
+  '/api/public/mpesa-webhook': typeof ApiPublicMpesaWebhookRoute
+  '/api/public/send-sms': typeof ApiPublicSendSmsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +131,9 @@ export interface FileRoutesById {
   '/scan': typeof ScanRoute
   '/admin/employees': typeof AdminEmployeesRoute
   '/packages/$id': typeof PackagesIdRoute
+  '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
+  '/api/public/mpesa-webhook': typeof ApiPublicMpesaWebhookRoute
+  '/api/public/send-sms': typeof ApiPublicSendSmsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +148,9 @@ export interface FileRouteTypes {
     | '/scan'
     | '/admin/employees'
     | '/packages/$id'
+    | '/api/public/gemini-ocr'
+    | '/api/public/mpesa-webhook'
+    | '/api/public/send-sms'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +163,9 @@ export interface FileRouteTypes {
     | '/scan'
     | '/admin/employees'
     | '/packages/$id'
+    | '/api/public/gemini-ocr'
+    | '/api/public/mpesa-webhook'
+    | '/api/public/send-sms'
   id:
     | '__root__'
     | '/'
@@ -145,6 +178,9 @@ export interface FileRouteTypes {
     | '/scan'
     | '/admin/employees'
     | '/packages/$id'
+    | '/api/public/gemini-ocr'
+    | '/api/public/mpesa-webhook'
+    | '/api/public/send-sms'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -157,6 +193,9 @@ export interface RootRouteChildren {
   PackagesRoute: typeof PackagesRouteWithChildren
   ScanRoute: typeof ScanRoute
   AdminEmployeesRoute: typeof AdminEmployeesRoute
+  ApiPublicGeminiOcrRoute: typeof ApiPublicGeminiOcrRoute
+  ApiPublicMpesaWebhookRoute: typeof ApiPublicMpesaWebhookRoute
+  ApiPublicSendSmsRoute: typeof ApiPublicSendSmsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -231,6 +270,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEmployeesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/send-sms': {
+      id: '/api/public/send-sms'
+      path: '/api/public/send-sms'
+      fullPath: '/api/public/send-sms'
+      preLoaderRoute: typeof ApiPublicSendSmsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/mpesa-webhook': {
+      id: '/api/public/mpesa-webhook'
+      path: '/api/public/mpesa-webhook'
+      fullPath: '/api/public/mpesa-webhook'
+      preLoaderRoute: typeof ApiPublicMpesaWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/gemini-ocr': {
+      id: '/api/public/gemini-ocr'
+      path: '/api/public/gemini-ocr'
+      fullPath: '/api/public/gemini-ocr'
+      preLoaderRoute: typeof ApiPublicGeminiOcrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -256,6 +316,9 @@ const rootRouteChildren: RootRouteChildren = {
   PackagesRoute: PackagesRouteWithChildren,
   ScanRoute: ScanRoute,
   AdminEmployeesRoute: AdminEmployeesRoute,
+  ApiPublicGeminiOcrRoute: ApiPublicGeminiOcrRoute,
+  ApiPublicMpesaWebhookRoute: ApiPublicMpesaWebhookRoute,
+  ApiPublicSendSmsRoute: ApiPublicSendSmsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

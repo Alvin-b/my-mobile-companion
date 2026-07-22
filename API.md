@@ -439,3 +439,136 @@ variables:
 
 Run **1. Authentication → Login** first — the test script auto-populates
 `access_token` and `user_id` so every downstream request works.
+
+---
+
+## 17. Automation endpoints (Lovable server routes)
+
+These are TanStack Start server routes hosted at:
+
+```
+https://project--5e9b81ad-6c63-4331-af7a-01008019e17f.lovable.app
+```
+
+(stable across renames; use `-dev` suffix for the preview build).
+
+### 17.1 Auto-commission trigger (server-side, no endpoint)
+
+A Postgres trigger (`trg_auto_commission_paid`) fires when a `cargo_packages`
+row transitions to `status = 'paid'`. It:
+
+1. Reads the `sales_rep` field (expects `"SR-002 John Kamau"` shape).
+2. Looks up the matching active `employees` row by `employee_code`.
+3. Picks the active `commission_rules` row for that role + `trigger = 'payment'`.
+4. Inserts a `commissions` row with `amount = cost * percentage / 100 + flat_amount`
+   and `status = 'pending'`.
+
+Nothing to call — payments made through `PATCH /rest/v1/cargo_packages` or
+auto-linked via M-Pesa create the commission automatically.
+
+### 17.2 `POST /api/public/mpesa-webhook`
+
+Receiver for Safaricom Daraja C2B / STK Push callbacks. Configure Daraja's
+`CallBackURL` to:
+
+```
+https://project--5e9b81ad-6c63-4331-af7a-01008019e17f.lovable.app/api/public/mpesa-webhook?secret=<MPESA_WEBHOOK_SECRET>
+```
+
+or send the secret as `X-Webhook-Secret` header. Requests without the correct
+secret return `401`.
+
+Behavior:
+- Inserts a row into `payment_notifications` (`evidence_type = 'TEXT'`,
+  `status = 'PENDING'`, `uploaded_by = 'MPESA_WEBHOOK'`, `amount`,
+  `sender_phone`).
+- If the STK `AccountReference` matches a `cargo_packages.id` (tracking
+  number), an entry is inserted into `payment_allocations` and the existing
+  DB trigger flips the package to `paid` and generates the commission.
+- Returns `{ "ResultCode": 0, "ResultDesc": "Accepted" }` on success (Daraja
+  requires that shape).
+
+The mobile app does not need to call this — it is server-to-server only.
+
+### 17.3 `POST /api/public/gemini-ocr`
+
+Server-side OCR for airway bills / shipping labels. The mobile app sends the
+captured image; the server calls Gemini via the Lovable AI Gateway (API key
+stays on the server).
+
+Headers:
+```
+Authorization: Bearer <supabase_access_token>
+Content-Type: application/json
+```
+
+Body:
+```json
+{ "image_base64": "<jpeg-bytes-base64>", "mime_type": "image/jpeg" }
+```
+
+Response 200:
+```json
+{
+  "tracking_number": "1260707534975",
+  "consignee_name": "Jane Doe",
+  "consignee_phone": "0712345678",
+  "origin": "Nairobi (NBO)",
+  "destination": "Kigali (KGL)",
+  "description": "Electronics",
+  "mode": "Air Freight",
+  "weight": "3.5",
+  "pieces": "2",
+  "cost": "4500"
+}
+```
+
+Map the response directly into a `POST /rest/v1/cargo_packages` body (§5.3).
+
+### 17.4 `POST /api/public/send-sms`
+
+Outbound customer notification (SMS / WhatsApp). Requires a logged-in staff
+JWT.
+
+Headers:
+```
+Authorization: Bearer <supabase_access_token>
+Content-Type: application/json
+```
+
+Body:
+```json
+{ "to": "+254712345678",
+  "message": "Your parcel 1260707534975 is ready for collection.",
+  "package_id": "1260707534975" }
+```
+
+Behavior:
+- If `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_FROM_NUMBER`
+  secrets are configured, the message is sent via Twilio Programmable SMS.
+- Otherwise the request is queued into `whatsapp_logs` with `status = 'queued'`
+  for manual delivery.
+- Every attempt is recorded in `whatsapp_logs` (`template = 'manual'`, payload
+  carries `to`, `message`, `tracking_number`, `sent_by`).
+
+Response:
+```json
+{ "ok": true, "status": "sent", "ref": "SM1234...", "error": null }
+```
+
+---
+
+## 18. Secrets the backend expects
+
+Configured via Lovable Cloud (never checked into git):
+
+| Secret | Purpose | Required for |
+| --- | --- | --- |
+| `MPESA_WEBHOOK_SECRET` | Shared secret validating Daraja callbacks | §17.2 (auto-set) |
+| `LOVABLE_API_KEY` | Lovable AI Gateway auth | §17.3 (auto-set) |
+| `TWILIO_ACCOUNT_SID` | Twilio credential | §17.4 (add if using Twilio) |
+| `TWILIO_AUTH_TOKEN` | Twilio credential | §17.4 |
+| `TWILIO_FROM_NUMBER` | Twilio sender in E.164 | §17.4 |
+
+Ask the Lovable admin to add the Twilio trio before switching `send-sms`
+off queue mode.

@@ -77,13 +77,16 @@ export const Route = createFileRoute("/api/public/send-sms")({
           "@/integrations/supabase/client.server"
         );
         await supabaseAdmin.from("whatsapp_logs").insert({
-          to_phone: body.to,
-          message: body.message,
+          template: "manual",
           status: providerStatus,
-          provider_ref: providerRef,
+          provider_message_id: providerRef,
           error: errorText,
-          package_id: body.package_id ?? null,
-          sent_by: user.id,
+          payload: {
+            to: body.to,
+            message: body.message,
+            tracking_number: body.package_id ?? null,
+            sent_by: user.id,
+          },
         });
 
         return Response.json({ ok: providerStatus !== "failed", status: providerStatus, ref: providerRef, error: errorText });

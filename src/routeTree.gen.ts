@@ -19,6 +19,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PackagesIdRouteImport } from './routes/packages.$id'
 import { Route as AdminEmployeesRouteImport } from './routes/admin.employees'
+import { Route as ApiPublicMpesaWebhookRouteImport } from './routes/api/public/mpesa-webhook'
 
 const ScanRoute = ScanRouteImport.update({
   id: '/scan',
@@ -70,6 +71,11 @@ const AdminEmployeesRoute = AdminEmployeesRouteImport.update({
   path: '/admin/employees',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicMpesaWebhookRoute = ApiPublicMpesaWebhookRouteImport.update({
+  id: '/api/public/mpesa-webhook',
+  path: '/api/public/mpesa-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/scan': typeof ScanRoute
   '/admin/employees': typeof AdminEmployeesRoute
   '/packages/$id': typeof PackagesIdRoute
+  '/api/public/mpesa-webhook': typeof ApiPublicMpesaWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/scan': typeof ScanRoute
   '/admin/employees': typeof AdminEmployeesRoute
   '/packages/$id': typeof PackagesIdRoute
+  '/api/public/mpesa-webhook': typeof ApiPublicMpesaWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/scan': typeof ScanRoute
   '/admin/employees': typeof AdminEmployeesRoute
   '/packages/$id': typeof PackagesIdRoute
+  '/api/public/mpesa-webhook': typeof ApiPublicMpesaWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/scan'
     | '/admin/employees'
     | '/packages/$id'
+    | '/api/public/mpesa-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/scan'
     | '/admin/employees'
     | '/packages/$id'
+    | '/api/public/mpesa-webhook'
   id:
     | '__root__'
     | '/'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/scan'
     | '/admin/employees'
     | '/packages/$id'
+    | '/api/public/mpesa-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -157,6 +169,7 @@ export interface RootRouteChildren {
   PackagesRoute: typeof PackagesRouteWithChildren
   ScanRoute: typeof ScanRoute
   AdminEmployeesRoute: typeof AdminEmployeesRoute
+  ApiPublicMpesaWebhookRoute: typeof ApiPublicMpesaWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -231,6 +244,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminEmployeesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/mpesa-webhook': {
+      id: '/api/public/mpesa-webhook'
+      path: '/api/public/mpesa-webhook'
+      fullPath: '/api/public/mpesa-webhook'
+      preLoaderRoute: typeof ApiPublicMpesaWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -256,17 +276,8 @@ const rootRouteChildren: RootRouteChildren = {
   PackagesRoute: PackagesRouteWithChildren,
   ScanRoute: ScanRoute,
   AdminEmployeesRoute: AdminEmployeesRoute,
+  ApiPublicMpesaWebhookRoute: ApiPublicMpesaWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

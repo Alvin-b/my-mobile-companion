@@ -17,46 +17,56 @@ export type Database = {
       audit_logs: {
         Row: {
           action: string
-          actor_employee_id: string | null
-          actor_user_id: string | null
-          after: Json | null
-          before: Json | null
+          actor: string | null
           created_at: string
+          details: string | null
           id: string
-          resource_id: string | null
-          resource_type: string
+          timestamp: string
         }
         Insert: {
           action: string
-          actor_employee_id?: string | null
-          actor_user_id?: string | null
-          after?: Json | null
-          before?: Json | null
+          actor?: string | null
           created_at?: string
-          id?: string
-          resource_id?: string | null
-          resource_type: string
+          details?: string | null
+          id: string
+          timestamp?: string
         }
         Update: {
           action?: string
-          actor_employee_id?: string | null
-          actor_user_id?: string | null
-          after?: Json | null
-          before?: Json | null
+          actor?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          timestamp?: string
+        }
+        Relationships: []
+      }
+      broadcast_messages: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          sender: string | null
+          target: string
+          timestamp: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          message: string
+          sender?: string | null
+          target?: string
+          timestamp?: string
+        }
+        Update: {
           created_at?: string
           id?: string
-          resource_id?: string | null
-          resource_type?: string
+          message?: string
+          sender?: string | null
+          target?: string
+          timestamp?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "audit_logs_actor_employee_id_fkey"
-            columns: ["actor_employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       cargo_packages: {
         Row: {
@@ -68,6 +78,7 @@ export type Database = {
           cost: number | null
           created_at: string
           created_by: string | null
+          descr: string | null
           description: string | null
           dest: string | null
           id: string
@@ -97,6 +108,7 @@ export type Database = {
           cost?: number | null
           created_at?: string
           created_by?: string | null
+          descr?: string | null
           description?: string | null
           dest?: string | null
           id: string
@@ -126,6 +138,7 @@ export type Database = {
           cost?: number | null
           created_at?: string
           created_by?: string | null
+          descr?: string | null
           description?: string | null
           dest?: string | null
           id?: string
@@ -1054,7 +1067,47 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      commission_rates: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          employee_id: string | null
+          flat_amount: number | null
+          id: string | null
+          percentage: number | null
+          role: Database["public"]["Enums"]["app_role"] | null
+          trigger: Database["public"]["Enums"]["commission_trigger"] | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          employee_id?: string | null
+          flat_amount?: number | null
+          id?: string | null
+          percentage?: number | null
+          role?: Database["public"]["Enums"]["app_role"] | null
+          trigger?: Database["public"]["Enums"]["commission_trigger"] | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          employee_id?: string | null
+          flat_amount?: number | null
+          id?: string | null
+          percentage?: number | null
+          role?: Database["public"]["Enums"]["app_role"] | null
+          trigger?: Database["public"]["Enums"]["commission_trigger"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_rules_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       approve_commission: {

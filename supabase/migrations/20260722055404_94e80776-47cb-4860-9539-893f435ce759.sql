@@ -1,0 +1,1 @@
+ALTER VIEW public.commission_rates SET (security_invoker = true);

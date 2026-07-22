@@ -20,6 +20,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as PackagesIdRouteImport } from './routes/packages.$id'
 import { Route as AdminEmployeesRouteImport } from './routes/admin.employees'
 import { Route as ApiPublicMpesaWebhookRouteImport } from './routes/api/public/mpesa-webhook'
+import { Route as ApiPublicGeminiOcrRouteImport } from './routes/api/public/gemini-ocr'
 
 const ScanRoute = ScanRouteImport.update({
   id: '/scan',
@@ -76,6 +77,11 @@ const ApiPublicMpesaWebhookRoute = ApiPublicMpesaWebhookRouteImport.update({
   path: '/api/public/mpesa-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicGeminiOcrRoute = ApiPublicGeminiOcrRouteImport.update({
+  id: '/api/public/gemini-ocr',
+  path: '/api/public/gemini-ocr',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/scan': typeof ScanRoute
   '/admin/employees': typeof AdminEmployeesRoute
   '/packages/$id': typeof PackagesIdRoute
+  '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
   '/api/public/mpesa-webhook': typeof ApiPublicMpesaWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/scan': typeof ScanRoute
   '/admin/employees': typeof AdminEmployeesRoute
   '/packages/$id': typeof PackagesIdRoute
+  '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
   '/api/public/mpesa-webhook': typeof ApiPublicMpesaWebhookRoute
 }
 export interface FileRoutesById {
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/scan': typeof ScanRoute
   '/admin/employees': typeof AdminEmployeesRoute
   '/packages/$id': typeof PackagesIdRoute
+  '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
   '/api/public/mpesa-webhook': typeof ApiPublicMpesaWebhookRoute
 }
 export interface FileRouteTypes {
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/scan'
     | '/admin/employees'
     | '/packages/$id'
+    | '/api/public/gemini-ocr'
     | '/api/public/mpesa-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
     | '/scan'
     | '/admin/employees'
     | '/packages/$id'
+    | '/api/public/gemini-ocr'
     | '/api/public/mpesa-webhook'
   id:
     | '__root__'
@@ -156,6 +167,7 @@ export interface FileRouteTypes {
     | '/scan'
     | '/admin/employees'
     | '/packages/$id'
+    | '/api/public/gemini-ocr'
     | '/api/public/mpesa-webhook'
   fileRoutesById: FileRoutesById
 }
@@ -169,6 +181,7 @@ export interface RootRouteChildren {
   PackagesRoute: typeof PackagesRouteWithChildren
   ScanRoute: typeof ScanRoute
   AdminEmployeesRoute: typeof AdminEmployeesRoute
+  ApiPublicGeminiOcrRoute: typeof ApiPublicGeminiOcrRoute
   ApiPublicMpesaWebhookRoute: typeof ApiPublicMpesaWebhookRoute
 }
 
@@ -251,6 +264,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMpesaWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/gemini-ocr': {
+      id: '/api/public/gemini-ocr'
+      path: '/api/public/gemini-ocr'
+      fullPath: '/api/public/gemini-ocr'
+      preLoaderRoute: typeof ApiPublicGeminiOcrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -276,6 +296,7 @@ const rootRouteChildren: RootRouteChildren = {
   PackagesRoute: PackagesRouteWithChildren,
   ScanRoute: ScanRoute,
   AdminEmployeesRoute: AdminEmployeesRoute,
+  ApiPublicGeminiOcrRoute: ApiPublicGeminiOcrRoute,
   ApiPublicMpesaWebhookRoute: ApiPublicMpesaWebhookRoute,
 }
 export const routeTree = rootRouteImport

@@ -18,6 +18,7 @@ import { Route as CommissionsRouteImport } from './routes/commissions'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PackagesIdRouteImport } from './routes/packages.$id'
+import { Route as ApiMpesaStkPushRouteImport } from './routes/api/mpesa-stk-push'
 import { Route as AdminEmployeesRouteImport } from './routes/admin.employees'
 import { Route as ApiPublicSendSmsRouteImport } from './routes/api/public/send-sms'
 import { Route as ApiPublicMpesaWebhookRouteImport } from './routes/api/public/mpesa-webhook'
@@ -68,6 +69,11 @@ const PackagesIdRoute = PackagesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => PackagesRoute,
 } as any)
+const ApiMpesaStkPushRoute = ApiMpesaStkPushRouteImport.update({
+  id: '/api/mpesa-stk-push',
+  path: '/api/mpesa-stk-push',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminEmployeesRoute = AdminEmployeesRouteImport.update({
   id: '/admin/employees',
   path: '/admin/employees',
@@ -99,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/packages': typeof PackagesRouteWithChildren
   '/scan': typeof ScanRoute
   '/admin/employees': typeof AdminEmployeesRoute
+  '/api/mpesa-stk-push': typeof ApiMpesaStkPushRoute
   '/packages/$id': typeof PackagesIdRoute
   '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
   '/api/public/mpesa-webhook': typeof ApiPublicMpesaWebhookRoute
@@ -114,6 +121,7 @@ export interface FileRoutesByTo {
   '/packages': typeof PackagesRouteWithChildren
   '/scan': typeof ScanRoute
   '/admin/employees': typeof AdminEmployeesRoute
+  '/api/mpesa-stk-push': typeof ApiMpesaStkPushRoute
   '/packages/$id': typeof PackagesIdRoute
   '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
   '/api/public/mpesa-webhook': typeof ApiPublicMpesaWebhookRoute
@@ -130,6 +138,7 @@ export interface FileRoutesById {
   '/packages': typeof PackagesRouteWithChildren
   '/scan': typeof ScanRoute
   '/admin/employees': typeof AdminEmployeesRoute
+  '/api/mpesa-stk-push': typeof ApiMpesaStkPushRoute
   '/packages/$id': typeof PackagesIdRoute
   '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
   '/api/public/mpesa-webhook': typeof ApiPublicMpesaWebhookRoute
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
     | '/packages'
     | '/scan'
     | '/admin/employees'
+    | '/api/mpesa-stk-push'
     | '/packages/$id'
     | '/api/public/gemini-ocr'
     | '/api/public/mpesa-webhook'
@@ -162,6 +172,7 @@ export interface FileRouteTypes {
     | '/packages'
     | '/scan'
     | '/admin/employees'
+    | '/api/mpesa-stk-push'
     | '/packages/$id'
     | '/api/public/gemini-ocr'
     | '/api/public/mpesa-webhook'
@@ -177,6 +188,7 @@ export interface FileRouteTypes {
     | '/packages'
     | '/scan'
     | '/admin/employees'
+    | '/api/mpesa-stk-push'
     | '/packages/$id'
     | '/api/public/gemini-ocr'
     | '/api/public/mpesa-webhook'
@@ -193,6 +205,7 @@ export interface RootRouteChildren {
   PackagesRoute: typeof PackagesRouteWithChildren
   ScanRoute: typeof ScanRoute
   AdminEmployeesRoute: typeof AdminEmployeesRoute
+  ApiMpesaStkPushRoute: typeof ApiMpesaStkPushRoute
   ApiPublicGeminiOcrRoute: typeof ApiPublicGeminiOcrRoute
   ApiPublicMpesaWebhookRoute: typeof ApiPublicMpesaWebhookRoute
   ApiPublicSendSmsRoute: typeof ApiPublicSendSmsRoute
@@ -263,6 +276,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PackagesIdRouteImport
       parentRoute: typeof PackagesRoute
     }
+    '/api/mpesa-stk-push': {
+      id: '/api/mpesa-stk-push'
+      path: '/api/mpesa-stk-push'
+      fullPath: '/api/mpesa-stk-push'
+      preLoaderRoute: typeof ApiMpesaStkPushRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/employees': {
       id: '/admin/employees'
       path: '/admin/employees'
@@ -316,6 +336,7 @@ const rootRouteChildren: RootRouteChildren = {
   PackagesRoute: PackagesRouteWithChildren,
   ScanRoute: ScanRoute,
   AdminEmployeesRoute: AdminEmployeesRoute,
+  ApiMpesaStkPushRoute: ApiMpesaStkPushRoute,
   ApiPublicGeminiOcrRoute: ApiPublicGeminiOcrRoute,
   ApiPublicMpesaWebhookRoute: ApiPublicMpesaWebhookRoute,
   ApiPublicSendSmsRoute: ApiPublicSendSmsRoute,
@@ -323,13 +344,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

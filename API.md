@@ -572,3 +572,124 @@ Configured via Lovable Cloud (never checked into git):
 
 Ask the Lovable admin to add the Twilio trio before switching `send-sms`
 off queue mode.
+---
+
+## 19. M-Pesa STK Push (Daraja) — initiate a payment
+
+Trigger a Safaricom STK prompt on the customer's phone. Called by the mobile
+app (Retrofit) with a signed-in staff JWT.
+
+### 19.1 `POST /api/mpesa-stk-push`
+
+Headers:
+```
+Authorization: Bearer <supabase_access_token>
+Content-Type: application/json
+```
+
+Body:
+```json
+{
+  "phone": "0712345678",
+  "amount": 4500,
+  "tracking_number": "1260707534975",
+  "description": "Air freight"
+}
+```
+
+- `phone` accepts `07XX...`, `2547XX...`, or `+2547XX...`; normalized to `2547XXXXXXXX` before Daraja.
+- `amount` is KES, whole shillings.
+- `tracking_number` is the `cargo_packages.id`; used as the Daraja
+  `AccountReference` unless `MPESA_ACCOUNT_REFERENCE` is set.
+
+Response 200:
+```json
+{
+  "ok": true,
+  "notification_id": "PN-8f3a1c22",
+  "notification_number": "PAY-20260723-2b4f7a",
+  "checkout_request_id": "ws_CO_23072026...",
+  "merchant_request_id": "29115-34620561-1",
+  "customer_message": "Success. Request accepted for processing"
+}
+```
+
+Behavior:
+1. Verifies the Supabase JWT (`Authorization: Bearer ...`).
+2. Requests a Daraja OAuth token, then calls
+   `POST /mpesa/stkpush/v1/processrequest`.
+3. Inserts a **pending** row in `payment_notifications` keyed by
+   `checkout_request_id`, so the webhook can match the callback.
+4. Returns the Daraja `CheckoutRequestID` — poll `notification_id` for status.
+
+### 19.2 Callback (server-to-server)
+
+Safaricom POSTs the result to `MPESA_CALLBACK_URL`, which must be:
+```
+https://project--5e9b81ad-6c63-4331-af7a-01008019e17f.lovable.app/api/public/mpesa-webhook?secret=<MPESA_WEBHOOK_SECRET>
+```
+
+The webhook:
+- Looks up the pending `payment_notifications` row by `checkout_request_id`.
+- On `ResultCode = 0`: sets `status = 'PENDING'` → allocation, stores
+  `mpesa_receipt`, and inserts a `payment_allocations` row when the
+  `AccountReference` matches a `cargo_packages.id`. The existing DB trigger
+  then flips the package to `paid` and creates the commission.
+- On non-zero `ResultCode`: sets `status = 'FAILED'`, stores `result_code`
+  and `result_desc`.
+
+### 19.3 Poll status
+
+The mobile app polls the notification row every ~3s:
+```
+GET /rest/v1/payment_notifications?id=eq.PN-8f3a1c22&select=status,mpesa_receipt,result_code,result_desc
+```
+
+`status` values:
+- `PENDING` — STK sent, awaiting customer PIN / callback.
+- `LINKED`  — payment succeeded and was allocated to the cargo package.
+- `FAILED`  — customer cancelled, wrong PIN, timeout, or Daraja error.
+
+### 19.4 Secrets used
+
+| Secret | Purpose |
+| --- | --- |
+| `MPESA_ENV` | `sandbox` or `production` (defaults to `sandbox`) |
+| `MPESA_CONSUMER_KEY` | Daraja app consumer key |
+| `MPESA_CONSUMER_SECRET` | Daraja app consumer secret |
+| `MPESA_SHORTCODE` | Your PayBill / Till number registered on Daraja |
+| `MPESA_PASSKEY` | Daraja Lipa Na M-Pesa Online passkey |
+| `MPESA_PARTY_B` | Optional — receiving PayBill (e.g. `522522` for shared KCB); defaults to `MPESA_SHORTCODE` |
+| `MPESA_ACCOUNT_REFERENCE` | Optional — force a static AccountReference; otherwise the tracking number is used |
+| `MPESA_CALLBACK_URL` | Full public URL of `/api/public/mpesa-webhook` including `?secret=...` |
+| `MPESA_WEBHOOK_SECRET` | Shared secret validating incoming Daraja callbacks |
+
+### 19.5 Kotlin / Retrofit example
+
+```kotlin
+interface MpesaApi {
+    @POST("api/mpesa-stk-push")
+    suspend fun stkPush(@Body req: StkPushRequest): StkPushResponse
+}
+
+data class StkPushRequest(
+    val phone: String,
+    val amount: Int,
+    val tracking_number: String,
+    val description: String? = null,
+)
+
+data class StkPushResponse(
+    val ok: Boolean,
+    val notification_id: String,
+    val notification_number: String,
+    val checkout_request_id: String?,
+    val merchant_request_id: String?,
+    val customer_message: String?,
+)
+```
+
+Base URL for these automation endpoints:
+```
+https://project--5e9b81ad-6c63-4331-af7a-01008019e17f.lovable.app
+```

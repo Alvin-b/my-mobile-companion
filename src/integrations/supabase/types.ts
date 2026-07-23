@@ -736,12 +736,18 @@ export type Database = {
       }
       payment_notifications: {
         Row: {
+          account_reference: string | null
           amount: number | null
+          checkout_request_id: string | null
           created_at: string
           evidence_type: string
           id: string
           image_url: string | null
+          merchant_request_id: string | null
+          mpesa_receipt: string | null
           notification_number: string
+          result_code: number | null
+          result_desc: string | null
           sender_phone: string | null
           status: string
           text_content: string | null
@@ -751,12 +757,18 @@ export type Database = {
           uploaded_by: string | null
         }
         Insert: {
+          account_reference?: string | null
           amount?: number | null
+          checkout_request_id?: string | null
           created_at?: string
           evidence_type: string
           id: string
           image_url?: string | null
+          merchant_request_id?: string | null
+          mpesa_receipt?: string | null
           notification_number: string
+          result_code?: number | null
+          result_desc?: string | null
           sender_phone?: string | null
           status?: string
           text_content?: string | null
@@ -766,12 +778,18 @@ export type Database = {
           uploaded_by?: string | null
         }
         Update: {
+          account_reference?: string | null
           amount?: number | null
+          checkout_request_id?: string | null
           created_at?: string
           evidence_type?: string
           id?: string
           image_url?: string | null
+          merchant_request_id?: string | null
+          mpesa_receipt?: string | null
           notification_number?: string
+          result_code?: number | null
+          result_desc?: string | null
           sender_phone?: string | null
           status?: string
           text_content?: string | null

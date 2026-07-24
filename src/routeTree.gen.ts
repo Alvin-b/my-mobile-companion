@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ScanRouteImport } from './routes/scan'
 import { Route as PackagesRouteImport } from './routes/packages'
 import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as MpesaTestRouteImport } from './routes/mpesa-test'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CustomersRouteImport } from './routes/customers'
 import { Route as CommissionsRouteImport } from './routes/commissions'
@@ -37,6 +38,11 @@ const PackagesRoute = PackagesRouteImport.update({
 const NotificationsRoute = NotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MpesaTestRoute = MpesaTestRouteImport.update({
+  id: '/mpesa-test',
+  path: '/mpesa-test',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/commissions': typeof CommissionsRoute
   '/customers': typeof CustomersRoute
   '/dashboard': typeof DashboardRoute
+  '/mpesa-test': typeof MpesaTestRoute
   '/notifications': typeof NotificationsRoute
   '/packages': typeof PackagesRouteWithChildren
   '/scan': typeof ScanRoute
@@ -117,6 +124,7 @@ export interface FileRoutesByTo {
   '/commissions': typeof CommissionsRoute
   '/customers': typeof CustomersRoute
   '/dashboard': typeof DashboardRoute
+  '/mpesa-test': typeof MpesaTestRoute
   '/notifications': typeof NotificationsRoute
   '/packages': typeof PackagesRouteWithChildren
   '/scan': typeof ScanRoute
@@ -134,6 +142,7 @@ export interface FileRoutesById {
   '/commissions': typeof CommissionsRoute
   '/customers': typeof CustomersRoute
   '/dashboard': typeof DashboardRoute
+  '/mpesa-test': typeof MpesaTestRoute
   '/notifications': typeof NotificationsRoute
   '/packages': typeof PackagesRouteWithChildren
   '/scan': typeof ScanRoute
@@ -152,6 +161,7 @@ export interface FileRouteTypes {
     | '/commissions'
     | '/customers'
     | '/dashboard'
+    | '/mpesa-test'
     | '/notifications'
     | '/packages'
     | '/scan'
@@ -168,6 +178,7 @@ export interface FileRouteTypes {
     | '/commissions'
     | '/customers'
     | '/dashboard'
+    | '/mpesa-test'
     | '/notifications'
     | '/packages'
     | '/scan'
@@ -184,6 +195,7 @@ export interface FileRouteTypes {
     | '/commissions'
     | '/customers'
     | '/dashboard'
+    | '/mpesa-test'
     | '/notifications'
     | '/packages'
     | '/scan'
@@ -201,6 +213,7 @@ export interface RootRouteChildren {
   CommissionsRoute: typeof CommissionsRoute
   CustomersRoute: typeof CustomersRoute
   DashboardRoute: typeof DashboardRoute
+  MpesaTestRoute: typeof MpesaTestRoute
   NotificationsRoute: typeof NotificationsRoute
   PackagesRoute: typeof PackagesRouteWithChildren
   ScanRoute: typeof ScanRoute
@@ -232,6 +245,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mpesa-test': {
+      id: '/mpesa-test'
+      path: '/mpesa-test'
+      fullPath: '/mpesa-test'
+      preLoaderRoute: typeof MpesaTestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -332,6 +352,7 @@ const rootRouteChildren: RootRouteChildren = {
   CommissionsRoute: CommissionsRoute,
   CustomersRoute: CustomersRoute,
   DashboardRoute: DashboardRoute,
+  MpesaTestRoute: MpesaTestRoute,
   NotificationsRoute: NotificationsRoute,
   PackagesRoute: PackagesRouteWithChildren,
   ScanRoute: ScanRoute,
@@ -344,13 +365,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -7,6 +7,7 @@ import { useEmployee } from "@/hooks/use-employee";
 import { ROLE_LABELS } from "@/lib/format";
 import {
   createEmployee,
+  deleteEmployee,
   listEmployees,
   setEmployeeActive,
 } from "@/lib/admin.functions";
@@ -27,6 +28,7 @@ function AdminEmployees() {
   const listFn = useServerFn(listEmployees);
   const createFn = useServerFn(createEmployee);
   const toggleFn = useServerFn(setEmployeeActive);
+  const deleteFn = useServerFn(deleteEmployee);
 
   const list = useQuery({
     queryKey: ["admin-employees"],
@@ -69,6 +71,11 @@ function AdminEmployees() {
   const toggleMut = useMutation({
     mutationFn: (v: { id: string; active: boolean }) =>
       toggleFn({ data: { employee_id: v.id, is_active: v.active } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-employees"] }),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (employeeId: string) => deleteFn({ data: { employee_id: employeeId } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-employees"] }),
   });
 
@@ -126,12 +133,29 @@ function AdminEmployees() {
                     {ROLE_LABELS[e.role]} · {e.email}
                   </div>
                 </div>
-                <button
-                  onClick={() => toggleMut.mutate({ id: e.id, active: !e.is_active })}
-                  className="text-[10px] font-semibold text-[--t2] hover:text-[--t1] uppercase tracking-wider"
-                >
-                  {e.is_active ? "Disable" : "Enable"}
-                </button>
+                <div className="flex gap-3 text-[10px] font-semibold uppercase tracking-wider">
+                  {e.role !== "admin" && (
+                    <button
+                      onClick={() => toggleMut.mutate({ id: e.id, active: !e.is_active })}
+                      className="text-[--t2] hover:text-[--t1]"
+                    >
+                      {e.is_active ? "Disable" : "Enable"}
+                    </button>
+                  )}
+                  {e.role !== "admin" && (
+                    <button
+                      disabled={deleteMut.isPending}
+                      onClick={() => {
+                        if (window.confirm(`Delete access for ${e.full_name}? Package and payment history will be retained.`)) {
+                          deleteMut.mutate(e.id);
+                        }
+                      }}
+                      className="text-red-400 hover:text-red-300 disabled:opacity-50"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -163,7 +187,7 @@ function AdminEmployees() {
                 <input className={ipt} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+2547…" />
               </Field>
               <Field label="Temporary password">
-                <input type="text" className={ipt} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Min 6 chars" />
+                <input type="text" className={ipt} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Min 8 chars" />
               </Field>
               <Field label="Role">
                 <select className={ipt} value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as any })}>
@@ -189,7 +213,7 @@ function AdminEmployees() {
             {err && <div className="mt-2 text-[11px] text-red-400 bg-red-500/10 border border-red-500/30 rounded-md p-2">{err}</div>}
 
             <button
-              disabled={createMut.isPending || !form.full_name || !form.email || form.password.length < 6}
+              disabled={createMut.isPending || !form.full_name || !form.email || form.password.length < 8}
               onClick={() => createMut.mutate()}
               className="mt-4 w-full py-3 rounded-lg bg-[--blue] text-white text-[12px] font-bold uppercase tracking-wider disabled:opacity-50"
             >

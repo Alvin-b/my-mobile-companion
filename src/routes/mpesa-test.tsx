@@ -37,7 +37,7 @@ function MpesaTestPage() {
 
   const [phone, setPhone] = useState("");
   const [amount, setAmount] = useState("1");
-  const [tracking, setTracking] = useState("TEST-" + Math.floor(Math.random() * 9999));
+  const [tracking, setTracking] = useState("");
   const [description, setDescription] = useState("Test");
 
   const [loading, setLoading] = useState(false);
@@ -134,7 +134,7 @@ function MpesaTestPage() {
               required
             />
           </Field>
-          <Field label="Tracking / Account Ref">
+          <Field label="Tracking number (an existing package awaiting payment)">
             <input
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               value={tracking}

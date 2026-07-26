@@ -60,6 +60,24 @@ export const Route = createFileRoute("/api/mpesa-stk-push")({
           return Response.json({ error: parsed.error.message }, { status: 400 });
         }
 
+        // The tracking number is the shared identifier used by Android and the
+        // companion app. Do not send a charge for an unknown or already closed
+        // package, and never let the caller choose a different amount.
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { data: pkg, error: packageError } = await supabaseAdmin
+          .from("packages")
+          .select("id, amount_due, status")
+          .eq("tracking_number", parsed.data.tracking_number)
+          .maybeSingle();
+        if (packageError) return Response.json({ error: packageError.message }, { status: 500 });
+        if (!pkg) return Response.json({ error: "Unknown tracking number" }, { status: 404 });
+        if (pkg.status !== "awaiting_payment") {
+          return Response.json({ error: "Package is not awaiting payment" }, { status: 409 });
+        }
+        if (Number(pkg.amount_due) !== parsed.data.amount) {
+          return Response.json({ error: "Amount must equal the package amount due" }, { status: 400 });
+        }
+
         const env = process.env.MPESA_ENV ?? "sandbox";
         const base =
           env === "production"
@@ -132,7 +150,6 @@ export const Route = createFileRoute("/api/mpesa-stk-push")({
           );
         }
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const notifNumber = `PAY-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${(stkJson.CheckoutRequestID ?? "").slice(-6) || Math.floor(Math.random() * 9999).toString().padStart(4, "0")}`;
         const notifId = `PN-${crypto.randomUUID().slice(0, 8)}`;
 

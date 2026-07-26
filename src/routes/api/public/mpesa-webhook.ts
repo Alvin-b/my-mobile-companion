@@ -32,6 +32,29 @@ function pick(items: Array<{ Name: string; Value?: string | number }>, name: str
   return items.find((i) => i.Name === name)?.Value;
 }
 
+async function applySuccessfulPayment(
+  supabaseAdmin: any,
+  args: {
+    notificationId: string;
+    trackingNumber: string;
+    amount: number;
+    receipt: string;
+    phone: string;
+    checkoutRequestId: string;
+    resultDesc: string;
+  },
+) {
+  return supabaseAdmin.rpc("apply_mpesa_payment", {
+    _notification_id: args.notificationId,
+    _tracking_number: args.trackingNumber,
+    _amount: args.amount,
+    _receipt: args.receipt,
+    _phone: args.phone,
+    _checkout_request_id: args.checkoutRequestId,
+    _result_desc: args.resultDesc,
+  });
+}
+
 export const Route = createFileRoute("/api/public/mpesa-webhook")({
   server: {
     handlers: {
@@ -123,21 +146,18 @@ export const Route = createFileRoute("/api/public/mpesa-webhook")({
 
             const ref = existing.account_reference || accountRef;
             if (ref) {
-              const { data: pkg } = await supabaseAdmin
-                .from("cargo_packages")
-                .select("id, status")
-                .eq("id", ref)
-                .maybeSingle();
-              if (pkg && pkg.status !== "collected") {
-                await supabaseAdmin.from("payment_allocations").insert({
-                  id: `PA-${crypto.randomUUID().slice(0, 8)}`,
-                  payment_notification_id: existing.id,
-                  order_id: pkg.id,
-                  tracking_number: pkg.id,
-                  allocated_amount: amount,
-                  linked_by: "MPESA_WEBHOOK",
-                  notification_number: existing.notification_number,
-                });
+              const { error } = await applySuccessfulPayment(supabaseAdmin, {
+                notificationId: existing.id,
+                trackingNumber: ref,
+                amount,
+                receipt,
+                phone,
+                checkoutRequestId,
+                resultDesc: cb.ResultDesc ?? "Success",
+              });
+              if (error) {
+                console.error("[mpesa-webhook] apply payment failed", error);
+                return new Response("db error", { status: 500 });
               }
             }
             return Response.json({ ResultCode: 0, ResultDesc: "Accepted" });
@@ -180,23 +200,21 @@ export const Route = createFileRoute("/api/public/mpesa-webhook")({
           return new Response("db error", { status: 500 });
         }
 
-        // Auto-allocate when the AccountReference matches a tracking number.
+        // Auto-apply an unmatched successful callback when its reference is a
+        // known package tracking number. The database function is idempotent.
         if (accountRef) {
-          const { data: pkg } = await supabaseAdmin
-            .from("cargo_packages")
-            .select("id, status")
-            .eq("id", accountRef)
-            .maybeSingle();
-          if (pkg && pkg.status !== "collected") {
-            await supabaseAdmin.from("payment_allocations").insert({
-              id: `PA-${crypto.randomUUID().slice(0, 8)}`,
-              payment_notification_id: notif.id,
-              order_id: pkg.id,
-              tracking_number: pkg.id,
-              allocated_amount: amount,
-              linked_by: "MPESA_WEBHOOK",
-              notification_number: num,
-            });
+          const { error } = await applySuccessfulPayment(supabaseAdmin, {
+            notificationId: notif.id,
+            trackingNumber: accountRef,
+            amount,
+            receipt,
+            phone,
+            checkoutRequestId,
+            resultDesc: cb.ResultDesc ?? "Success",
+          });
+          if (error) {
+            console.error("[mpesa-webhook] apply unmatched payment failed", error);
+            return new Response("db error", { status: 500 });
           }
         }
 

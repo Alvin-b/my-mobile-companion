@@ -10,7 +10,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const Input = z.object({
   phone: z.string().min(9),                 // 07XX, +2547XX, or 2547XX
   amount: z.number().int().positive(),      // KES, whole shillings
-  tracking_number: z.string().min(1),       // cargo_packages.id
+  tracking_number: z.string().min(1),       // packages.tracking_number
   description: z.string().max(60).optional(),
 });
 
@@ -71,6 +71,19 @@ export const initiateMpesaStkPush = createServerFn({ method: "POST" })
     }
     const accountRef = accountRefEnv || data.tracking_number;
 
+    // Keep this test/server-function path subject to the same canonical
+    // package and amount checks as the Android HTTP endpoint.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: pkg, error: packageError } = await supabaseAdmin
+      .from("packages")
+      .select("amount_due, status")
+      .eq("tracking_number", data.tracking_number)
+      .maybeSingle();
+    if (packageError) throw new Error(packageError.message);
+    if (!pkg) throw new Error("Unknown tracking number");
+    if (pkg.status !== "awaiting_payment") throw new Error("Package is not awaiting payment");
+    if (Number(pkg.amount_due) !== data.amount) throw new Error("Amount must equal the package amount due");
+
     // 1) OAuth token
     const auth = b64(`${consumerKey}:${consumerSecret}`);
     const tokenRes = await fetch(
@@ -121,7 +134,6 @@ export const initiateMpesaStkPush = createServerFn({ method: "POST" })
     }
 
     // 3) Persist a pending payment_notification so the webhook can match
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const notifNumber = `PAY-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${(stkJson.CheckoutRequestID ?? "").slice(-6) || Math.floor(Math.random() * 9999).toString().padStart(4, "0")}`;
     const notifId = `PN-${crypto.randomUUID().slice(0, 8)}`;
 

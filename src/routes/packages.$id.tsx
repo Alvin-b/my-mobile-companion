@@ -181,6 +181,7 @@ function PaymentPanel({ pkg, employeeId, onDone }: { pkg: any; employeeId: strin
   const [ref, setRef] = useState("");
   const [busy, setBusy] = useState<"stk" | "manual" | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const total = Number(pkg.amount_due ?? 0);
 
   async function record(method: "mpesa_stk" | "mpesa_manual", providerRef: string) {
@@ -206,11 +207,24 @@ function PaymentPanel({ pkg, employeeId, onDone }: { pkg: any; employeeId: strin
           className="w-full bg-[--s1] border border-[--b1] rounded-md px-3 py-2.5 text-sm mono focus:outline-none focus:ring-2 focus:ring-[--ring]" />
         <button disabled={!!busy || !phone} onClick={async () => {
           setBusy("stk");
-          try { const ref = "STK" + Date.now().toString().slice(-8); await record("mpesa_stk", ref); onDone(); }
+          setErr(null); setNotice(null);
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) throw new Error("Your session has expired. Please sign in again.");
+            const response = await fetch("/api/mpesa-stk-push", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+              body: JSON.stringify({ phone, amount: total, tracking_number: pkg.tracking_number, description: pkg.description ?? "DEX payment" }),
+            });
+            const body = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(body.error ?? "Unable to start the STK push");
+            setNotice("STK prompt sent. The package will update when Safaricom confirms payment.");
+            onDone();
+          }
           catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
           finally { setBusy(null); }
         }} className="py-3 rounded-lg bg-[--green] text-white text-sm font-bold disabled:opacity-50">
-          {busy === "stk" ? "Sending STK…" : "Send STK Push (stub)"}
+          {busy === "stk" ? "Sending STK…" : "Send STK Push"}
         </button>
         <div className="flex items-center gap-2">
           <input value={ref} onChange={(e) => setRef(e.target.value.toUpperCase())} placeholder="Manual receipt (QK7X…)"
@@ -225,6 +239,7 @@ function PaymentPanel({ pkg, employeeId, onDone }: { pkg: any; employeeId: strin
           </button>
         </div>
         {err && <div className="text-xs text-[--red]">{err}</div>}
+        {notice && <div className="text-xs text-emerald-400">{notice}</div>}
       </div>
     </div>
   );

@@ -24,6 +24,8 @@ import { Route as AdminEmployeesRouteImport } from './routes/admin.employees'
 import { Route as ApiPublicSendSmsRouteImport } from './routes/api/public/send-sms'
 import { Route as ApiPublicMpesaWebhookRouteImport } from './routes/api/public/mpesa-webhook'
 import { Route as ApiPublicGeminiOcrRouteImport } from './routes/api/public/gemini-ocr'
+import { Route as ApiAdminEmployeesRouteImport } from './routes/api/admin/employees'
+import { Route as ApiAdminDeleteUserRouteImport } from './routes/api/admin/delete-user'
 
 const ScanRoute = ScanRouteImport.update({
   id: '/scan',
@@ -100,6 +102,16 @@ const ApiPublicGeminiOcrRoute = ApiPublicGeminiOcrRouteImport.update({
   path: '/api/public/gemini-ocr',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminEmployeesRoute = ApiAdminEmployeesRouteImport.update({
+  id: '/api/admin/employees',
+  path: '/api/admin/employees',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminDeleteUserRoute = ApiAdminDeleteUserRouteImport.update({
+  id: '/api/admin/delete-user',
+  path: '/api/admin/delete-user',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -114,6 +126,8 @@ export interface FileRoutesByFullPath {
   '/admin/employees': typeof AdminEmployeesRoute
   '/api/mpesa-stk-push': typeof ApiMpesaStkPushRoute
   '/packages/$id': typeof PackagesIdRoute
+  '/api/admin/delete-user': typeof ApiAdminDeleteUserRoute
+  '/api/admin/employees': typeof ApiAdminEmployeesRoute
   '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
   '/api/public/mpesa-webhook': typeof ApiPublicMpesaWebhookRoute
   '/api/public/send-sms': typeof ApiPublicSendSmsRoute
@@ -131,6 +145,8 @@ export interface FileRoutesByTo {
   '/admin/employees': typeof AdminEmployeesRoute
   '/api/mpesa-stk-push': typeof ApiMpesaStkPushRoute
   '/packages/$id': typeof PackagesIdRoute
+  '/api/admin/delete-user': typeof ApiAdminDeleteUserRoute
+  '/api/admin/employees': typeof ApiAdminEmployeesRoute
   '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
   '/api/public/mpesa-webhook': typeof ApiPublicMpesaWebhookRoute
   '/api/public/send-sms': typeof ApiPublicSendSmsRoute
@@ -149,6 +165,8 @@ export interface FileRoutesById {
   '/admin/employees': typeof AdminEmployeesRoute
   '/api/mpesa-stk-push': typeof ApiMpesaStkPushRoute
   '/packages/$id': typeof PackagesIdRoute
+  '/api/admin/delete-user': typeof ApiAdminDeleteUserRoute
+  '/api/admin/employees': typeof ApiAdminEmployeesRoute
   '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
   '/api/public/mpesa-webhook': typeof ApiPublicMpesaWebhookRoute
   '/api/public/send-sms': typeof ApiPublicSendSmsRoute
@@ -168,6 +186,8 @@ export interface FileRouteTypes {
     | '/admin/employees'
     | '/api/mpesa-stk-push'
     | '/packages/$id'
+    | '/api/admin/delete-user'
+    | '/api/admin/employees'
     | '/api/public/gemini-ocr'
     | '/api/public/mpesa-webhook'
     | '/api/public/send-sms'
@@ -185,6 +205,8 @@ export interface FileRouteTypes {
     | '/admin/employees'
     | '/api/mpesa-stk-push'
     | '/packages/$id'
+    | '/api/admin/delete-user'
+    | '/api/admin/employees'
     | '/api/public/gemini-ocr'
     | '/api/public/mpesa-webhook'
     | '/api/public/send-sms'
@@ -202,6 +224,8 @@ export interface FileRouteTypes {
     | '/admin/employees'
     | '/api/mpesa-stk-push'
     | '/packages/$id'
+    | '/api/admin/delete-user'
+    | '/api/admin/employees'
     | '/api/public/gemini-ocr'
     | '/api/public/mpesa-webhook'
     | '/api/public/send-sms'
@@ -219,6 +243,8 @@ export interface RootRouteChildren {
   ScanRoute: typeof ScanRoute
   AdminEmployeesRoute: typeof AdminEmployeesRoute
   ApiMpesaStkPushRoute: typeof ApiMpesaStkPushRoute
+  ApiAdminDeleteUserRoute: typeof ApiAdminDeleteUserRoute
+  ApiAdminEmployeesRoute: typeof ApiAdminEmployeesRoute
   ApiPublicGeminiOcrRoute: typeof ApiPublicGeminiOcrRoute
   ApiPublicMpesaWebhookRoute: typeof ApiPublicMpesaWebhookRoute
   ApiPublicSendSmsRoute: typeof ApiPublicSendSmsRoute
@@ -331,6 +357,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicGeminiOcrRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/employees': {
+      id: '/api/admin/employees'
+      path: '/api/admin/employees'
+      fullPath: '/api/admin/employees'
+      preLoaderRoute: typeof ApiAdminEmployeesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/delete-user': {
+      id: '/api/admin/delete-user'
+      path: '/api/admin/delete-user'
+      fullPath: '/api/admin/delete-user'
+      preLoaderRoute: typeof ApiAdminDeleteUserRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -358,6 +398,8 @@ const rootRouteChildren: RootRouteChildren = {
   ScanRoute: ScanRoute,
   AdminEmployeesRoute: AdminEmployeesRoute,
   ApiMpesaStkPushRoute: ApiMpesaStkPushRoute,
+  ApiAdminDeleteUserRoute: ApiAdminDeleteUserRoute,
+  ApiAdminEmployeesRoute: ApiAdminEmployeesRoute,
   ApiPublicGeminiOcrRoute: ApiPublicGeminiOcrRoute,
   ApiPublicMpesaWebhookRoute: ApiPublicMpesaWebhookRoute,
   ApiPublicSendSmsRoute: ApiPublicSendSmsRoute,
@@ -365,3 +407,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

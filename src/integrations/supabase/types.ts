@@ -1128,6 +1128,18 @@ export type Database = {
       }
     }
     Functions: {
+      apply_mpesa_payment: {
+        Args: {
+          _amount: number
+          _checkout_request_id: string
+          _notification_id: string
+          _phone: string
+          _receipt: string
+          _result_desc: string
+          _tracking_number: string
+        }
+        Returns: string
+      }
       approve_commission: {
         Args: { _id: string }
         Returns: {

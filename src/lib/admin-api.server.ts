@@ -133,21 +133,14 @@ export async function deleteManagedEmployee(input: z.infer<typeof deleteEmployee
     .maybeSingle();
   if (targetError) throw new ApiError(500, targetError.message);
   if (!target) throw new ApiError(404, "Employee not found");
-  if (target.role === "admin") throw new ApiError(400, "Administrator accounts cannot be deleted");
 
-  // Preserve historical package/payment references while removing access.
-  const { error: deactivateError } = await supabaseAdmin
-    .from("employees")
-    .update({ is_active: false })
-    .eq("id", target.id);
-  if (deactivateError) throw new ApiError(500, deactivateError.message);
+  const { error: deleteError } = await supabaseAdmin.from("employees").delete().eq("id", target.id);
+  if (deleteError) throw new ApiError(500, deleteError.message);
 
   if (target.user_id) {
-    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(target.user_id);
-    if (deleteError) {
-      await supabaseAdmin.from("employees").update({ is_active: true }).eq("id", target.id);
-      throw new ApiError(500, deleteError.message);
-    }
+    await supabaseAdmin.from("user_roles").delete().eq("user_id", target.user_id);
+    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(target.user_id);
+    if (authError) throw new ApiError(500, authError.message);
   }
   return { employee_id: target.id, employee_code: target.employee_code };
 }

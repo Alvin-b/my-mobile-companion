@@ -1,9 +1,9 @@
 import { z } from "zod";
 
-const appRoles = ["admin", "sales_manager", "logistics_manager", "sales_rep"] as const;
-type AppRole = (typeof appRoles)[number];
+export const appRoles = ["admin", "sales_manager", "logistics_manager", "sales_rep"] as const;
+export type AppRole = (typeof appRoles)[number];
 
-const rolePrefix: Record<AppRole, string> = {
+export const rolePrefix: Record<AppRole, string> = {
   admin: "ADM",
   sales_manager: "SM",
   logistics_manager: "LM",

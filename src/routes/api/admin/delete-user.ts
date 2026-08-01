@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ApiError, deleteEmployeeInput, deleteManagedEmployee, requireActiveAdmin } from "@/lib/admin-api";
+import { ApiError, deleteEmployeeInput } from "@/lib/admin-api";
+import { deleteManagedEmployee, requireActiveAdmin } from "@/lib/admin-api.server";
 
 export const Route = createFileRoute("/api/admin/delete-user")({
   server: {

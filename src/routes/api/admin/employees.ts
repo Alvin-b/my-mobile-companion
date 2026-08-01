@@ -1,13 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ApiError, createEmployeeInput, setEmployeeActiveInput } from "@/lib/admin-api";
 import {
-  ApiError,
-  createEmployeeInput,
   createManagedEmployee,
   listManagedEmployees,
   requireActiveAdmin,
-  setEmployeeActiveInput,
   setManagedEmployeeActive,
-} from "@/lib/admin-api";
+} from "@/lib/admin-api.server";
 
 function errorResponse(error: unknown) {
   if (error instanceof ApiError) return Response.json({ error: error.message }, { status: error.status });

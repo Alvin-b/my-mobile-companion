@@ -1,13 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import {
-  createEmployeeInput,
-  createManagedEmployee,
-  listManagedEmployees,
-  setEmployeeActiveInput,
-  setManagedEmployeeActive,
-} from "@/lib/admin-api";
+import { createEmployeeInput, setEmployeeActiveInput } from "@/lib/admin-api";
 
 async function requireServerFnAdmin(context: { supabase: any; userId: string }) {
   const { data: isAdmin, error } = await context.supabase.rpc("has_role", {
@@ -32,6 +26,7 @@ export const createEmployee = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => createEmployeeInput.parse(input))
   .handler(async ({ data, context }) => {
     await requireServerFnAdmin(context);
+    const { createManagedEmployee } = await import("@/lib/admin-api.server");
     return { ok: true, employee: await createManagedEmployee(data) };
   });
 
@@ -39,6 +34,7 @@ export const listEmployees = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await requireServerFnAdmin(context);
+    const { listManagedEmployees } = await import("@/lib/admin-api.server");
     return listManagedEmployees();
   });
 
@@ -47,6 +43,7 @@ export const setEmployeeActive = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => setEmployeeActiveInput.parse(input))
   .handler(async ({ data, context }) => {
     const actor = await requireServerFnAdmin(context);
+    const { setManagedEmployeeActive } = await import("@/lib/admin-api.server");
     await setManagedEmployeeActive(data, actor.id);
     return { ok: true };
   });
@@ -56,6 +53,6 @@ export const deleteEmployee = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ employee_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const actor = await requireServerFnAdmin(context);
-    const { deleteManagedEmployee } = await import("@/lib/admin-api");
+    const { deleteManagedEmployee } = await import("@/lib/admin-api.server");
     return { ok: true, archived: await deleteManagedEmployee(data, actor.id) };
   });

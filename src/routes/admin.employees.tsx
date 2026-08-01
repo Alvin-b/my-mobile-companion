@@ -77,6 +77,7 @@ function AdminEmployees() {
   const deleteMut = useMutation({
     mutationFn: (employeeId: string) => deleteFn({ data: { employee_id: employeeId } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-employees"] }),
+    onError: (e: any) => setErr(e?.message ?? "Failed to delete employee"),
   });
 
   if (loading) return <div className="p-6 text-xs text-[--t2]">Loading…</div>;
@@ -134,7 +135,7 @@ function AdminEmployees() {
                   </div>
                 </div>
                 <div className="flex gap-3 text-[10px] font-semibold uppercase tracking-wider">
-                  {e.role !== "admin" && (
+                  {e.id !== employee?.id && e.role !== "admin" && (
                     <button
                       onClick={() => toggleMut.mutate({ id: e.id, active: !e.is_active })}
                       className="text-[--t2] hover:text-[--t1]"
@@ -142,11 +143,11 @@ function AdminEmployees() {
                       {e.is_active ? "Disable" : "Enable"}
                     </button>
                   )}
-                  {e.role !== "admin" && (
+                  {e.id !== employee?.id && (
                     <button
                       disabled={deleteMut.isPending}
                       onClick={() => {
-                        if (window.confirm(`Delete access for ${e.full_name}? Package and payment history will be retained.`)) {
+                        if (window.confirm(`Permanently delete ${e.full_name} (${e.employee_code})? Their login will be removed.`)) {
                           deleteMut.mutate(e.id);
                         }
                       }}

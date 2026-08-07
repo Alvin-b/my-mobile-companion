@@ -207,6 +207,7 @@ export type Database = {
           amount: number
           approved_at: string | null
           approved_by: string | null
+          cargo_package_id: string | null
           created_at: string
           employee_id: string
           id: string
@@ -220,6 +221,7 @@ export type Database = {
           amount?: number
           approved_at?: string | null
           approved_by?: string | null
+          cargo_package_id?: string | null
           created_at?: string
           employee_id: string
           id?: string
@@ -233,6 +235,7 @@ export type Database = {
           amount?: number
           approved_at?: string | null
           approved_by?: string | null
+          cargo_package_id?: string | null
           created_at?: string
           employee_id?: string
           id?: string
@@ -1146,6 +1149,7 @@ export type Database = {
           amount: number
           approved_at: string | null
           approved_by: string | null
+          cargo_package_id: string | null
           created_at: string
           employee_id: string
           id: string
@@ -1178,6 +1182,7 @@ export type Database = {
           amount: number
           approved_at: string | null
           approved_by: string | null
+          cargo_package_id: string | null
           created_at: string
           employee_id: string
           id: string

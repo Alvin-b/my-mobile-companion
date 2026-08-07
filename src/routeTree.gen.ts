@@ -19,6 +19,7 @@ import { Route as CustomersRouteImport } from './routes/customers'
 import { Route as CommissionsRouteImport } from './routes/commissions'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DesktopIndexRouteImport } from './routes/desktop.index'
 import { Route as PackagesIdRouteImport } from './routes/packages.$id'
 import { Route as ApiMpesaStkPushRouteImport } from './routes/api/mpesa-stk-push'
 import { Route as AdminEmployeesRouteImport } from './routes/admin.employees'
@@ -80,6 +81,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DesktopIndexRoute = DesktopIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DesktopRoute,
+} as any)
 const PackagesIdRoute = PackagesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -138,7 +144,7 @@ export interface FileRoutesByFullPath {
   '/commissions': typeof CommissionsRoute
   '/customers': typeof CustomersRoute
   '/dashboard': typeof DashboardRoute
-  '/desktop': typeof DesktopRoute
+  '/desktop': typeof DesktopRouteWithChildren
   '/mpesa-test': typeof MpesaTestRoute
   '/notifications': typeof NotificationsRoute
   '/packages': typeof PackagesRouteWithChildren
@@ -146,6 +152,7 @@ export interface FileRoutesByFullPath {
   '/admin/employees': typeof AdminEmployeesRoute
   '/api/mpesa-stk-push': typeof ApiMpesaStkPushRoute
   '/packages/$id': typeof PackagesIdRoute
+  '/desktop/': typeof DesktopIndexRoute
   '/api/admin/delete-user': typeof ApiAdminDeleteUserRoute
   '/api/admin/employees': typeof ApiAdminEmployeesRoute
   '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
@@ -160,7 +167,6 @@ export interface FileRoutesByTo {
   '/commissions': typeof CommissionsRoute
   '/customers': typeof CustomersRoute
   '/dashboard': typeof DashboardRoute
-  '/desktop': typeof DesktopRoute
   '/mpesa-test': typeof MpesaTestRoute
   '/notifications': typeof NotificationsRoute
   '/packages': typeof PackagesRouteWithChildren
@@ -168,6 +174,7 @@ export interface FileRoutesByTo {
   '/admin/employees': typeof AdminEmployeesRoute
   '/api/mpesa-stk-push': typeof ApiMpesaStkPushRoute
   '/packages/$id': typeof PackagesIdRoute
+  '/desktop': typeof DesktopIndexRoute
   '/api/admin/delete-user': typeof ApiAdminDeleteUserRoute
   '/api/admin/employees': typeof ApiAdminEmployeesRoute
   '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
@@ -183,7 +190,7 @@ export interface FileRoutesById {
   '/commissions': typeof CommissionsRoute
   '/customers': typeof CustomersRoute
   '/dashboard': typeof DashboardRoute
-  '/desktop': typeof DesktopRoute
+  '/desktop': typeof DesktopRouteWithChildren
   '/mpesa-test': typeof MpesaTestRoute
   '/notifications': typeof NotificationsRoute
   '/packages': typeof PackagesRouteWithChildren
@@ -191,6 +198,7 @@ export interface FileRoutesById {
   '/admin/employees': typeof AdminEmployeesRoute
   '/api/mpesa-stk-push': typeof ApiMpesaStkPushRoute
   '/packages/$id': typeof PackagesIdRoute
+  '/desktop/': typeof DesktopIndexRoute
   '/api/admin/delete-user': typeof ApiAdminDeleteUserRoute
   '/api/admin/employees': typeof ApiAdminEmployeesRoute
   '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
@@ -215,6 +223,7 @@ export interface FileRouteTypes {
     | '/admin/employees'
     | '/api/mpesa-stk-push'
     | '/packages/$id'
+    | '/desktop/'
     | '/api/admin/delete-user'
     | '/api/admin/employees'
     | '/api/public/gemini-ocr'
@@ -229,7 +238,6 @@ export interface FileRouteTypes {
     | '/commissions'
     | '/customers'
     | '/dashboard'
-    | '/desktop'
     | '/mpesa-test'
     | '/notifications'
     | '/packages'
@@ -237,6 +245,7 @@ export interface FileRouteTypes {
     | '/admin/employees'
     | '/api/mpesa-stk-push'
     | '/packages/$id'
+    | '/desktop'
     | '/api/admin/delete-user'
     | '/api/admin/employees'
     | '/api/public/gemini-ocr'
@@ -259,6 +268,7 @@ export interface FileRouteTypes {
     | '/admin/employees'
     | '/api/mpesa-stk-push'
     | '/packages/$id'
+    | '/desktop/'
     | '/api/admin/delete-user'
     | '/api/admin/employees'
     | '/api/public/gemini-ocr'
@@ -274,7 +284,7 @@ export interface RootRouteChildren {
   CommissionsRoute: typeof CommissionsRoute
   CustomersRoute: typeof CustomersRoute
   DashboardRoute: typeof DashboardRoute
-  DesktopRoute: typeof DesktopRoute
+  DesktopRoute: typeof DesktopRouteWithChildren
   MpesaTestRoute: typeof MpesaTestRoute
   NotificationsRoute: typeof NotificationsRoute
   PackagesRoute: typeof PackagesRouteWithChildren
@@ -362,6 +372,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/desktop/': {
+      id: '/desktop/'
+      path: '/'
+      fullPath: '/desktop/'
+      preLoaderRoute: typeof DesktopIndexRouteImport
+      parentRoute: typeof DesktopRoute
+    }
     '/packages/$id': {
       id: '/packages/$id'
       path: '/$id'
@@ -435,6 +452,17 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface DesktopRouteChildren {
+  DesktopIndexRoute: typeof DesktopIndexRoute
+}
+
+const DesktopRouteChildren: DesktopRouteChildren = {
+  DesktopIndexRoute: DesktopIndexRoute,
+}
+
+const DesktopRouteWithChildren =
+  DesktopRoute._addFileChildren(DesktopRouteChildren)
+
 interface PackagesRouteChildren {
   PackagesIdRoute: typeof PackagesIdRoute
 }
@@ -453,7 +481,7 @@ const rootRouteChildren: RootRouteChildren = {
   CommissionsRoute: CommissionsRoute,
   CustomersRoute: CustomersRoute,
   DashboardRoute: DashboardRoute,
-  DesktopRoute: DesktopRoute,
+  DesktopRoute: DesktopRouteWithChildren,
   MpesaTestRoute: MpesaTestRoute,
   NotificationsRoute: NotificationsRoute,
   PackagesRoute: PackagesRouteWithChildren,

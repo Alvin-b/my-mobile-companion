@@ -13,12 +13,17 @@ import { Route as ScanRouteImport } from './routes/scan'
 import { Route as PackagesRouteImport } from './routes/packages'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as MpesaTestRouteImport } from './routes/mpesa-test'
+import { Route as DesktopRouteImport } from './routes/desktop'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CustomersRouteImport } from './routes/customers'
 import { Route as CommissionsRouteImport } from './routes/commissions'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DesktopIndexRouteImport } from './routes/desktop.index'
 import { Route as PackagesIdRouteImport } from './routes/packages.$id'
+import { Route as DesktopOperationsRouteImport } from './routes/desktop.operations'
+import { Route as DesktopFinanceRouteImport } from './routes/desktop.finance'
+import { Route as DesktopEmployeesRouteImport } from './routes/desktop.employees'
 import { Route as ApiMpesaStkPushRouteImport } from './routes/api/mpesa-stk-push'
 import { Route as AdminEmployeesRouteImport } from './routes/admin.employees'
 import { Route as ApiPublicSendSmsRouteImport } from './routes/api/public/send-sms'
@@ -49,6 +54,11 @@ const MpesaTestRoute = MpesaTestRouteImport.update({
   path: '/mpesa-test',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DesktopRoute = DesktopRouteImport.update({
+  id: '/desktop',
+  path: '/desktop',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -74,10 +84,30 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DesktopIndexRoute = DesktopIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DesktopRoute,
+} as any)
 const PackagesIdRoute = PackagesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => PackagesRoute,
+} as any)
+const DesktopOperationsRoute = DesktopOperationsRouteImport.update({
+  id: '/operations',
+  path: '/operations',
+  getParentRoute: () => DesktopRoute,
+} as any)
+const DesktopFinanceRoute = DesktopFinanceRouteImport.update({
+  id: '/finance',
+  path: '/finance',
+  getParentRoute: () => DesktopRoute,
+} as any)
+const DesktopEmployeesRoute = DesktopEmployeesRouteImport.update({
+  id: '/employees',
+  path: '/employees',
+  getParentRoute: () => DesktopRoute,
 } as any)
 const ApiMpesaStkPushRoute = ApiMpesaStkPushRouteImport.update({
   id: '/api/mpesa-stk-push',
@@ -132,13 +162,18 @@ export interface FileRoutesByFullPath {
   '/commissions': typeof CommissionsRoute
   '/customers': typeof CustomersRoute
   '/dashboard': typeof DashboardRoute
+  '/desktop': typeof DesktopRouteWithChildren
   '/mpesa-test': typeof MpesaTestRoute
   '/notifications': typeof NotificationsRoute
   '/packages': typeof PackagesRouteWithChildren
   '/scan': typeof ScanRoute
   '/admin/employees': typeof AdminEmployeesRoute
   '/api/mpesa-stk-push': typeof ApiMpesaStkPushRoute
+  '/desktop/employees': typeof DesktopEmployeesRoute
+  '/desktop/finance': typeof DesktopFinanceRoute
+  '/desktop/operations': typeof DesktopOperationsRoute
   '/packages/$id': typeof PackagesIdRoute
+  '/desktop/': typeof DesktopIndexRoute
   '/api/admin/delete-user': typeof ApiAdminDeleteUserRoute
   '/api/admin/employees': typeof ApiAdminEmployeesRoute
   '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
@@ -159,7 +194,11 @@ export interface FileRoutesByTo {
   '/scan': typeof ScanRoute
   '/admin/employees': typeof AdminEmployeesRoute
   '/api/mpesa-stk-push': typeof ApiMpesaStkPushRoute
+  '/desktop/employees': typeof DesktopEmployeesRoute
+  '/desktop/finance': typeof DesktopFinanceRoute
+  '/desktop/operations': typeof DesktopOperationsRoute
   '/packages/$id': typeof PackagesIdRoute
+  '/desktop': typeof DesktopIndexRoute
   '/api/admin/delete-user': typeof ApiAdminDeleteUserRoute
   '/api/admin/employees': typeof ApiAdminEmployeesRoute
   '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
@@ -175,13 +214,18 @@ export interface FileRoutesById {
   '/commissions': typeof CommissionsRoute
   '/customers': typeof CustomersRoute
   '/dashboard': typeof DashboardRoute
+  '/desktop': typeof DesktopRouteWithChildren
   '/mpesa-test': typeof MpesaTestRoute
   '/notifications': typeof NotificationsRoute
   '/packages': typeof PackagesRouteWithChildren
   '/scan': typeof ScanRoute
   '/admin/employees': typeof AdminEmployeesRoute
   '/api/mpesa-stk-push': typeof ApiMpesaStkPushRoute
+  '/desktop/employees': typeof DesktopEmployeesRoute
+  '/desktop/finance': typeof DesktopFinanceRoute
+  '/desktop/operations': typeof DesktopOperationsRoute
   '/packages/$id': typeof PackagesIdRoute
+  '/desktop/': typeof DesktopIndexRoute
   '/api/admin/delete-user': typeof ApiAdminDeleteUserRoute
   '/api/admin/employees': typeof ApiAdminEmployeesRoute
   '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
@@ -198,13 +242,18 @@ export interface FileRouteTypes {
     | '/commissions'
     | '/customers'
     | '/dashboard'
+    | '/desktop'
     | '/mpesa-test'
     | '/notifications'
     | '/packages'
     | '/scan'
     | '/admin/employees'
     | '/api/mpesa-stk-push'
+    | '/desktop/employees'
+    | '/desktop/finance'
+    | '/desktop/operations'
     | '/packages/$id'
+    | '/desktop/'
     | '/api/admin/delete-user'
     | '/api/admin/employees'
     | '/api/public/gemini-ocr'
@@ -225,7 +274,11 @@ export interface FileRouteTypes {
     | '/scan'
     | '/admin/employees'
     | '/api/mpesa-stk-push'
+    | '/desktop/employees'
+    | '/desktop/finance'
+    | '/desktop/operations'
     | '/packages/$id'
+    | '/desktop'
     | '/api/admin/delete-user'
     | '/api/admin/employees'
     | '/api/public/gemini-ocr'
@@ -240,13 +293,18 @@ export interface FileRouteTypes {
     | '/commissions'
     | '/customers'
     | '/dashboard'
+    | '/desktop'
     | '/mpesa-test'
     | '/notifications'
     | '/packages'
     | '/scan'
     | '/admin/employees'
     | '/api/mpesa-stk-push'
+    | '/desktop/employees'
+    | '/desktop/finance'
+    | '/desktop/operations'
     | '/packages/$id'
+    | '/desktop/'
     | '/api/admin/delete-user'
     | '/api/admin/employees'
     | '/api/public/gemini-ocr'
@@ -262,6 +320,7 @@ export interface RootRouteChildren {
   CommissionsRoute: typeof CommissionsRoute
   CustomersRoute: typeof CustomersRoute
   DashboardRoute: typeof DashboardRoute
+  DesktopRoute: typeof DesktopRouteWithChildren
   MpesaTestRoute: typeof MpesaTestRoute
   NotificationsRoute: typeof NotificationsRoute
   PackagesRoute: typeof PackagesRouteWithChildren
@@ -307,6 +366,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MpesaTestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/desktop': {
+      id: '/desktop'
+      path: '/desktop'
+      fullPath: '/desktop'
+      preLoaderRoute: typeof DesktopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
@@ -342,12 +408,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/desktop/': {
+      id: '/desktop/'
+      path: '/'
+      fullPath: '/desktop/'
+      preLoaderRoute: typeof DesktopIndexRouteImport
+      parentRoute: typeof DesktopRoute
+    }
     '/packages/$id': {
       id: '/packages/$id'
       path: '/$id'
       fullPath: '/packages/$id'
       preLoaderRoute: typeof PackagesIdRouteImport
       parentRoute: typeof PackagesRoute
+    }
+    '/desktop/operations': {
+      id: '/desktop/operations'
+      path: '/operations'
+      fullPath: '/desktop/operations'
+      preLoaderRoute: typeof DesktopOperationsRouteImport
+      parentRoute: typeof DesktopRoute
+    }
+    '/desktop/finance': {
+      id: '/desktop/finance'
+      path: '/finance'
+      fullPath: '/desktop/finance'
+      preLoaderRoute: typeof DesktopFinanceRouteImport
+      parentRoute: typeof DesktopRoute
+    }
+    '/desktop/employees': {
+      id: '/desktop/employees'
+      path: '/employees'
+      fullPath: '/desktop/employees'
+      preLoaderRoute: typeof DesktopEmployeesRouteImport
+      parentRoute: typeof DesktopRoute
     }
     '/api/mpesa-stk-push': {
       id: '/api/mpesa-stk-push'
@@ -415,6 +509,23 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface DesktopRouteChildren {
+  DesktopEmployeesRoute: typeof DesktopEmployeesRoute
+  DesktopFinanceRoute: typeof DesktopFinanceRoute
+  DesktopOperationsRoute: typeof DesktopOperationsRoute
+  DesktopIndexRoute: typeof DesktopIndexRoute
+}
+
+const DesktopRouteChildren: DesktopRouteChildren = {
+  DesktopEmployeesRoute: DesktopEmployeesRoute,
+  DesktopFinanceRoute: DesktopFinanceRoute,
+  DesktopOperationsRoute: DesktopOperationsRoute,
+  DesktopIndexRoute: DesktopIndexRoute,
+}
+
+const DesktopRouteWithChildren =
+  DesktopRoute._addFileChildren(DesktopRouteChildren)
+
 interface PackagesRouteChildren {
   PackagesIdRoute: typeof PackagesIdRoute
 }
@@ -433,6 +544,7 @@ const rootRouteChildren: RootRouteChildren = {
   CommissionsRoute: CommissionsRoute,
   CustomersRoute: CustomersRoute,
   DashboardRoute: DashboardRoute,
+  DesktopRoute: DesktopRouteWithChildren,
   MpesaTestRoute: MpesaTestRoute,
   NotificationsRoute: NotificationsRoute,
   PackagesRoute: PackagesRouteWithChildren,
@@ -450,13 +562,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

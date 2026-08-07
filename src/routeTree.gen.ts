@@ -21,6 +21,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DesktopIndexRouteImport } from './routes/desktop.index'
 import { Route as PackagesIdRouteImport } from './routes/packages.$id'
+import { Route as DesktopFinanceRouteImport } from './routes/desktop.finance'
 import { Route as ApiMpesaStkPushRouteImport } from './routes/api/mpesa-stk-push'
 import { Route as AdminEmployeesRouteImport } from './routes/admin.employees'
 import { Route as ApiPublicSendSmsRouteImport } from './routes/api/public/send-sms'
@@ -91,6 +92,11 @@ const PackagesIdRoute = PackagesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => PackagesRoute,
 } as any)
+const DesktopFinanceRoute = DesktopFinanceRouteImport.update({
+  id: '/finance',
+  path: '/finance',
+  getParentRoute: () => DesktopRoute,
+} as any)
 const ApiMpesaStkPushRoute = ApiMpesaStkPushRouteImport.update({
   id: '/api/mpesa-stk-push',
   path: '/api/mpesa-stk-push',
@@ -151,6 +157,7 @@ export interface FileRoutesByFullPath {
   '/scan': typeof ScanRoute
   '/admin/employees': typeof AdminEmployeesRoute
   '/api/mpesa-stk-push': typeof ApiMpesaStkPushRoute
+  '/desktop/finance': typeof DesktopFinanceRoute
   '/packages/$id': typeof PackagesIdRoute
   '/desktop/': typeof DesktopIndexRoute
   '/api/admin/delete-user': typeof ApiAdminDeleteUserRoute
@@ -173,6 +180,7 @@ export interface FileRoutesByTo {
   '/scan': typeof ScanRoute
   '/admin/employees': typeof AdminEmployeesRoute
   '/api/mpesa-stk-push': typeof ApiMpesaStkPushRoute
+  '/desktop/finance': typeof DesktopFinanceRoute
   '/packages/$id': typeof PackagesIdRoute
   '/desktop': typeof DesktopIndexRoute
   '/api/admin/delete-user': typeof ApiAdminDeleteUserRoute
@@ -197,6 +205,7 @@ export interface FileRoutesById {
   '/scan': typeof ScanRoute
   '/admin/employees': typeof AdminEmployeesRoute
   '/api/mpesa-stk-push': typeof ApiMpesaStkPushRoute
+  '/desktop/finance': typeof DesktopFinanceRoute
   '/packages/$id': typeof PackagesIdRoute
   '/desktop/': typeof DesktopIndexRoute
   '/api/admin/delete-user': typeof ApiAdminDeleteUserRoute
@@ -222,6 +231,7 @@ export interface FileRouteTypes {
     | '/scan'
     | '/admin/employees'
     | '/api/mpesa-stk-push'
+    | '/desktop/finance'
     | '/packages/$id'
     | '/desktop/'
     | '/api/admin/delete-user'
@@ -244,6 +254,7 @@ export interface FileRouteTypes {
     | '/scan'
     | '/admin/employees'
     | '/api/mpesa-stk-push'
+    | '/desktop/finance'
     | '/packages/$id'
     | '/desktop'
     | '/api/admin/delete-user'
@@ -267,6 +278,7 @@ export interface FileRouteTypes {
     | '/scan'
     | '/admin/employees'
     | '/api/mpesa-stk-push'
+    | '/desktop/finance'
     | '/packages/$id'
     | '/desktop/'
     | '/api/admin/delete-user'
@@ -386,6 +398,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PackagesIdRouteImport
       parentRoute: typeof PackagesRoute
     }
+    '/desktop/finance': {
+      id: '/desktop/finance'
+      path: '/finance'
+      fullPath: '/desktop/finance'
+      preLoaderRoute: typeof DesktopFinanceRouteImport
+      parentRoute: typeof DesktopRoute
+    }
     '/api/mpesa-stk-push': {
       id: '/api/mpesa-stk-push'
       path: '/api/mpesa-stk-push'
@@ -453,10 +472,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface DesktopRouteChildren {
+  DesktopFinanceRoute: typeof DesktopFinanceRoute
   DesktopIndexRoute: typeof DesktopIndexRoute
 }
 
 const DesktopRouteChildren: DesktopRouteChildren = {
+  DesktopFinanceRoute: DesktopFinanceRoute,
   DesktopIndexRoute: DesktopIndexRoute,
 }
 

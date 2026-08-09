@@ -1199,6 +1199,28 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      resolve_employee_for_cargo: {
+        Args: { _sales_rep: string }
+        Returns: {
+          commission_percentage: number
+          created_at: string
+          email: string | null
+          employee_code: string
+          full_name: string
+          id: string
+          is_active: boolean
+          phone: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "employees"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       transition_package_status: {
         Args: {
           _by?: string

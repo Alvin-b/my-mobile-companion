@@ -693,3 +693,128 @@ Base URL for these automation endpoints:
 ```
 https://project--5e9b81ad-6c63-4331-af7a-01008019e17f.lovable.app
 ```
+
+---
+
+## 20. Linking a payment to a package (commission automation)
+
+Linking is a single insert into `payment_allocations`. Everything else happens
+server-side inside the same transaction — the Android app must **not** patch the
+package status or create commissions itself.
+
+```http
+POST /rest/v1/payment_allocations
+Authorization: Bearer <access_token>
+apikey: <publishable_key>
+Content-Type: application/json
+Prefer: return=representation
+
+{
+  "id": "PA-1786266745593-01",
+  "payment_notification_id": "PN-1786266745593",
+  "notification_number": "PAY-20260809-45593",
+  "order_id": "<cargo_packages.id>",
+  "tracking_number": "<cargo_packages.id>",
+  "allocated_amount": 5000,
+  "linked_by": "<auth_user_id> (Full Name)"
+}
+```
+
+On insert the backend automatically:
+
+1. sets `payment_notifications.status = 'LINKED'`;
+2. sets the package `status = 'paid'`, `paid_at = now()`, `payment_ref`, and
+   `payment_method` (money now counts as collected/disbursed in every report);
+3. awards the commission to the employee named in `cargo_packages.sales_rep`.
+
+### Employee matching for commissions
+
+`sales_rep` is free text, so the resolver accepts any of:
+
+| Stored value | Matched by |
+| --- | --- |
+| `SR-0001 jane nee` | `employees.employee_code` |
+| `037f04e0-...-a4e11cc59d86 jane nee` | `employees.id` or `employees.user_id` |
+| `jane nee` | `employees.full_name` |
+
+Best practice for Android: always write `"<employee_code> <full_name>"` into
+`sales_rep` at registration time.
+
+### Commission amount
+
+`amount = cargo_packages.cost * percentage / 100 + flat_amount`, using the most
+specific active rule in `commission_rules` (employee-specific rule first, then
+role rule). If no rule exists, `employees.commission_percentage` is used.
+Defaults shipped: sales rep 5%, sales manager 2%, logistics manager 1.5%.
+Duplicate protection is enforced by a unique index on
+`(cargo_package_id, employee_id, trigger)` — re-linking never double-pays.
+
+Read an employee's own commissions:
+
+```http
+GET /rest/v1/commissions?employee_id=eq.<employees.id>&select=id,amount,percentage,status,trigger,created_at,cargo_package_id&order=created_at.desc
+```
+
+## 21. Real payment evidence (uploaded image / text)
+
+`payment_notifications.image_url` stores a **private storage path** such as
+`proofs/proof_1786266743362.jpg`. It is not a public URL, which is why clients
+that render it directly fall back to placeholder artwork. Use this endpoint to
+get the real, signed, one-hour URL:
+
+```http
+GET /api/public/payment-evidence?id=PN-1786266745593
+GET /api/public/payment-evidence?status=PENDING&limit=50
+Authorization: Bearer <access_token>
+```
+
+```json
+{
+  "evidence": {
+    "id": "PN-1786266745593",
+    "notification_number": "PAY-20260809-45593",
+    "evidence_type": "IMAGE",
+    "image_url": "proofs/proof_1786266743362.jpg",
+    "evidence_url": "https://.../object/sign/proofs/proof_...?token=...",
+    "text_content": "this is for tracking number 2003",
+    "amount": null,
+    "sender_phone": null,
+    "mpesa_receipt": null,
+    "status": "PENDING",
+    "uploaded_by": "DEX Admin",
+    "uploaded_at": "2026-08-09T09:12:25Z"
+  }
+}
+```
+
+Kotlin:
+
+```kotlin
+interface EvidenceApi {
+    @GET("api/public/payment-evidence")
+    suspend fun evidence(
+        @Query("status") status: String? = null,
+        @Query("limit") limit: Int = 50,
+    ): EvidenceListResponse
+}
+
+data class EvidenceListResponse(val evidence: List<PaymentEvidence>, val count: Int)
+
+data class PaymentEvidence(
+    val id: String,
+    val notification_number: String,
+    val evidence_type: String,   // "IMAGE" or "TEXT"
+    val evidence_url: String?,   // load this with Coil, never image_url
+    val text_content: String?,
+    val amount: Double?,
+    val sender_phone: String?,
+    val status: String,
+    val uploaded_by: String?,
+    val uploaded_at: String,
+)
+```
+
+Render rule: if `evidence_type == "IMAGE"` and `evidence_url != null`, load
+`evidence_url` with Coil; otherwise show `text_content`. Never show a bundled
+sample receipt — an empty state is correct when both are null. Signed URLs
+expire after one hour, so refetch rather than caching them long-term.

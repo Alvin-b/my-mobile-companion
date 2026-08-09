@@ -27,6 +27,7 @@ import { Route as DesktopEmployeesRouteImport } from './routes/desktop.employees
 import { Route as ApiMpesaStkPushRouteImport } from './routes/api/mpesa-stk-push'
 import { Route as AdminEmployeesRouteImport } from './routes/admin.employees'
 import { Route as ApiPublicSendSmsRouteImport } from './routes/api/public/send-sms'
+import { Route as ApiPublicPaymentEvidenceRouteImport } from './routes/api/public/payment-evidence'
 import { Route as ApiPublicMpesaWebhookRouteImport } from './routes/api/public/mpesa-webhook'
 import { Route as ApiPublicGeminiOcrRouteImport } from './routes/api/public/gemini-ocr'
 import { Route as ApiAdminEmployeesRouteImport } from './routes/api/admin/employees'
@@ -124,6 +125,12 @@ const ApiPublicSendSmsRoute = ApiPublicSendSmsRouteImport.update({
   path: '/api/public/send-sms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPaymentEvidenceRoute =
+  ApiPublicPaymentEvidenceRouteImport.update({
+    id: '/api/public/payment-evidence',
+    path: '/api/public/payment-evidence',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicMpesaWebhookRoute = ApiPublicMpesaWebhookRouteImport.update({
   id: '/api/public/mpesa-webhook',
   path: '/api/public/mpesa-webhook',
@@ -178,6 +185,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/employees': typeof ApiAdminEmployeesRoute
   '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
   '/api/public/mpesa-webhook': typeof ApiPublicMpesaWebhookRoute
+  '/api/public/payment-evidence': typeof ApiPublicPaymentEvidenceRoute
   '/api/public/send-sms': typeof ApiPublicSendSmsRoute
   '/api/public/admin/delete-user': typeof ApiPublicAdminDeleteUserRoute
   '/api/public/admin/employees': typeof ApiPublicAdminEmployeesRoute
@@ -203,6 +211,7 @@ export interface FileRoutesByTo {
   '/api/admin/employees': typeof ApiAdminEmployeesRoute
   '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
   '/api/public/mpesa-webhook': typeof ApiPublicMpesaWebhookRoute
+  '/api/public/payment-evidence': typeof ApiPublicPaymentEvidenceRoute
   '/api/public/send-sms': typeof ApiPublicSendSmsRoute
   '/api/public/admin/delete-user': typeof ApiPublicAdminDeleteUserRoute
   '/api/public/admin/employees': typeof ApiPublicAdminEmployeesRoute
@@ -230,6 +239,7 @@ export interface FileRoutesById {
   '/api/admin/employees': typeof ApiAdminEmployeesRoute
   '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
   '/api/public/mpesa-webhook': typeof ApiPublicMpesaWebhookRoute
+  '/api/public/payment-evidence': typeof ApiPublicPaymentEvidenceRoute
   '/api/public/send-sms': typeof ApiPublicSendSmsRoute
   '/api/public/admin/delete-user': typeof ApiPublicAdminDeleteUserRoute
   '/api/public/admin/employees': typeof ApiPublicAdminEmployeesRoute
@@ -258,6 +268,7 @@ export interface FileRouteTypes {
     | '/api/admin/employees'
     | '/api/public/gemini-ocr'
     | '/api/public/mpesa-webhook'
+    | '/api/public/payment-evidence'
     | '/api/public/send-sms'
     | '/api/public/admin/delete-user'
     | '/api/public/admin/employees'
@@ -283,6 +294,7 @@ export interface FileRouteTypes {
     | '/api/admin/employees'
     | '/api/public/gemini-ocr'
     | '/api/public/mpesa-webhook'
+    | '/api/public/payment-evidence'
     | '/api/public/send-sms'
     | '/api/public/admin/delete-user'
     | '/api/public/admin/employees'
@@ -309,6 +321,7 @@ export interface FileRouteTypes {
     | '/api/admin/employees'
     | '/api/public/gemini-ocr'
     | '/api/public/mpesa-webhook'
+    | '/api/public/payment-evidence'
     | '/api/public/send-sms'
     | '/api/public/admin/delete-user'
     | '/api/public/admin/employees'
@@ -331,6 +344,7 @@ export interface RootRouteChildren {
   ApiAdminEmployeesRoute: typeof ApiAdminEmployeesRoute
   ApiPublicGeminiOcrRoute: typeof ApiPublicGeminiOcrRoute
   ApiPublicMpesaWebhookRoute: typeof ApiPublicMpesaWebhookRoute
+  ApiPublicPaymentEvidenceRoute: typeof ApiPublicPaymentEvidenceRoute
   ApiPublicSendSmsRoute: typeof ApiPublicSendSmsRoute
   ApiPublicAdminDeleteUserRoute: typeof ApiPublicAdminDeleteUserRoute
   ApiPublicAdminEmployeesRoute: typeof ApiPublicAdminEmployeesRoute
@@ -464,6 +478,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSendSmsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/payment-evidence': {
+      id: '/api/public/payment-evidence'
+      path: '/api/public/payment-evidence'
+      fullPath: '/api/public/payment-evidence'
+      preLoaderRoute: typeof ApiPublicPaymentEvidenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/mpesa-webhook': {
       id: '/api/public/mpesa-webhook'
       path: '/api/public/mpesa-webhook'
@@ -555,6 +576,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminEmployeesRoute: ApiAdminEmployeesRoute,
   ApiPublicGeminiOcrRoute: ApiPublicGeminiOcrRoute,
   ApiPublicMpesaWebhookRoute: ApiPublicMpesaWebhookRoute,
+  ApiPublicPaymentEvidenceRoute: ApiPublicPaymentEvidenceRoute,
   ApiPublicSendSmsRoute: ApiPublicSendSmsRoute,
   ApiPublicAdminDeleteUserRoute: ApiPublicAdminDeleteUserRoute,
   ApiPublicAdminEmployeesRoute: ApiPublicAdminEmployeesRoute,
@@ -562,13 +584,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

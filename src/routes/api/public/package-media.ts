@@ -46,11 +46,12 @@ export const Route = createFileRoute("/api/public/package-media")({
 
         // Extra images attached to warehouse packages (stickers, proofs, QR).
         let images: unknown[] = [];
-        if (id) {
+        const isUuid = !!id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+        if (isUuid) {
           const { data: imgs } = await supabaseAdmin
             .from("package_images")
             .select("id, package_id, kind, url, created_at")
-            .eq("package_id", id);
+            .eq("package_id", id!);
           images = await Promise.all(
             (imgs ?? []).map(async (i) => ({
               ...i,

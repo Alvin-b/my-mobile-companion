@@ -1,53 +1,47 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { verifyStaffJwt, signPath } from "@/lib/storage-sign.server";
 
 // Returns the REAL uploaded payment evidence for one or more payment
 // notifications. Evidence images live in the private `proofs` bucket, so the
 // stored `image_url` (e.g. "proofs/proof_123.jpg") is NOT directly loadable by
 // the mobile app — this endpoint issues a short-lived signed URL instead.
 //
+// Evidence can be: an image only, an image + a typed note, or text only.
+// The response always exposes both `evidence_url` and `note`, plus an
+// `evidence_kind` of "image" | "text" | "image_and_text" | "none" so the app
+// can render whichever parts exist without guessing.
+//
 // Auth: Supabase JWT of an active staff member.
-// GET  /api/public/payment-evidence?id=PN-123            -> single record
+// GET  /api/public/payment-evidence?id=PN-123               -> single record
 // GET  /api/public/payment-evidence?status=PENDING&limit=50 -> list
-
-const BUCKETS = ["proofs", "package-photos", "sticker-photos", "signatures"];
-
-async function verifySupabaseJwt(token: string) {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) return null;
-  const r = await fetch(`${url}/auth/v1/user`, {
-    headers: { apikey: key, Authorization: `Bearer ${token}` },
-  });
-  if (!r.ok) return null;
-  return (await r.json()) as { id: string };
-}
-
-function splitPath(raw: string): { bucket: string; path: string } {
-  const clean = raw.replace(/^\/+/, "");
-  const first = clean.split("/")[0] ?? "";
-  if (BUCKETS.includes(first)) {
-    return { bucket: first, path: clean.slice(first.length + 1) };
-  }
-  return { bucket: "proofs", path: clean };
-}
+// GET  /api/public/payment-evidence?order_id=<cargo id>     -> linked to a package
 
 export const Route = createFileRoute("/api/public/payment-evidence")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const auth = request.headers.get("authorization") ?? "";
-        const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
-        const user = token ? await verifySupabaseJwt(token) : null;
+        const user = await verifyStaffJwt(request);
         if (!user) return new Response("Unauthorized", { status: 401 });
 
         const url = new URL(request.url);
         const id = url.searchParams.get("id");
         const status = url.searchParams.get("status");
-        const limit = Math.min(Number(url.searchParams.get("limit") ?? 50), 200);
+        const orderId = url.searchParams.get("order_id");
+        const limit = Math.min(Number(url.searchParams.get("limit") ?? 50) || 50, 200);
 
-        const { supabaseAdmin } = await import(
-          "@/integrations/supabase/client.server"
-        );
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+        let ids: string[] | null = null;
+        if (orderId) {
+          const { data: allocs } = await supabaseAdmin
+            .from("payment_allocations")
+            .select("payment_notification_id")
+            .eq("order_id", orderId);
+          ids = (allocs ?? []).map((a) => a.payment_notification_id);
+          if (ids.length === 0) {
+            return Response.json({ evidence: [], count: 0 }, { headers: { "cache-control": "no-store" } });
+          }
+        }
 
         let query = supabaseAdmin
           .from("payment_notifications")
@@ -58,25 +52,30 @@ export const Route = createFileRoute("/api/public/payment-evidence")({
           .limit(limit);
         if (id) query = query.eq("id", id);
         if (status) query = query.eq("status", status);
+        if (ids) query = query.in("id", ids);
 
         const { data, error } = await query;
         if (error) return new Response(error.message, { status: 500 });
 
         const rows = await Promise.all(
           (data ?? []).map(async (row) => {
-            let signed: string | null = null;
-            if (row.image_url) {
-              if (/^https?:\/\//i.test(row.image_url)) {
-                signed = row.image_url;
-              } else {
-                const { bucket, path } = splitPath(row.image_url);
-                const { data: s } = await supabaseAdmin.storage
-                  .from(bucket)
-                  .createSignedUrl(path, 60 * 60);
-                signed = s?.signedUrl ?? null;
-              }
-            }
-            return { ...row, evidence_url: signed };
+            const evidenceUrl = await signPath(row.image_url, "proofs");
+            const note = (row.text_content ?? "").trim() || null;
+            const kind = evidenceUrl
+              ? note
+                ? "image_and_text"
+                : "image"
+              : note
+                ? "text"
+                : "none";
+            return {
+              ...row,
+              evidence_url: evidenceUrl,
+              has_image: !!evidenceUrl,
+              note,
+              has_note: !!note,
+              evidence_kind: kind,
+            };
           }),
         );
 

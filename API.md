@@ -755,16 +755,21 @@ Read an employee's own commissions:
 GET /rest/v1/commissions?employee_id=eq.<employees.id>&select=id,amount,percentage,status,trigger,created_at,cargo_package_id&order=created_at.desc
 ```
 
-## 21. Real payment evidence (uploaded image / text)
+## 21. Real payment evidence (image, text, or both)
 
 `payment_notifications.image_url` stores a **private storage path** such as
 `proofs/proof_1786266743362.jpg`. It is not a public URL, which is why clients
 that render it directly fall back to placeholder artwork. Use this endpoint to
-get the real, signed, one-hour URL:
+get the real, signed, one-hour URL.
+
+Evidence is flexible: the uploader may attach **an image only**, **an image plus
+a note**, or **text only**. The response always contains both parts plus an
+`evidence_kind` discriminator so the app never has to guess.
 
 ```http
 GET /api/public/payment-evidence?id=PN-1786266745593
 GET /api/public/payment-evidence?status=PENDING&limit=50
+GET /api/public/payment-evidence?order_id=<cargo_package_id>
 Authorization: Bearer <access_token>
 ```
 
@@ -776,7 +781,11 @@ Authorization: Bearer <access_token>
     "evidence_type": "IMAGE",
     "image_url": "proofs/proof_1786266743362.jpg",
     "evidence_url": "https://.../object/sign/proofs/proof_...?token=...",
+    "has_image": true,
+    "note": "this is for tracking number 2003",
+    "has_note": true,
     "text_content": "this is for tracking number 2003",
+    "evidence_kind": "image_and_text",
     "amount": null,
     "sender_phone": null,
     "mpesa_receipt": null,
@@ -787,6 +796,8 @@ Authorization: Bearer <access_token>
 }
 ```
 
+`evidence_kind` is one of `image`, `text`, `image_and_text`, `none`.
+
 Kotlin:
 
 ```kotlin
@@ -794,6 +805,7 @@ interface EvidenceApi {
     @GET("api/public/payment-evidence")
     suspend fun evidence(
         @Query("status") status: String? = null,
+        @Query("order_id") orderId: String? = null,
         @Query("limit") limit: Int = 50,
     ): EvidenceListResponse
 }
@@ -803,9 +815,12 @@ data class EvidenceListResponse(val evidence: List<PaymentEvidence>, val count: 
 data class PaymentEvidence(
     val id: String,
     val notification_number: String,
-    val evidence_type: String,   // "IMAGE" or "TEXT"
-    val evidence_url: String?,   // load this with Coil, never image_url
-    val text_content: String?,
+    val evidence_type: String,
+    val evidence_url: String?,    // load this with Coil, never image_url
+    val has_image: Boolean,
+    val note: String?,            // typed note / full text, may be null
+    val has_note: Boolean,
+    val evidence_kind: String,    // image | text | image_and_text | none
     val amount: Double?,
     val sender_phone: String?,
     val status: String,
@@ -814,7 +829,77 @@ data class PaymentEvidence(
 )
 ```
 
-Render rule: if `evidence_type == "IMAGE"` and `evidence_url != null`, load
-`evidence_url` with Coil; otherwise show `text_content`. Never show a bundled
-sample receipt — an empty state is correct when both are null. Signed URLs
-expire after one hour, so refetch rather than caching them long-term.
+Render rule (do NOT branch on `evidence_type`):
+
+```kotlin
+if (e.has_image) AsyncImage(model = e.evidence_url, contentDescription = null)
+if (e.has_note)  Text(e.note!!)
+if (!e.has_image && !e.has_note) Text("No evidence attached")
+```
+
+Never show a bundled sample receipt. Signed URLs expire after one hour, so
+refetch rather than caching them long-term.
+
+---
+
+## 22. Package photos (private buckets)
+
+Same problem, same fix: `cargo_packages.package_photo_url` and rows in
+`package_images` hold private storage paths (`package-photos/...`,
+`sticker-photos/...`, `signatures/...`). Loading them directly returns 400/404,
+which is why the app shows blank package cards.
+
+```http
+GET /api/public/package-media?id=<cargo_package_id>
+GET /api/public/package-media?limit=50
+Authorization: Bearer <access_token>
+```
+
+```json
+{
+  "package": {
+    "id": "CG-1786266745593",
+    "consignee": "Jane Doe",
+    "status": "paid",
+    "package_photo_url": "package-photos/pkg_178626.jpg",
+    "photo_url": "https://.../object/sign/package-photos/pkg_178626.jpg?token=...",
+    "package_photo_captured_at": "2026-08-09T09:12:25Z"
+  },
+  "images": [
+    { "id": "...", "kind": "sticker", "url": "sticker-photos/s1.jpg", "signed_url": "https://..." }
+  ]
+}
+```
+
+The list form returns `{ "packages": [...], "count": n }` with a `photo_url` on
+every row — call it once when the packages screen loads and map by `id`.
+
+```kotlin
+@GET("api/public/package-media")
+suspend fun packageMedia(@Query("limit") limit: Int = 50): PackageMediaList
+
+data class PackageMediaList(val packages: List<PackageMedia>, val count: Int)
+data class PackageMedia(val id: String, val consignee: String?, val photo_url: String?)
+```
+
+---
+
+## 23. Generic media signer
+
+For any other stored path (signatures, proofs referenced elsewhere, sticker
+photos) use the generic signer instead of hardcoding bucket URLs:
+
+```http
+GET  /api/public/media?path=signatures/sig_1.png&expires=3600
+POST /api/public/media      { "paths": ["proofs/a.jpg", "package-photos/b.jpg"] }
+Authorization: Bearer <access_token>
+```
+
+Single: `{ "path": "...", "url": "https://...", "expires_in": 3600 }`
+Batch:  `{ "urls": { "proofs/a.jpg": "https://...", ... }, "expires_in": 3600 }`
+
+The bucket is inferred from the first path segment (`proofs`,
+`package-photos`, `sticker-photos`, `signatures`); bare filenames default to
+`proofs`. Full Supabase storage URLs are accepted and re-signed. Batch is
+capped at 100 paths, `expires` at 24h. All three endpoints require a
+signed-in staff access token — the anon key alone returns 401.

@@ -903,3 +903,42 @@ The bucket is inferred from the first path segment (`proofs`,
 `proofs`. Full Supabase storage URLs are accepted and re-signed. Batch is
 capped at 100 paths, `expires` at 24h. All three endpoints require a
 signed-in staff access token — the anon key alone returns 401.
+
+---
+
+## 24. Linking a payment to a package (paid + commission)
+
+`POST /rest/v1/payment_allocations` with a staff access token.
+
+```json
+{
+  "id": "PA-<timestamp>",
+  "payment_notification_id": "PN-...",
+  "order_id": "1260707534987",      // REQUIRED: the cargo_packages.id (tracking number)
+  "tracking_number": "1260707534987",
+  "allocated_amount": 5000,
+  "notification_number": "PAY-20260801-1234",
+  "linked_at": "2026-08-01T12:06:00Z"
+}
+```
+
+Rules enforced by the backend on insert:
+
+* `order_id` (or `tracking_number`) **must** match an existing package.
+  A blank or unknown value now fails with
+  `Cannot link payment: no package found for "..."` — previously it silently
+  linked to nothing. Send the exact package id the app shows, never an empty
+  string.
+* The package is set to `paid`, and `paid_at`, `payment_ref`,
+  `payment_method = mpesa` are stamped. If the package had no `cost`, the
+  allocated amount is written as the cost.
+* The notification is set to `LINKED`.
+* A `commissions` row is created automatically for the employee resolved from
+  `cargo_packages.sales_rep` (matched by employee code, user id, or full name).
+  The rate comes from `commission_rules` for that role, falling back to the
+  employee's `commission_percentage`, then 5%. Duplicate links can never create
+  a second commission for the same package + employee.
+
+If no commission appears, the cause is almost always `sales_rep` not matching
+any active employee (e.g. `"Unassigned"`). Set it to the employee code
+(`SR-0001`) when registering cargo.

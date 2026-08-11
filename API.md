@@ -942,3 +942,89 @@ Rules enforced by the backend on insert:
 If no commission appears, the cause is almost always `sales_rep` not matching
 any active employee (e.g. `"Unassigned"`). Set it to the employee code
 (`SR-0001`) when registering cargo.
+
+---
+
+## 25. Clearing packages with uploaded payment evidence + company revenue
+
+### 25.1 Link one evidence to one or many packages
+
+`POST /api/public/link-payment`
+Headers: `Authorization: Bearer <staff access_token>`, `Content-Type: application/json`
+
+```json
+{
+  "payment_notification_id": "PN-1723",
+  "allocations": [
+    { "package_id": "DXC260811A1B2C3", "amount": 5000 },
+    { "package_id": "DXC260811D4E5F6" }
+  ]
+}
+```
+
+Rules:
+- `amount` is optional — it defaults to the package `cost`, and when no cost is
+  recorded the evidence amount is split evenly across the listed packages.
+- The sum of allocations may not exceed the evidence amount.
+- Nothing is written until every package id resolves, so a bad id fails the
+  whole request instead of half-clearing a batch.
+
+For every allocation the backend automatically:
+1. moves the package from unpaid → `paid`, stamping `paid_at`, `payment_ref`
+   (the notification number) and `payment_method`,
+2. counts the package value as company revenue,
+3. awards the commission to the employee in `sales_rep` (rule for their role,
+   else their own percentage, else 5%) — deduplicated, so re-linking never
+   double-pays,
+4. flips the evidence record to `LINKED`.
+
+Response:
+
+```json
+{
+  "ok": true,
+  "payment_notification_id": "PN-1723",
+  "allocated_total": 8000,
+  "packages": [
+    { "id": "DXC260811A1B2C3", "status": "paid", "cost": 5000, "paid_at": "…", "payment_ref": "PN-1723", "sales_rep": "SR-0001" }
+  ]
+}
+```
+
+> `sales_rep` must hold the employee code (e.g. `SR-0001`), their user id, or
+> their exact full name. `"Unassigned"` resolves to nobody and awards nothing.
+
+### 25.2 Company revenue totals (admin dashboard)
+
+`GET /api/public/revenue-summary` — Bearer staff token.
+
+```json
+{
+  "currency": "KES",
+  "revenue": { "total": 5000, "today": 0, "this_month": 5000 },
+  "packages": { "total": 2, "paid": 1, "unpaid": 1, "outstanding_value": 3000 },
+  "commissions": { "accrued": 250, "paid_out": 0, "outstanding": 250 },
+  "net_retained": 4750
+}
+```
+
+Kotlin:
+
+```kotlin
+interface FinanceApi {
+    @POST("api/public/link-payment")
+    suspend fun linkPayment(@Body body: LinkPaymentRequest): LinkPaymentResponse
+
+    @GET("api/public/revenue-summary")
+    suspend fun revenueSummary(): RevenueSummary
+}
+
+data class LinkPaymentRequest(
+    val payment_notification_id: String,
+    val allocations: List<Allocation>,
+)
+data class Allocation(val package_id: String, val amount: Double? = null)
+```
+
+The same totals are rendered on the desktop console Overview page under
+**Company total** (money in, this month, still unpaid, net after commission).

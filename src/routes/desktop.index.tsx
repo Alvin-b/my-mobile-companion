@@ -66,6 +66,17 @@ function Overview() {
   const pendingCommission = comms.filter((c) => c.status === "pending").reduce((s, c) => s + Number(c.amount ?? 0), 0);
   const inTransit = rows.filter((r) => !["collected", "cleared"].includes(r.status)).length;
 
+  // Company money position: everything a linked payment (evidence or M-Pesa)
+  // has cleared, versus what is still owed and what is due to staff.
+  const outstanding = rows.filter((r) => !r.paid_at).reduce((s, r) => s + Number(r.cost ?? 0), 0);
+  const commissionAccrued = comms.reduce((s, c) => s + Number(c.amount ?? 0), 0);
+  const netRetained = revenue - commissionAccrued;
+  const paidCount = rows.filter((r) => r.paid_at).length;
+  const monthStart = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).getTime();
+  const revenueThisMonth = rows
+    .filter((r) => r.paid_at && new Date(r.paid_at).getTime() >= monthStart)
+    .reduce((s, r) => s + Number(r.cost ?? 0), 0);
+
   const days = lastNDays(14);
   const trend = days.map((d) => {
     const registered = rows.filter((r) => dayKey(r.registered_at) === d).length;
@@ -113,6 +124,17 @@ function Overview() {
         <Kpi label="Collected revenue" value={fmtKES(revenue)} hint="Paid cargo only" tint="green" />
         <Kpi label="Commission pending" value={fmtKES(pendingCommission)} hint={`${comms.filter((c) => c.status === "pending").length} entries awaiting approval`} tint="orange" />
         <Kpi label="Active staff" value={String(people.filter((p) => p.is_active).length)} hint={`${people.length} total accounts`} tint="teal" />
+      </div>
+
+      <div className="mt-4">
+        <Panel title="Company total" subtitle="All cleared cargo value, net of staff commission">
+          <div className="grid grid-cols-4 gap-4">
+            <Kpi label="Total money in" value={fmtKES(revenue)} hint={`${paidCount} packages cleared`} tint="green" />
+            <Kpi label="This month" value={fmtKES(revenueThisMonth)} hint="Cleared since the 1st" />
+            <Kpi label="Still unpaid" value={fmtKES(outstanding)} hint={`${rows.length - paidCount} packages awaiting payment`} tint="orange" />
+            <Kpi label="Net after commission" value={fmtKES(netRetained)} hint={`${fmtKES(commissionAccrued)} accrued to staff`} tint="teal" />
+          </div>
+        </Panel>
       </div>
 
       <div className="grid grid-cols-3 gap-4 mt-4">

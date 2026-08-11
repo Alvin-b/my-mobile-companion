@@ -27,10 +27,12 @@ import { Route as DesktopEmployeesRouteImport } from './routes/desktop.employees
 import { Route as ApiMpesaStkPushRouteImport } from './routes/api/mpesa-stk-push'
 import { Route as AdminEmployeesRouteImport } from './routes/admin.employees'
 import { Route as ApiPublicSendSmsRouteImport } from './routes/api/public/send-sms'
+import { Route as ApiPublicRevenueSummaryRouteImport } from './routes/api/public/revenue-summary'
 import { Route as ApiPublicPaymentEvidenceRouteImport } from './routes/api/public/payment-evidence'
 import { Route as ApiPublicPackageMediaRouteImport } from './routes/api/public/package-media'
 import { Route as ApiPublicMpesaWebhookRouteImport } from './routes/api/public/mpesa-webhook'
 import { Route as ApiPublicMediaRouteImport } from './routes/api/public/media'
+import { Route as ApiPublicLinkPaymentRouteImport } from './routes/api/public/link-payment'
 import { Route as ApiPublicGeminiOcrRouteImport } from './routes/api/public/gemini-ocr'
 import { Route as ApiAdminEmployeesRouteImport } from './routes/api/admin/employees'
 import { Route as ApiAdminDeleteUserRouteImport } from './routes/api/admin/delete-user'
@@ -127,6 +129,11 @@ const ApiPublicSendSmsRoute = ApiPublicSendSmsRouteImport.update({
   path: '/api/public/send-sms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicRevenueSummaryRoute = ApiPublicRevenueSummaryRouteImport.update({
+  id: '/api/public/revenue-summary',
+  path: '/api/public/revenue-summary',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPaymentEvidenceRoute =
   ApiPublicPaymentEvidenceRouteImport.update({
     id: '/api/public/payment-evidence',
@@ -146,6 +153,11 @@ const ApiPublicMpesaWebhookRoute = ApiPublicMpesaWebhookRouteImport.update({
 const ApiPublicMediaRoute = ApiPublicMediaRouteImport.update({
   id: '/api/public/media',
   path: '/api/public/media',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicLinkPaymentRoute = ApiPublicLinkPaymentRouteImport.update({
+  id: '/api/public/link-payment',
+  path: '/api/public/link-payment',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicGeminiOcrRoute = ApiPublicGeminiOcrRouteImport.update({
@@ -196,10 +208,12 @@ export interface FileRoutesByFullPath {
   '/api/admin/delete-user': typeof ApiAdminDeleteUserRoute
   '/api/admin/employees': typeof ApiAdminEmployeesRoute
   '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
+  '/api/public/link-payment': typeof ApiPublicLinkPaymentRoute
   '/api/public/media': typeof ApiPublicMediaRoute
   '/api/public/mpesa-webhook': typeof ApiPublicMpesaWebhookRoute
   '/api/public/package-media': typeof ApiPublicPackageMediaRoute
   '/api/public/payment-evidence': typeof ApiPublicPaymentEvidenceRoute
+  '/api/public/revenue-summary': typeof ApiPublicRevenueSummaryRoute
   '/api/public/send-sms': typeof ApiPublicSendSmsRoute
   '/api/public/admin/delete-user': typeof ApiPublicAdminDeleteUserRoute
   '/api/public/admin/employees': typeof ApiPublicAdminEmployeesRoute
@@ -224,10 +238,12 @@ export interface FileRoutesByTo {
   '/api/admin/delete-user': typeof ApiAdminDeleteUserRoute
   '/api/admin/employees': typeof ApiAdminEmployeesRoute
   '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
+  '/api/public/link-payment': typeof ApiPublicLinkPaymentRoute
   '/api/public/media': typeof ApiPublicMediaRoute
   '/api/public/mpesa-webhook': typeof ApiPublicMpesaWebhookRoute
   '/api/public/package-media': typeof ApiPublicPackageMediaRoute
   '/api/public/payment-evidence': typeof ApiPublicPaymentEvidenceRoute
+  '/api/public/revenue-summary': typeof ApiPublicRevenueSummaryRoute
   '/api/public/send-sms': typeof ApiPublicSendSmsRoute
   '/api/public/admin/delete-user': typeof ApiPublicAdminDeleteUserRoute
   '/api/public/admin/employees': typeof ApiPublicAdminEmployeesRoute
@@ -254,10 +270,12 @@ export interface FileRoutesById {
   '/api/admin/delete-user': typeof ApiAdminDeleteUserRoute
   '/api/admin/employees': typeof ApiAdminEmployeesRoute
   '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
+  '/api/public/link-payment': typeof ApiPublicLinkPaymentRoute
   '/api/public/media': typeof ApiPublicMediaRoute
   '/api/public/mpesa-webhook': typeof ApiPublicMpesaWebhookRoute
   '/api/public/package-media': typeof ApiPublicPackageMediaRoute
   '/api/public/payment-evidence': typeof ApiPublicPaymentEvidenceRoute
+  '/api/public/revenue-summary': typeof ApiPublicRevenueSummaryRoute
   '/api/public/send-sms': typeof ApiPublicSendSmsRoute
   '/api/public/admin/delete-user': typeof ApiPublicAdminDeleteUserRoute
   '/api/public/admin/employees': typeof ApiPublicAdminEmployeesRoute
@@ -285,10 +303,12 @@ export interface FileRouteTypes {
     | '/api/admin/delete-user'
     | '/api/admin/employees'
     | '/api/public/gemini-ocr'
+    | '/api/public/link-payment'
     | '/api/public/media'
     | '/api/public/mpesa-webhook'
     | '/api/public/package-media'
     | '/api/public/payment-evidence'
+    | '/api/public/revenue-summary'
     | '/api/public/send-sms'
     | '/api/public/admin/delete-user'
     | '/api/public/admin/employees'
@@ -313,10 +333,12 @@ export interface FileRouteTypes {
     | '/api/admin/delete-user'
     | '/api/admin/employees'
     | '/api/public/gemini-ocr'
+    | '/api/public/link-payment'
     | '/api/public/media'
     | '/api/public/mpesa-webhook'
     | '/api/public/package-media'
     | '/api/public/payment-evidence'
+    | '/api/public/revenue-summary'
     | '/api/public/send-sms'
     | '/api/public/admin/delete-user'
     | '/api/public/admin/employees'
@@ -342,10 +364,12 @@ export interface FileRouteTypes {
     | '/api/admin/delete-user'
     | '/api/admin/employees'
     | '/api/public/gemini-ocr'
+    | '/api/public/link-payment'
     | '/api/public/media'
     | '/api/public/mpesa-webhook'
     | '/api/public/package-media'
     | '/api/public/payment-evidence'
+    | '/api/public/revenue-summary'
     | '/api/public/send-sms'
     | '/api/public/admin/delete-user'
     | '/api/public/admin/employees'
@@ -367,10 +391,12 @@ export interface RootRouteChildren {
   ApiAdminDeleteUserRoute: typeof ApiAdminDeleteUserRoute
   ApiAdminEmployeesRoute: typeof ApiAdminEmployeesRoute
   ApiPublicGeminiOcrRoute: typeof ApiPublicGeminiOcrRoute
+  ApiPublicLinkPaymentRoute: typeof ApiPublicLinkPaymentRoute
   ApiPublicMediaRoute: typeof ApiPublicMediaRoute
   ApiPublicMpesaWebhookRoute: typeof ApiPublicMpesaWebhookRoute
   ApiPublicPackageMediaRoute: typeof ApiPublicPackageMediaRoute
   ApiPublicPaymentEvidenceRoute: typeof ApiPublicPaymentEvidenceRoute
+  ApiPublicRevenueSummaryRoute: typeof ApiPublicRevenueSummaryRoute
   ApiPublicSendSmsRoute: typeof ApiPublicSendSmsRoute
   ApiPublicAdminDeleteUserRoute: typeof ApiPublicAdminDeleteUserRoute
   ApiPublicAdminEmployeesRoute: typeof ApiPublicAdminEmployeesRoute
@@ -504,6 +530,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSendSmsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/revenue-summary': {
+      id: '/api/public/revenue-summary'
+      path: '/api/public/revenue-summary'
+      fullPath: '/api/public/revenue-summary'
+      preLoaderRoute: typeof ApiPublicRevenueSummaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payment-evidence': {
       id: '/api/public/payment-evidence'
       path: '/api/public/payment-evidence'
@@ -530,6 +563,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/media'
       fullPath: '/api/public/media'
       preLoaderRoute: typeof ApiPublicMediaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/link-payment': {
+      id: '/api/public/link-payment'
+      path: '/api/public/link-payment'
+      fullPath: '/api/public/link-payment'
+      preLoaderRoute: typeof ApiPublicLinkPaymentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/gemini-ocr': {
@@ -615,10 +655,12 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminDeleteUserRoute: ApiAdminDeleteUserRoute,
   ApiAdminEmployeesRoute: ApiAdminEmployeesRoute,
   ApiPublicGeminiOcrRoute: ApiPublicGeminiOcrRoute,
+  ApiPublicLinkPaymentRoute: ApiPublicLinkPaymentRoute,
   ApiPublicMediaRoute: ApiPublicMediaRoute,
   ApiPublicMpesaWebhookRoute: ApiPublicMpesaWebhookRoute,
   ApiPublicPackageMediaRoute: ApiPublicPackageMediaRoute,
   ApiPublicPaymentEvidenceRoute: ApiPublicPaymentEvidenceRoute,
+  ApiPublicRevenueSummaryRoute: ApiPublicRevenueSummaryRoute,
   ApiPublicSendSmsRoute: ApiPublicSendSmsRoute,
   ApiPublicAdminDeleteUserRoute: ApiPublicAdminDeleteUserRoute,
   ApiPublicAdminEmployeesRoute: ApiPublicAdminEmployeesRoute,

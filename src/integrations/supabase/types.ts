@@ -96,6 +96,7 @@ export type Database = {
           sales_rep: string | null
           signature_points: string | null
           status: string
+          tracking_number: string | null
           updated_at: string
           weight: number | null
         }
@@ -126,6 +127,7 @@ export type Database = {
           sales_rep?: string | null
           signature_points?: string | null
           status?: string
+          tracking_number?: string | null
           updated_at?: string
           weight?: number | null
         }
@@ -156,6 +158,7 @@ export type Database = {
           sales_rep?: string | null
           signature_points?: string | null
           status?: string
+          tracking_number?: string | null
           updated_at?: string
           weight?: number | null
         }

@@ -1028,3 +1028,31 @@ data class Allocation(val package_id: String, val amount: Double? = null)
 
 The same totals are rendered on the desktop console Overview page under
 **Company total** (money in, this month, still unpaid, net after commission).
+
+## 26. Package uniqueness and paid-state rules
+
+**Duplicate registration is now blocked in the database.**
+
+- Every `cargo_packages` row has a `tracking_number` (auto-filled from `id` when omitted).
+- Registering a tracking number that already exists fails with a `unique_violation`
+  and the message `Tracking number <X> is already registered`.
+- **Exception — sea cargo:** when `mode` contains `sea` (case-insensitive, e.g.
+  `Sea Freight`), the same tracking number may be reused across many packages,
+  because each sea-cargo client keeps one tracking number for all shipments.
+- Customer names may repeat freely; only the tracking number is constrained.
+
+Android handling: on insert, catch HTTP 409 / error code `23505` and show
+"This tracking number is already registered" instead of creating a second row.
+
+**Paid state is stamped automatically.**
+
+- Setting `status = 'paid'` (or `'cleared'`) stamps `paid_at` if it is empty.
+- Linking payment evidence (`POST /api/public/link-payment`, or an insert into
+  `payment_allocations`) flips the package to `paid`, stamps `paid_at`,
+  `payment_ref` and `payment_method`, marks the notification `LINKED`, and fires
+  the commission trigger — unless the package is already `collected`/`cleared`/
+  `released`, in which case its later status is preserved.
+- Allocations may reference either the package `id` or its `tracking_number`.
+
+So both payment paths — direct M-Pesa payment and admin-uploaded evidence —
+land in the same paid/cleared bucket and count towards company revenue.

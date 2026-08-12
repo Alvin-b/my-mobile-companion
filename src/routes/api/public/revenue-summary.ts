@@ -19,7 +19,7 @@ export const Route = createFileRoute("/api/public/revenue-summary")({
 
         const { data: packages, error } = await supabaseAdmin
           .from("cargo_packages")
-          .select("id, status, cost, paid_at, registered_at");
+          .select("id, status, cost, paid_at, registered_at, collected_at");
         if (error) return new Response(error.message, { status: 500 });
 
         const { data: commissions, error: commissionError } = await supabaseAdmin
@@ -38,6 +38,10 @@ export const Route = createFileRoute("/api/public/revenue-summary")({
         const paidAt = (r: { paid_at: string | null }) => (r.paid_at ? new Date(r.paid_at).getTime() : 0);
 
         const grossRevenue = sum(paid);
+        const isReleased = (r: (typeof rows)[number]) =>
+          Boolean(r.collected_at) || ["collected", "cleared", "released"].includes(r.status);
+        const released = rows.filter(isReleased);
+        const pending = rows.filter((r) => !isReleased(r));
         const outstanding = sum(rows.filter((r) => !r.paid_at));
         const commissionRows = commissions ?? [];
         const commissionTotal = commissionRows.reduce((t, c) => t + Number(c.amount ?? 0), 0);
@@ -53,6 +57,14 @@ export const Route = createFileRoute("/api/public/revenue-summary")({
               total: grossRevenue,
               today: sum(paid.filter((r) => paidAt(r) >= startOfDay)),
               this_month: sum(paid.filter((r) => paidAt(r) >= startOfMonth)),
+            },
+            gross_income: {
+              total: sum(released),
+              released_count: released.length,
+            },
+            pending_release: {
+              value: sum(pending),
+              count: pending.length,
             },
             packages: {
               total: rows.length,

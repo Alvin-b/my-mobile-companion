@@ -49,8 +49,10 @@ export const Route = createFileRoute("/api/public/link-payment")({
           if (!key) return Response.json({ error: "Every allocation needs a package_id" }, { status: 400 });
           const { data: pkg } = await supabaseAdmin
             .from("cargo_packages")
-            .select("id, cost")
-            .eq("id", key)
+            .select("id, cost, tracking_number, mode, registered_at")
+            .or(`id.eq.${key},tracking_number.eq.${key}`)
+            .order("registered_at", { ascending: true })
+            .limit(1)
             .maybeSingle();
           if (!pkg) return Response.json({ error: `No package found for "${key}"` }, { status: 404 });
           const requested = input.amount == null ? null : Number(input.amount);

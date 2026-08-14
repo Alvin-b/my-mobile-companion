@@ -1056,3 +1056,47 @@ Android handling: on insert, catch HTTP 409 / error code `23505` and show
 
 So both payment paths — direct M-Pesa payment and admin-uploaded evidence —
 land in the same paid/cleared bucket and count towards company revenue.
+
+## 27. Payment evidence → packages, clearing and duplicate emails
+
+**Root cause of "linked but still unpaid":** `cargo_packages.status` only permitted
+`registered | paid | collected`, so writing `cleared` was rejected. The status set is now
+`registered, pending, unpaid, paid, cleared, collected, released, cancelled`, and an
+AFTER-INSERT trigger on `payment_allocations` always:
+
+- moves the package to `cleared` (never downgrading `collected`/`released`),
+- stamps `paid_at`, `payment_ref` (evidence number) and `payment_method`,
+- fills `cost` from the allocated amount when the package had no cost,
+- which in turn fires the commission trigger for the employee tied to the package
+  (admins never earn commission).
+
+Existing linked packages were repaired and missing commissions backfilled, so gross income,
+revenue and `/api/public/revenue-summary` now include them.
+
+**See the packages linked to one evidence**
+
+`GET /api/public/payment-evidence?id=PN-123` (staff JWT) now returns, in addition to
+`evidence_url` / `note` / `evidence_kind`:
+
+```json
+{
+  "evidence": {
+    "id": "PN-123",
+    "linked_package_count": 2,
+    "allocated_total": 9000,
+    "linked_packages": [
+      { "allocation_id": "PA-…", "package_id": "DXC…", "tracking_number": "DXC…",
+        "consignee": "Jane", "status": "cleared", "cost": 5000,
+        "allocated_amount": 5000, "paid_at": "…", "payment_ref": "PN-123",
+        "sales_rep": "SR-0001 Jane", "dest": "NBO", "mode": "Air Freight",
+        "linked_by": "admin@…", "linked_at": "…" }
+    ]
+  }
+}
+```
+
+**Duplicate emails**
+
+`POST /api/public/admin/employees` returns `409` with a clear message when the email already
+belongs to an employee or an auth account. The database also enforces a case-insensitive
+unique email on `employees` and `profiles`.

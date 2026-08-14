@@ -59,15 +59,29 @@ async function nextEmployeeCode(role: AppRole): Promise<string> {
 }
 
 export async function createManagedEmployee(input: z.infer<typeof createEmployeeInput>) {
+  const email = input.email.trim().toLowerCase();
+
+  // Reject a duplicate email up-front so the admin gets a clear message
+  // instead of a raw auth/database conflict.
+  const { data: existing, error: existingError } = await supabaseAdmin
+    .from("employees")
+    .select("id")
+    .ilike("email", email)
+    .maybeSingle();
+  if (existingError) throw new ApiError(500, existingError.message);
+  if (existing) throw new ApiError(409, `The email ${email} is already registered to another employee`);
+
   const employeeCode = await nextEmployeeCode(input.role);
   const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
-    email: input.email.toLowerCase(),
+    email,
     password: input.password,
     email_confirm: true,
     user_metadata: { full_name: input.full_name },
   });
   if (createError || !created.user) {
-    throw new ApiError(400, createError?.message ?? "Unable to create the authentication account");
+    const message = createError?.message ?? "Unable to create the authentication account";
+    const duplicate = /already|registered|exists/i.test(message);
+    throw new ApiError(duplicate ? 409 : 400, duplicate ? `The email ${email} is already registered` : message);
   }
 
   const userId = created.user.id;
@@ -77,7 +91,7 @@ export async function createManagedEmployee(input: z.infer<typeof createEmployee
       user_id: userId,
       employee_code: employeeCode,
       full_name: input.full_name,
-      email: input.email.toLowerCase(),
+      email,
       phone: input.phone || null,
       role: input.role,
       commission_percentage: input.commission_percentage ?? 0,

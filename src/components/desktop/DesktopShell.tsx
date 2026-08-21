@@ -4,12 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEmployee } from "@/hooks/use-employee";
 import { ROLE_LABELS } from "@/lib/format";
 
-const nav = [
+const adminNav = [
   { to: "/desktop", label: "Overview", exact: true },
   { to: "/desktop/finance", label: "Finance" },
   { to: "/desktop/employees", label: "Employees" },
   { to: "/desktop/operations", label: "Operations" },
 ];
+const financeNav = [{ to: "/desktop/finance", label: "Finance workspace", exact: true }];
 
 export function DesktopShell({ children }: { children: ReactNode }) {
   const { employee, loading, session } = useEmployee();
@@ -25,7 +26,7 @@ export function DesktopShell({ children }: { children: ReactNode }) {
     return null;
   }
 
-  if (employee?.role !== "admin") {
+  if (employee?.role !== "admin" && employee?.role !== "finance_manager") {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="card-elevated p-6 max-w-sm text-center">
@@ -48,10 +49,10 @@ export function DesktopShell({ children }: { children: ReactNode }) {
       <aside className="w-56 shrink-0 border-r border-[--b1] bg-[--s1]/60 flex flex-col sticky top-0 h-screen">
         <div className="px-5 pt-6 pb-5">
           <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[--t3]">DEXCARGO</div>
-          <div className="font-display text-lg font-extrabold leading-tight">Admin Console</div>
+          <div className="font-display text-lg font-extrabold leading-tight">{employee.role === "finance_manager" ? "Finance Workspace" : "Admin Console"}</div>
         </div>
         <nav className="flex flex-col gap-1 px-3">
-          {nav.map((n) => {
+          {(employee.role === "finance_manager" ? financeNav : adminNav).map((n) => {
             const active = n.exact ? loc.pathname === n.to : loc.pathname.startsWith(n.to);
             return (
               <Link

@@ -73,6 +73,14 @@ DO $$ DECLARE t text; BEGIN
     EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON public.%I TO authenticated', t);
   END LOOP;
 END $$;
+DROP POLICY IF EXISTS finance_settings_read ON public.finance_settings;
+DROP POLICY IF EXISTS finance_settings_write ON public.finance_settings;
+DROP POLICY IF EXISTS finance_invoices_access ON public.finance_invoices;
+DROP POLICY IF EXISTS finance_invoice_items_access ON public.finance_invoice_items;
+DROP POLICY IF EXISTS finance_expenses_access ON public.finance_expenses;
+DROP POLICY IF EXISTS finance_approvals_access ON public.finance_approvals;
+DROP POLICY IF EXISTS finance_month_close_access ON public.finance_month_closes;
+DROP POLICY IF EXISTS finance_audit_access ON public.finance_audit_log;
 CREATE POLICY finance_settings_read ON public.finance_settings FOR SELECT TO authenticated USING (public.is_admin(auth.uid()) OR public.is_finance_manager(auth.uid()));
 CREATE POLICY finance_settings_write ON public.finance_settings FOR ALL TO authenticated USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
 CREATE POLICY finance_invoices_access ON public.finance_invoices FOR ALL TO authenticated USING (public.is_admin(auth.uid()) OR public.is_finance_manager(auth.uid())) WITH CHECK (public.is_admin(auth.uid()) OR public.is_finance_manager(auth.uid()));

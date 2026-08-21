@@ -1280,6 +1280,7 @@ export type Database = {
         | "sales_manager"
         | "logistics_manager"
         | "sales_rep"
+        | "finance_manager"
         | "sr"
         | "lm"
         | "sm"
@@ -1434,6 +1435,7 @@ export const Constants = {
         "sales_manager",
         "logistics_manager",
         "sales_rep",
+        "finance_manager",
         "sr",
         "lm",
         "sm",

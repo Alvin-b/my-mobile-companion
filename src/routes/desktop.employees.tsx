@@ -22,7 +22,7 @@ export const Route = createFileRoute("/desktop/employees")({
   component: DesktopEmployees,
 });
 
-const ROLE_TINT = ["#3B6BF5", "#F59E0B", "#14B8A6", "#8B5CF6"];
+const ROLE_TINT = ["#3B6BF5", "#F59E0B", "#14B8A6", "#8B5CF6", "#EC4899"];
 const tooltipStyle = { background: "#111827", border: "1px solid #1F2937", borderRadius: 10, fontSize: 11, color: "#E2E8F0" };
 const ipt = "w-full bg-[--s1] border border-[--b1] rounded-lg px-3 py-2 text-sm placeholder:text-[--t3] focus:outline-none focus:ring-2 focus:ring-[--ring]";
 
@@ -40,7 +40,7 @@ function DesktopEmployees() {
     email: "",
     phone: "",
     password: "",
-    role: "sales_rep" as "admin" | "sales_manager" | "logistics_manager" | "sales_rep",
+    role: "sales_rep" as "admin" | "sales_manager" | "logistics_manager" | "sales_rep" | "finance_manager",
     commission_percentage: 0,
   });
 
@@ -99,11 +99,12 @@ function DesktopEmployees() {
         }
       />
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-5 gap-4">
         <Kpi label="Sales reps" value={String(people.filter((p) => p.role === "sales_rep").length)} />
         <Kpi label="Logistics managers" value={String(people.filter((p) => p.role === "logistics_manager").length)} tint="teal" />
         <Kpi label="Sales managers" value={String(people.filter((p) => p.role === "sales_manager").length)} tint="orange" />
         <Kpi label="Administrators" value={String(people.filter((p) => p.role === "admin").length)} tint="green" />
+        <Kpi label="Finance managers" value={String(people.filter((p) => p.role === "finance_manager").length)} tint="teal" />
       </div>
 
       {err && <div className="mt-4 text-[11px] text-red-400 bg-red-500/10 border border-red-500/30 rounded-md p-2">{err}</div>}
@@ -199,6 +200,7 @@ function DesktopEmployees() {
                   <option value="sales_rep">Sales Representative (SR)</option>
                   <option value="logistics_manager">Logistics Manager (LM)</option>
                   <option value="sales_manager">Sales Manager (SM)</option>
+                  <option value="finance_manager">Finance Manager (FIN)</option>
                   <option value="admin">Administrator (ADM)</option>
                 </select>
               </Field>

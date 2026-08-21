@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const appRoles = ["admin", "sales_manager", "logistics_manager", "sales_rep"] as const;
+export const appRoles = ["admin", "sales_manager", "logistics_manager", "sales_rep", "finance_manager"] as const;
 export type AppRole = (typeof appRoles)[number];
 
 export const rolePrefix: Record<AppRole, string> = {
@@ -8,6 +8,7 @@ export const rolePrefix: Record<AppRole, string> = {
   sales_manager: "SM",
   logistics_manager: "LM",
   sales_rep: "SR",
+  finance_manager: "FIN",
 };
 
 export const createEmployeeInput = z.object({

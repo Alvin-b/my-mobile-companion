@@ -42,7 +42,7 @@ function AdminEmployees() {
     email: "",
     phone: "",
     password: "",
-    role: "sales_rep" as "admin" | "sales_manager" | "logistics_manager" | "sales_rep",
+    role: "sales_rep" as "admin" | "sales_manager" | "logistics_manager" | "sales_rep" | "finance_manager",
     commission_percentage: 0,
   });
   const [err, setErr] = useState<string | null>(null);
@@ -195,6 +195,7 @@ function AdminEmployees() {
                   <option value="sales_rep">Sales Representative (SR)</option>
                   <option value="logistics_manager">Logistics Manager (LM)</option>
                   <option value="sales_manager">Sales Manager (SM)</option>
+                  <option value="finance_manager">Finance Manager (FIN)</option>
                   <option value="admin">Administrator (ADM)</option>
                 </select>
               </Field>

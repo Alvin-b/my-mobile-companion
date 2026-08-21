@@ -24,11 +24,13 @@ import { Route as ApiMpesaStkPushRouteImport } from './routes/api/mpesa-stk-push
 import { Route as DesktopIndexRouteImport } from './routes/desktop.index'
 import { Route as DesktopEmployeesRouteImport } from './routes/desktop.employees'
 import { Route as DesktopFinanceRouteImport } from './routes/desktop.finance'
+import { Route as DesktopManifestsRouteImport } from './routes/desktop.manifests'
 import { Route as DesktopOperationsRouteImport } from './routes/desktop.operations'
 import { Route as PackagesIdRouteImport } from './routes/packages.$id'
 import { Route as ApiAdminDeleteUserRouteImport } from './routes/api/admin/delete-user'
 import { Route as ApiAdminEmployeesRouteImport } from './routes/api/admin/employees'
 import { Route as ApiPublicGeminiOcrRouteImport } from './routes/api/public/gemini-ocr'
+import { Route as ApiPublicImportManifestRouteImport } from './routes/api/public/import-manifest'
 import { Route as ApiPublicLinkPaymentRouteImport } from './routes/api/public/link-payment'
 import { Route as ApiPublicMediaRouteImport } from './routes/api/public/media'
 import { Route as ApiPublicMpesaWebhookRouteImport } from './routes/api/public/mpesa-webhook'
@@ -114,6 +116,11 @@ const DesktopFinanceRoute = DesktopFinanceRouteImport.update({
   path: '/finance',
   getParentRoute: () => DesktopRoute,
 } as any)
+const DesktopManifestsRoute = DesktopManifestsRouteImport.update({
+  id: '/manifests',
+  path: '/manifests',
+  getParentRoute: () => DesktopRoute,
+} as any)
 const DesktopOperationsRoute = DesktopOperationsRouteImport.update({
   id: '/operations',
   path: '/operations',
@@ -137,6 +144,11 @@ const ApiAdminEmployeesRoute = ApiAdminEmployeesRouteImport.update({
 const ApiPublicGeminiOcrRoute = ApiPublicGeminiOcrRouteImport.update({
   id: '/api/public/gemini-ocr',
   path: '/api/public/gemini-ocr',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicImportManifestRoute = ApiPublicImportManifestRouteImport.update({
+  id: '/api/public/import-manifest',
+  path: '/api/public/import-manifest',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicLinkPaymentRoute = ApiPublicLinkPaymentRouteImport.update({
@@ -202,12 +214,14 @@ export interface FileRoutesByFullPath {
   '/api/mpesa-stk-push': typeof ApiMpesaStkPushRoute
   '/desktop/employees': typeof DesktopEmployeesRoute
   '/desktop/finance': typeof DesktopFinanceRoute
+  '/desktop/manifests': typeof DesktopManifestsRoute
   '/desktop/operations': typeof DesktopOperationsRoute
   '/packages/$id': typeof PackagesIdRoute
   '/desktop/': typeof DesktopIndexRoute
   '/api/admin/delete-user': typeof ApiAdminDeleteUserRoute
   '/api/admin/employees': typeof ApiAdminEmployeesRoute
   '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
+  '/api/public/import-manifest': typeof ApiPublicImportManifestRoute
   '/api/public/link-payment': typeof ApiPublicLinkPaymentRoute
   '/api/public/media': typeof ApiPublicMediaRoute
   '/api/public/mpesa-webhook': typeof ApiPublicMpesaWebhookRoute
@@ -232,12 +246,14 @@ export interface FileRoutesByTo {
   '/api/mpesa-stk-push': typeof ApiMpesaStkPushRoute
   '/desktop/employees': typeof DesktopEmployeesRoute
   '/desktop/finance': typeof DesktopFinanceRoute
+  '/desktop/manifests': typeof DesktopManifestsRoute
   '/desktop/operations': typeof DesktopOperationsRoute
   '/packages/$id': typeof PackagesIdRoute
   '/desktop': typeof DesktopIndexRoute
   '/api/admin/delete-user': typeof ApiAdminDeleteUserRoute
   '/api/admin/employees': typeof ApiAdminEmployeesRoute
   '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
+  '/api/public/import-manifest': typeof ApiPublicImportManifestRoute
   '/api/public/link-payment': typeof ApiPublicLinkPaymentRoute
   '/api/public/media': typeof ApiPublicMediaRoute
   '/api/public/mpesa-webhook': typeof ApiPublicMpesaWebhookRoute
@@ -264,12 +280,14 @@ export interface FileRoutesById {
   '/api/mpesa-stk-push': typeof ApiMpesaStkPushRoute
   '/desktop/employees': typeof DesktopEmployeesRoute
   '/desktop/finance': typeof DesktopFinanceRoute
+  '/desktop/manifests': typeof DesktopManifestsRoute
   '/desktop/operations': typeof DesktopOperationsRoute
   '/packages/$id': typeof PackagesIdRoute
   '/desktop/': typeof DesktopIndexRoute
   '/api/admin/delete-user': typeof ApiAdminDeleteUserRoute
   '/api/admin/employees': typeof ApiAdminEmployeesRoute
   '/api/public/gemini-ocr': typeof ApiPublicGeminiOcrRoute
+  '/api/public/import-manifest': typeof ApiPublicImportManifestRoute
   '/api/public/link-payment': typeof ApiPublicLinkPaymentRoute
   '/api/public/media': typeof ApiPublicMediaRoute
   '/api/public/mpesa-webhook': typeof ApiPublicMpesaWebhookRoute
@@ -297,12 +315,14 @@ export interface FileRouteTypes {
     | '/api/mpesa-stk-push'
     | '/desktop/employees'
     | '/desktop/finance'
+    | '/desktop/manifests'
     | '/desktop/operations'
     | '/packages/$id'
     | '/desktop/'
     | '/api/admin/delete-user'
     | '/api/admin/employees'
     | '/api/public/gemini-ocr'
+    | '/api/public/import-manifest'
     | '/api/public/link-payment'
     | '/api/public/media'
     | '/api/public/mpesa-webhook'
@@ -327,12 +347,14 @@ export interface FileRouteTypes {
     | '/api/mpesa-stk-push'
     | '/desktop/employees'
     | '/desktop/finance'
+    | '/desktop/manifests'
     | '/desktop/operations'
     | '/packages/$id'
     | '/desktop'
     | '/api/admin/delete-user'
     | '/api/admin/employees'
     | '/api/public/gemini-ocr'
+    | '/api/public/import-manifest'
     | '/api/public/link-payment'
     | '/api/public/media'
     | '/api/public/mpesa-webhook'
@@ -358,12 +380,14 @@ export interface FileRouteTypes {
     | '/api/mpesa-stk-push'
     | '/desktop/employees'
     | '/desktop/finance'
+    | '/desktop/manifests'
     | '/desktop/operations'
     | '/packages/$id'
     | '/desktop/'
     | '/api/admin/delete-user'
     | '/api/admin/employees'
     | '/api/public/gemini-ocr'
+    | '/api/public/import-manifest'
     | '/api/public/link-payment'
     | '/api/public/media'
     | '/api/public/mpesa-webhook'
@@ -391,6 +415,7 @@ export interface RootRouteChildren {
   ApiAdminDeleteUserRoute: typeof ApiAdminDeleteUserRoute
   ApiAdminEmployeesRoute: typeof ApiAdminEmployeesRoute
   ApiPublicGeminiOcrRoute: typeof ApiPublicGeminiOcrRoute
+  ApiPublicImportManifestRoute: typeof ApiPublicImportManifestRoute
   ApiPublicLinkPaymentRoute: typeof ApiPublicLinkPaymentRoute
   ApiPublicMediaRoute: typeof ApiPublicMediaRoute
   ApiPublicMpesaWebhookRoute: typeof ApiPublicMpesaWebhookRoute
@@ -509,6 +534,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DesktopFinanceRouteImport
       parentRoute: typeof DesktopRoute
     }
+    '/desktop/manifests': {
+      id: '/desktop/manifests'
+      path: '/manifests'
+      fullPath: '/desktop/manifests'
+      preLoaderRoute: typeof DesktopManifestsRouteImport
+      parentRoute: typeof DesktopRoute
+    }
     '/desktop/operations': {
       id: '/desktop/operations'
       path: '/operations'
@@ -542,6 +574,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/gemini-ocr'
       fullPath: '/api/public/gemini-ocr'
       preLoaderRoute: typeof ApiPublicGeminiOcrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/import-manifest': {
+      id: '/api/public/import-manifest'
+      path: '/api/public/import-manifest'
+      fullPath: '/api/public/import-manifest'
+      preLoaderRoute: typeof ApiPublicImportManifestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/link-payment': {
@@ -613,6 +652,7 @@ declare module '@tanstack/react-router' {
 interface DesktopRouteChildren {
   DesktopEmployeesRoute: typeof DesktopEmployeesRoute
   DesktopFinanceRoute: typeof DesktopFinanceRoute
+  DesktopManifestsRoute: typeof DesktopManifestsRoute
   DesktopOperationsRoute: typeof DesktopOperationsRoute
   DesktopIndexRoute: typeof DesktopIndexRoute
 }
@@ -620,6 +660,7 @@ interface DesktopRouteChildren {
 const DesktopRouteChildren: DesktopRouteChildren = {
   DesktopEmployeesRoute: DesktopEmployeesRoute,
   DesktopFinanceRoute: DesktopFinanceRoute,
+  DesktopManifestsRoute: DesktopManifestsRoute,
   DesktopOperationsRoute: DesktopOperationsRoute,
   DesktopIndexRoute: DesktopIndexRoute,
 }
@@ -655,6 +696,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminDeleteUserRoute: ApiAdminDeleteUserRoute,
   ApiAdminEmployeesRoute: ApiAdminEmployeesRoute,
   ApiPublicGeminiOcrRoute: ApiPublicGeminiOcrRoute,
+  ApiPublicImportManifestRoute: ApiPublicImportManifestRoute,
   ApiPublicLinkPaymentRoute: ApiPublicLinkPaymentRoute,
   ApiPublicMediaRoute: ApiPublicMediaRoute,
   ApiPublicMpesaWebhookRoute: ApiPublicMpesaWebhookRoute,

@@ -63,7 +63,28 @@ export const Route = createFileRoute("/api/public/import-manifest")({ server: { 
   const preview = { category, total_rows: parsed.length, ready_rows: ready.length, duplicate_rows: duplicates.length, invalid_rows: invalid.length, ready: ready.slice(0, 200), duplicates: duplicates.slice(0, 200), invalid: invalid.slice(0, 200) };
   if (!commit) return Response.json(preview, { headers: { "cache-control": "no-store" } });
   const manifestId = `${category.toUpperCase()}-${Date.now()}`;
-  const payload = ready.map((p) => ({ ...p, issue: undefined, mode: category === "sea" ? "sea" : "air", cargo_category: category, origin: category === "sea" ? "China" : "Guangzhou", dest: "Nairobi", status: "registered", manifest_id: manifestId, manifest_name: upload.name, imported_by: user.id, imported_at: new Date().toISOString(), created_by: user.id }));
+  // Map only columns that actually belong to cargo_packages. Preview-only fields
+  // such as row_number and issue must never be sent to Supabase.
+  const payload = ready.map((p) => ({
+    id: p.id,
+    tracking_number: p.tracking_number,
+    consignee: p.consignee,
+    pcs: p.pcs,
+    weight: p.weight,
+    volume_cbm: p.volume_cbm,
+    cost: p.cost,
+    description: p.description,
+    mode: category === "sea" ? "sea" : "air",
+    cargo_category: category,
+    origin: category === "sea" ? "China" : "Guangzhou",
+    dest: "Nairobi",
+    status: "registered",
+    manifest_id: manifestId,
+    manifest_name: upload.name,
+    imported_by: user.id,
+    imported_at: new Date().toISOString(),
+    created_by: user.id,
+  }));
   const { error: insertError } = payload.length ? await supabaseAdmin.from("cargo_packages").insert(payload) : { error: null };
   if (insertError) return Response.json({ error: insertError.message, ...preview }, { status: 400 });
   await supabaseAdmin.from("manifest_imports").insert({ id: manifestId, category, source_file_name: upload.name, total_rows: parsed.length, imported_rows: payload.length, duplicate_rows: duplicates.length, invalid_rows: invalid.length, imported_by: user.id, notes: { header_format: category === "sea" ? "sea_chinese" : "air" } });

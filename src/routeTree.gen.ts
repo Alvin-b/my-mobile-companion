@@ -26,6 +26,7 @@ import { Route as DesktopEmployeesRouteImport } from './routes/desktop.employees
 import { Route as DesktopFinanceRouteImport } from './routes/desktop.finance'
 import { Route as DesktopManifestsRouteImport } from './routes/desktop.manifests'
 import { Route as DesktopOperationsRouteImport } from './routes/desktop.operations'
+import { Route as DesktopPackagesRouteImport } from './routes/desktop.packages'
 import { Route as PackagesIdRouteImport } from './routes/packages.$id'
 import { Route as ApiAdminDeleteUserRouteImport } from './routes/api/admin/delete-user'
 import { Route as ApiAdminEmployeesRouteImport } from './routes/api/admin/employees'
@@ -126,6 +127,11 @@ const DesktopOperationsRoute = DesktopOperationsRouteImport.update({
   path: '/operations',
   getParentRoute: () => DesktopRoute,
 } as any)
+const DesktopPackagesRoute = DesktopPackagesRouteImport.update({
+  id: '/packages',
+  path: '/packages',
+  getParentRoute: () => DesktopRoute,
+} as any)
 const PackagesIdRoute = PackagesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -216,6 +222,7 @@ export interface FileRoutesByFullPath {
   '/desktop/finance': typeof DesktopFinanceRoute
   '/desktop/manifests': typeof DesktopManifestsRoute
   '/desktop/operations': typeof DesktopOperationsRoute
+  '/desktop/packages': typeof DesktopPackagesRoute
   '/packages/$id': typeof PackagesIdRoute
   '/desktop/': typeof DesktopIndexRoute
   '/api/admin/delete-user': typeof ApiAdminDeleteUserRoute
@@ -248,6 +255,7 @@ export interface FileRoutesByTo {
   '/desktop/finance': typeof DesktopFinanceRoute
   '/desktop/manifests': typeof DesktopManifestsRoute
   '/desktop/operations': typeof DesktopOperationsRoute
+  '/desktop/packages': typeof DesktopPackagesRoute
   '/packages/$id': typeof PackagesIdRoute
   '/desktop': typeof DesktopIndexRoute
   '/api/admin/delete-user': typeof ApiAdminDeleteUserRoute
@@ -282,6 +290,7 @@ export interface FileRoutesById {
   '/desktop/finance': typeof DesktopFinanceRoute
   '/desktop/manifests': typeof DesktopManifestsRoute
   '/desktop/operations': typeof DesktopOperationsRoute
+  '/desktop/packages': typeof DesktopPackagesRoute
   '/packages/$id': typeof PackagesIdRoute
   '/desktop/': typeof DesktopIndexRoute
   '/api/admin/delete-user': typeof ApiAdminDeleteUserRoute
@@ -317,6 +326,7 @@ export interface FileRouteTypes {
     | '/desktop/finance'
     | '/desktop/manifests'
     | '/desktop/operations'
+    | '/desktop/packages'
     | '/packages/$id'
     | '/desktop/'
     | '/api/admin/delete-user'
@@ -349,6 +359,7 @@ export interface FileRouteTypes {
     | '/desktop/finance'
     | '/desktop/manifests'
     | '/desktop/operations'
+    | '/desktop/packages'
     | '/packages/$id'
     | '/desktop'
     | '/api/admin/delete-user'
@@ -382,6 +393,7 @@ export interface FileRouteTypes {
     | '/desktop/finance'
     | '/desktop/manifests'
     | '/desktop/operations'
+    | '/desktop/packages'
     | '/packages/$id'
     | '/desktop/'
     | '/api/admin/delete-user'
@@ -548,6 +560,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DesktopOperationsRouteImport
       parentRoute: typeof DesktopRoute
     }
+    '/desktop/packages': {
+      id: '/desktop/packages'
+      path: '/packages'
+      fullPath: '/desktop/packages'
+      preLoaderRoute: typeof DesktopPackagesRouteImport
+      parentRoute: typeof DesktopRoute
+    }
     '/packages/$id': {
       id: '/packages/$id'
       path: '/$id'
@@ -654,6 +673,7 @@ interface DesktopRouteChildren {
   DesktopFinanceRoute: typeof DesktopFinanceRoute
   DesktopManifestsRoute: typeof DesktopManifestsRoute
   DesktopOperationsRoute: typeof DesktopOperationsRoute
+  DesktopPackagesRoute: typeof DesktopPackagesRoute
   DesktopIndexRoute: typeof DesktopIndexRoute
 }
 
@@ -662,6 +682,7 @@ const DesktopRouteChildren: DesktopRouteChildren = {
   DesktopFinanceRoute: DesktopFinanceRoute,
   DesktopManifestsRoute: DesktopManifestsRoute,
   DesktopOperationsRoute: DesktopOperationsRoute,
+  DesktopPackagesRoute: DesktopPackagesRoute,
   DesktopIndexRoute: DesktopIndexRoute,
 }
 

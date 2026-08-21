@@ -6,12 +6,13 @@ import { ROLE_LABELS } from "@/lib/format";
 
 const adminNav = [
   { to: "/desktop", label: "Overview", exact: true },
+  { to: "/desktop/packages", label: "Packages" },
   { to: "/desktop/finance", label: "Finance" },
   { to: "/desktop/employees", label: "Employees" },
   { to: "/desktop/operations", label: "Operations" },
 ];
-const financeNav = [{ to: "/desktop/finance", label: "Finance workspace", exact: true }];
-const salesManagerNav = [{ to: "/desktop/manifests", label: "Manifest import", exact: true }];
+const financeNav = [{ to: "/desktop/finance", label: "Finance workspace", exact: true }, { to: "/desktop/packages", label: "Packages" }];
+const salesManagerNav = [{ to: "/desktop/manifests", label: "Manifest import", exact: true }, { to: "/desktop/packages", label: "Packages" }];
 
 export function DesktopShell({ children }: { children: ReactNode }) {
   const { employee, loading, session } = useEmployee();

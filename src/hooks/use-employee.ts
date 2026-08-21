@@ -6,7 +6,7 @@ export type Employee = {
   user_id: string | null;
   employee_code: string;
   full_name: string;
-  role: "admin" | "sales_manager" | "logistics_manager" | "sales_rep" | "finance_manager";
+  role: "admin" | "sales_manager" | "logistics_manager" | "sales_rep" | "finance_manager" | "sm" | "sr" | "lm";
   commission_percentage: number;
   is_active: boolean;
   email: string | null;

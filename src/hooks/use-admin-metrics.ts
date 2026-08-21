@@ -3,6 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type CargoRow = {
   id: string;
+  tracking_number: string | null;
+  consignee: string | null;
+  description: string | null;
+  cargo_category: "general" | "special" | "sea" | null;
+  volume_cbm: number | null;
   status: string;
   cost: number | null;
   mode: string | null;
@@ -22,7 +27,7 @@ export function useCargo() {
     queryFn: async (): Promise<CargoRow[]> => {
       const { data, error } = await supabase
         .from("cargo_packages")
-        .select("id,status,cost,mode,dest,origin,pcs,weight,sales_rep,registered_at,paid_at,collected_at")
+        .select("id,tracking_number,consignee,description,cargo_category,volume_cbm,status,cost,mode,dest,origin,pcs,weight,sales_rep,registered_at,paid_at,collected_at")
         .order("registered_at", { ascending: false })
         .limit(2000);
       if (error) throw error;

@@ -73,7 +73,7 @@ function Finance() {
   const etims = finance.data?.settings?.etims_status ?? "not_connected";
   const [panel, setPanel] = useState<"invoice" | "expense" | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [invoice, setInvoice] = useState({ package_id: "", customer_name: "", due_date: "", notes: "" });
+  const [invoice, setInvoice] = useState({ package_id: "", customer_name: "", due_date: "", notes: "", payment_method: "mpesa" });
   const [expense, setExpense] = useState({ supplier_name: "", category: "", amount: "", expense_date: new Date().toISOString().slice(0, 10), description: "", receipt_url: "" });
   const clearablePackages = rows.filter((r) => Boolean(r.paid_at) && !["collected", "released"].includes(r.status));
 
@@ -86,14 +86,14 @@ function Finance() {
       const invoiceNumber = `DEX-${new Date().toISOString().slice(0, 10).replaceAll("-", "")}-${String(Date.now()).slice(-6)}`;
       const { data: created, error } = await db.from("finance_invoices").insert({
         invoice_number: invoiceNumber, customer_name: invoice.customer_name.trim(), due_date: invoice.due_date || null,
-        subtotal: amount, total: amount, package_ids: [pkg.id], notes: invoice.notes || null, created_by: employee?.user_id, status: "draft",
+        subtotal: amount, total: amount, package_ids: [pkg.id], notes: invoice.notes || null, payment_method: invoice.payment_method, etims_receipt_type: "NORMAL", etims_transaction_type: "SALE", created_by: employee?.user_id, status: "draft",
       }).select("id").single();
       if (error) throw error;
       const { error: itemError } = await db.from("finance_invoice_items").insert({ invoice_id: created.id, package_id: pkg.id, description: `Cargo package ${pkg.tracking_number ?? pkg.id}`, quantity: 1, unit_price: amount, line_total: amount });
       if (itemError) throw itemError;
       return invoiceNumber;
     },
-    onSuccess: (number) => { setPanel(null); setInvoice({ package_id: "", customer_name: "", due_date: "", notes: "" }); setNotice(`Invoice ${number} created as a draft. Review and approve before any eTIMS submission.`); qc.invalidateQueries({ queryKey: ["finance-workspace"] }); },
+    onSuccess: (number) => { setPanel(null); setInvoice({ package_id: "", customer_name: "", due_date: "", notes: "", payment_method: "mpesa" }); setNotice(`Invoice ${number} created as a draft and is ready for Deitax submission.`); qc.invalidateQueries({ queryKey: ["finance-workspace"] }); },
     onError: (e: any) => setNotice(e?.message ?? "Invoice could not be created."),
   });
   const createExpense = useMutation({
@@ -109,6 +109,18 @@ function Finance() {
     mutationFn: async () => { const { error } = await (supabase as any).rpc("finance_close_month", { _period: new Date().toISOString().slice(0, 7) + "-01", _note: "Closed from DEX Finance Workspace" }); if (error) throw error; },
     onSuccess: () => { setNotice("Current month closed. The finance snapshot and audit entry have been stored."); qc.invalidateQueries({ queryKey: ["finance-workspace"] }); },
     onError: (e: any) => setNotice(e?.message ?? "Month close failed."),
+  });
+  const submitEtims = useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) throw new Error("Sign in again to submit an invoice.");
+      const response = await fetch("/api/public/finance/submit-etims", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}` }, body: JSON.stringify({ invoice_id: id }) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error ?? "Deitax submission failed.");
+      return result;
+    },
+    onSuccess: (result) => { setNotice(result.ok ? `eTIMS receipt accepted${result.control_code ? ` · control code ${result.control_code}` : ""}.` : "Invoice was submitted to Deitax and is awaiting confirmation."); qc.invalidateQueries({ queryKey: ["finance-workspace"] }); },
+    onError: (e: any) => setNotice(e?.message ?? "Deitax submission failed."),
   });
 
   const approve = useMutation({
@@ -170,12 +182,12 @@ function Finance() {
 
       <div className="grid grid-cols-3 gap-4 mb-4">
         <Panel title="Invoice register" subtitle="Draft, approved and eTIMS submission states" className="col-span-2">
-          <div className="max-h-[220px] overflow-y-auto"><table className="w-full text-[12px]"><thead className="text-[10px] uppercase tracking-wider text-[--t3]"><tr className="text-left"><th className="py-2">Invoice</th><th>Customer</th><th>Total</th><th>Status</th><th>Due</th></tr></thead><tbody>{invoices.slice(0, 12).map((x: any) => <tr key={x.id} className="border-t border-[--b1]"><td className="py-2 mono text-[--orange]">{x.invoice_number}</td><td>{x.customer_name}</td><td>{fmtKES(x.total)}</td><td className="capitalize">{x.status}</td><td className="text-[--t3]">{x.due_date ?? "—"}</td></tr>)}{!invoices.length && <tr><td colSpan={5} className="py-6 text-center text-[--t3]">No invoices yet. Create invoices from cleared packages after running the finance migration.</td></tr>}</tbody></table></div>
+          <div className="max-h-[220px] overflow-y-auto"><table className="w-full text-[12px]"><thead className="text-[10px] uppercase tracking-wider text-[--t3]"><tr className="text-left"><th className="py-2">Invoice</th><th>Customer</th><th>Total</th><th>Status</th><th>eTIMS</th></tr></thead><tbody>{invoices.slice(0, 12).map((x: any) => <tr key={x.id} className="border-t border-[--b1]"><td className="py-2 mono text-[--orange]">{x.invoice_number}</td><td>{x.customer_name}</td><td>{fmtKES(x.total)}</td><td className="capitalize">{x.status}</td><td>{x.status === "accepted" ? <span className="text-[--green]">{x.etims_control_code ?? "Accepted"}</span> : <button disabled={submitEtims.isPending || ["cancelled", "credited"].includes(x.status)} onClick={() => submitEtims.mutate(x.id)} className="text-[10px] font-bold text-[--blue] disabled:opacity-50">{submitEtims.isPending ? "Sending…" : "Send to Deitax"}</button>}</td></tr>)}{!invoices.length && <tr><td colSpan={5} className="py-6 text-center text-[--t3]">No invoices yet. Create invoices from cleared packages after running the finance migration.</td></tr>}</tbody></table></div>
         </Panel>
         <Panel title="KRA / eTIMS control" subtitle="Compliance is deliberately controlled">
           <div className="text-lg font-bold capitalize">{String(etims).replaceAll("_", " ")}</div>
-          <p className="text-[11px] text-[--t3] mt-2 leading-relaxed">Set the DEX legal name, KRA PIN, VAT status and branch before sandbox onboarding. Invoices retain an audit trail and eTIMS response fields; no tax invoice is sent automatically.</p>
-          <div className="mt-3 text-[10px] font-bold uppercase tracking-wider text-[--orange]">Next: sandbox + certification</div>
+          <p className="text-[11px] text-[--t3] mt-2 leading-relaxed">Deitax is the configured eTIMS provider. Set the DEX legal name, KRA PIN, VAT status and branch, then configure Deitax server secrets. Submission is always manual from the invoice register.</p>
+          <div className="mt-3 text-[10px] font-bold uppercase tracking-wider text-[--orange]">Next: Deitax sandbox credentials</div>
         </Panel>
       </div>
 
@@ -290,7 +302,7 @@ function Finance() {
           </div>
         </Panel>
       </div>
-      {panel === "invoice" && <FinanceModal title="Create customer invoice" onClose={() => setPanel(null)}><div className="grid gap-3"><Field label="Cleared package"><select value={invoice.package_id} onChange={(e) => { const p = rows.find((x) => x.id === e.target.value); setInvoice({ ...invoice, package_id: e.target.value, customer_name: p?.consignee ?? invoice.customer_name }); }} className={inputClass}><option value="">Choose a cleared package</option>{clearablePackages.map((p) => <option key={p.id} value={p.id}>{p.tracking_number ?? p.id} · {p.consignee} · {fmtKES(p.cost)}</option>)}</select></Field><Field label="Customer name"><input value={invoice.customer_name} onChange={(e) => setInvoice({ ...invoice, customer_name: e.target.value })} className={inputClass} /></Field><Field label="Due date"><input type="date" value={invoice.due_date} onChange={(e) => setInvoice({ ...invoice, due_date: e.target.value })} className={inputClass} /></Field><Field label="Internal note"><textarea value={invoice.notes} onChange={(e) => setInvoice({ ...invoice, notes: e.target.value })} className={inputClass} /></Field><button disabled={createInvoice.isPending} onClick={() => createInvoice.mutate()} className="py-3 rounded-lg bg-[--blue] text-white text-[11px] font-bold disabled:opacity-50">{createInvoice.isPending ? "Creating…" : "Create invoice draft"}</button></div></FinanceModal>}
+      {panel === "invoice" && <FinanceModal title="Create customer invoice" onClose={() => setPanel(null)}><div className="grid gap-3"><Field label="Cleared package"><select value={invoice.package_id} onChange={(e) => { const p = rows.find((x) => x.id === e.target.value); setInvoice({ ...invoice, package_id: e.target.value, customer_name: p?.consignee ?? invoice.customer_name }); }} className={inputClass}><option value="">Choose a cleared package</option>{clearablePackages.map((p) => <option key={p.id} value={p.id}>{p.tracking_number ?? p.id} · {p.consignee} · {fmtKES(p.cost)}</option>)}</select></Field><Field label="Customer name"><input value={invoice.customer_name} onChange={(e) => setInvoice({ ...invoice, customer_name: e.target.value })} className={inputClass} /></Field><Field label="Payment method"><select value={invoice.payment_method} onChange={(e) => setInvoice({ ...invoice, payment_method: e.target.value })} className={inputClass}><option value="mpesa">M-Pesa</option><option value="bank_transfer">Bank transfer</option><option value="cash">Cash</option><option value="other">Other</option></select></Field><Field label="Due date"><input type="date" value={invoice.due_date} onChange={(e) => setInvoice({ ...invoice, due_date: e.target.value })} className={inputClass} /></Field><Field label="Internal note"><textarea value={invoice.notes} onChange={(e) => setInvoice({ ...invoice, notes: e.target.value })} className={inputClass} /></Field><button disabled={createInvoice.isPending} onClick={() => createInvoice.mutate()} className="py-3 rounded-lg bg-[--blue] text-white text-[11px] font-bold disabled:opacity-50">{createInvoice.isPending ? "Creating…" : "Create invoice draft"}</button></div></FinanceModal>}
       {panel === "expense" && <FinanceModal title="Record operating expense" onClose={() => setPanel(null)}><div className="grid gap-3"><Field label="Supplier"><input value={expense.supplier_name} onChange={(e) => setExpense({ ...expense, supplier_name: e.target.value })} className={inputClass} /></Field><Field label="Category"><select value={expense.category} onChange={(e) => setExpense({ ...expense, category: e.target.value })} className={inputClass}><option value="">Choose category</option><option>Freight & clearing</option><option>Warehouse</option><option>Delivery & fuel</option><option>Payroll</option><option>Office & utilities</option><option>Marketing</option><option>Other</option></select></Field><div className="grid grid-cols-2 gap-3"><Field label="Amount (KES)"><input type="number" min="0" value={expense.amount} onChange={(e) => setExpense({ ...expense, amount: e.target.value })} className={inputClass} /></Field><Field label="Expense date"><input type="date" value={expense.expense_date} onChange={(e) => setExpense({ ...expense, expense_date: e.target.value })} className={inputClass} /></Field></div><Field label="Receipt URL / storage path"><input value={expense.receipt_url} onChange={(e) => setExpense({ ...expense, receipt_url: e.target.value })} className={inputClass} placeholder="Optional; upload workflow can attach this" /></Field><Field label="Description"><textarea value={expense.description} onChange={(e) => setExpense({ ...expense, description: e.target.value })} className={inputClass} /></Field><button disabled={createExpense.isPending} onClick={() => createExpense.mutate()} className="py-3 rounded-lg bg-[--blue] text-white text-[11px] font-bold disabled:opacity-50">{createExpense.isPending ? "Saving…" : "Submit expense"}</button></div></FinanceModal>}
     </div>
   );

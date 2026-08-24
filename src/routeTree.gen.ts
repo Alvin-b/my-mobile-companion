@@ -41,6 +41,7 @@ import { Route as ApiPublicRevenueSummaryRouteImport } from './routes/api/public
 import { Route as ApiPublicSendSmsRouteImport } from './routes/api/public/send-sms'
 import { Route as ApiPublicAdminDeleteUserRouteImport } from './routes/api/public/admin/delete-user'
 import { Route as ApiPublicAdminEmployeesRouteImport } from './routes/api/public/admin/employees'
+import { Route as ApiPublicFinanceSubmitEtimsRouteImport } from './routes/api/public/finance/submit-etims'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -204,6 +205,12 @@ const ApiPublicAdminEmployeesRoute = ApiPublicAdminEmployeesRouteImport.update({
   path: '/api/public/admin/employees',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicFinanceSubmitEtimsRoute =
+  ApiPublicFinanceSubmitEtimsRouteImport.update({
+    id: '/api/public/finance/submit-etims',
+    path: '/api/public/finance/submit-etims',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -238,6 +245,7 @@ export interface FileRoutesByFullPath {
   '/api/public/send-sms': typeof ApiPublicSendSmsRoute
   '/api/public/admin/delete-user': typeof ApiPublicAdminDeleteUserRoute
   '/api/public/admin/employees': typeof ApiPublicAdminEmployeesRoute
+  '/api/public/finance/submit-etims': typeof ApiPublicFinanceSubmitEtimsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -271,6 +279,7 @@ export interface FileRoutesByTo {
   '/api/public/send-sms': typeof ApiPublicSendSmsRoute
   '/api/public/admin/delete-user': typeof ApiPublicAdminDeleteUserRoute
   '/api/public/admin/employees': typeof ApiPublicAdminEmployeesRoute
+  '/api/public/finance/submit-etims': typeof ApiPublicFinanceSubmitEtimsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -306,6 +315,7 @@ export interface FileRoutesById {
   '/api/public/send-sms': typeof ApiPublicSendSmsRoute
   '/api/public/admin/delete-user': typeof ApiPublicAdminDeleteUserRoute
   '/api/public/admin/employees': typeof ApiPublicAdminEmployeesRoute
+  '/api/public/finance/submit-etims': typeof ApiPublicFinanceSubmitEtimsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -342,6 +352,7 @@ export interface FileRouteTypes {
     | '/api/public/send-sms'
     | '/api/public/admin/delete-user'
     | '/api/public/admin/employees'
+    | '/api/public/finance/submit-etims'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -375,6 +386,7 @@ export interface FileRouteTypes {
     | '/api/public/send-sms'
     | '/api/public/admin/delete-user'
     | '/api/public/admin/employees'
+    | '/api/public/finance/submit-etims'
   id:
     | '__root__'
     | '/'
@@ -409,6 +421,7 @@ export interface FileRouteTypes {
     | '/api/public/send-sms'
     | '/api/public/admin/delete-user'
     | '/api/public/admin/employees'
+    | '/api/public/finance/submit-etims'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -437,6 +450,7 @@ export interface RootRouteChildren {
   ApiPublicSendSmsRoute: typeof ApiPublicSendSmsRoute
   ApiPublicAdminDeleteUserRoute: typeof ApiPublicAdminDeleteUserRoute
   ApiPublicAdminEmployeesRoute: typeof ApiPublicAdminEmployeesRoute
+  ApiPublicFinanceSubmitEtimsRoute: typeof ApiPublicFinanceSubmitEtimsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -665,6 +679,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAdminEmployeesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/finance/submit-etims': {
+      id: '/api/public/finance/submit-etims'
+      path: '/api/public/finance/submit-etims'
+      fullPath: '/api/public/finance/submit-etims'
+      preLoaderRoute: typeof ApiPublicFinanceSubmitEtimsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -727,6 +748,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicSendSmsRoute: ApiPublicSendSmsRoute,
   ApiPublicAdminDeleteUserRoute: ApiPublicAdminDeleteUserRoute,
   ApiPublicAdminEmployeesRoute: ApiPublicAdminEmployeesRoute,
+  ApiPublicFinanceSubmitEtimsRoute: ApiPublicFinanceSubmitEtimsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

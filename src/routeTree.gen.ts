@@ -41,7 +41,10 @@ import { Route as ApiPublicRevenueSummaryRouteImport } from './routes/api/public
 import { Route as ApiPublicSendSmsRouteImport } from './routes/api/public/send-sms'
 import { Route as ApiPublicAdminDeleteUserRouteImport } from './routes/api/public/admin/delete-user'
 import { Route as ApiPublicAdminEmployeesRouteImport } from './routes/api/public/admin/employees'
+import { Route as ApiPublicFinanceExpensesRouteImport } from './routes/api/public/finance/expenses'
+import { Route as ApiPublicFinanceInvoicesRouteImport } from './routes/api/public/finance/invoices'
 import { Route as ApiPublicFinanceSubmitEtimsRouteImport } from './routes/api/public/finance/submit-etims'
+import { Route as ApiPublicFinanceWorkspaceRouteImport } from './routes/api/public/finance/workspace'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -205,10 +208,28 @@ const ApiPublicAdminEmployeesRoute = ApiPublicAdminEmployeesRouteImport.update({
   path: '/api/public/admin/employees',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicFinanceExpensesRoute =
+  ApiPublicFinanceExpensesRouteImport.update({
+    id: '/api/public/finance/expenses',
+    path: '/api/public/finance/expenses',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicFinanceInvoicesRoute =
+  ApiPublicFinanceInvoicesRouteImport.update({
+    id: '/api/public/finance/invoices',
+    path: '/api/public/finance/invoices',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicFinanceSubmitEtimsRoute =
   ApiPublicFinanceSubmitEtimsRouteImport.update({
     id: '/api/public/finance/submit-etims',
     path: '/api/public/finance/submit-etims',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicFinanceWorkspaceRoute =
+  ApiPublicFinanceWorkspaceRouteImport.update({
+    id: '/api/public/finance/workspace',
+    path: '/api/public/finance/workspace',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -245,7 +266,10 @@ export interface FileRoutesByFullPath {
   '/api/public/send-sms': typeof ApiPublicSendSmsRoute
   '/api/public/admin/delete-user': typeof ApiPublicAdminDeleteUserRoute
   '/api/public/admin/employees': typeof ApiPublicAdminEmployeesRoute
+  '/api/public/finance/expenses': typeof ApiPublicFinanceExpensesRoute
+  '/api/public/finance/invoices': typeof ApiPublicFinanceInvoicesRoute
   '/api/public/finance/submit-etims': typeof ApiPublicFinanceSubmitEtimsRoute
+  '/api/public/finance/workspace': typeof ApiPublicFinanceWorkspaceRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -279,7 +303,10 @@ export interface FileRoutesByTo {
   '/api/public/send-sms': typeof ApiPublicSendSmsRoute
   '/api/public/admin/delete-user': typeof ApiPublicAdminDeleteUserRoute
   '/api/public/admin/employees': typeof ApiPublicAdminEmployeesRoute
+  '/api/public/finance/expenses': typeof ApiPublicFinanceExpensesRoute
+  '/api/public/finance/invoices': typeof ApiPublicFinanceInvoicesRoute
   '/api/public/finance/submit-etims': typeof ApiPublicFinanceSubmitEtimsRoute
+  '/api/public/finance/workspace': typeof ApiPublicFinanceWorkspaceRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -315,7 +342,10 @@ export interface FileRoutesById {
   '/api/public/send-sms': typeof ApiPublicSendSmsRoute
   '/api/public/admin/delete-user': typeof ApiPublicAdminDeleteUserRoute
   '/api/public/admin/employees': typeof ApiPublicAdminEmployeesRoute
+  '/api/public/finance/expenses': typeof ApiPublicFinanceExpensesRoute
+  '/api/public/finance/invoices': typeof ApiPublicFinanceInvoicesRoute
   '/api/public/finance/submit-etims': typeof ApiPublicFinanceSubmitEtimsRoute
+  '/api/public/finance/workspace': typeof ApiPublicFinanceWorkspaceRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -352,7 +382,10 @@ export interface FileRouteTypes {
     | '/api/public/send-sms'
     | '/api/public/admin/delete-user'
     | '/api/public/admin/employees'
+    | '/api/public/finance/expenses'
+    | '/api/public/finance/invoices'
     | '/api/public/finance/submit-etims'
+    | '/api/public/finance/workspace'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -386,7 +419,10 @@ export interface FileRouteTypes {
     | '/api/public/send-sms'
     | '/api/public/admin/delete-user'
     | '/api/public/admin/employees'
+    | '/api/public/finance/expenses'
+    | '/api/public/finance/invoices'
     | '/api/public/finance/submit-etims'
+    | '/api/public/finance/workspace'
   id:
     | '__root__'
     | '/'
@@ -421,7 +457,10 @@ export interface FileRouteTypes {
     | '/api/public/send-sms'
     | '/api/public/admin/delete-user'
     | '/api/public/admin/employees'
+    | '/api/public/finance/expenses'
+    | '/api/public/finance/invoices'
     | '/api/public/finance/submit-etims'
+    | '/api/public/finance/workspace'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -450,7 +489,10 @@ export interface RootRouteChildren {
   ApiPublicSendSmsRoute: typeof ApiPublicSendSmsRoute
   ApiPublicAdminDeleteUserRoute: typeof ApiPublicAdminDeleteUserRoute
   ApiPublicAdminEmployeesRoute: typeof ApiPublicAdminEmployeesRoute
+  ApiPublicFinanceExpensesRoute: typeof ApiPublicFinanceExpensesRoute
+  ApiPublicFinanceInvoicesRoute: typeof ApiPublicFinanceInvoicesRoute
   ApiPublicFinanceSubmitEtimsRoute: typeof ApiPublicFinanceSubmitEtimsRoute
+  ApiPublicFinanceWorkspaceRoute: typeof ApiPublicFinanceWorkspaceRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -679,11 +721,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAdminEmployeesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/finance/expenses': {
+      id: '/api/public/finance/expenses'
+      path: '/api/public/finance/expenses'
+      fullPath: '/api/public/finance/expenses'
+      preLoaderRoute: typeof ApiPublicFinanceExpensesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/finance/invoices': {
+      id: '/api/public/finance/invoices'
+      path: '/api/public/finance/invoices'
+      fullPath: '/api/public/finance/invoices'
+      preLoaderRoute: typeof ApiPublicFinanceInvoicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/finance/submit-etims': {
       id: '/api/public/finance/submit-etims'
       path: '/api/public/finance/submit-etims'
       fullPath: '/api/public/finance/submit-etims'
       preLoaderRoute: typeof ApiPublicFinanceSubmitEtimsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/finance/workspace': {
+      id: '/api/public/finance/workspace'
+      path: '/api/public/finance/workspace'
+      fullPath: '/api/public/finance/workspace'
+      preLoaderRoute: typeof ApiPublicFinanceWorkspaceRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -748,18 +811,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicSendSmsRoute: ApiPublicSendSmsRoute,
   ApiPublicAdminDeleteUserRoute: ApiPublicAdminDeleteUserRoute,
   ApiPublicAdminEmployeesRoute: ApiPublicAdminEmployeesRoute,
+  ApiPublicFinanceExpensesRoute: ApiPublicFinanceExpensesRoute,
+  ApiPublicFinanceInvoicesRoute: ApiPublicFinanceInvoicesRoute,
   ApiPublicFinanceSubmitEtimsRoute: ApiPublicFinanceSubmitEtimsRoute,
+  ApiPublicFinanceWorkspaceRoute: ApiPublicFinanceWorkspaceRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -8,6 +8,7 @@ ALTER TABLE public.cargo_packages ADD COLUMN IF NOT EXISTS manifest_id text;
 ALTER TABLE public.cargo_packages ADD COLUMN IF NOT EXISTS manifest_name text;
 ALTER TABLE public.cargo_packages ADD COLUMN IF NOT EXISTS imported_by uuid REFERENCES auth.users(id);
 ALTER TABLE public.cargo_packages ADD COLUMN IF NOT EXISTS imported_at timestamptz;
+ALTER TABLE public.cargo_packages ADD COLUMN IF NOT EXISTS manifest_data jsonb NOT NULL DEFAULT '{}'::jsonb;
 CREATE INDEX IF NOT EXISTS cargo_packages_manifest_idx ON public.cargo_packages(manifest_id, cargo_category);
 
 CREATE TABLE IF NOT EXISTS public.manifest_imports (

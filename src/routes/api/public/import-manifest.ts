@@ -3,7 +3,7 @@ import { inflateRawSync } from "node:zlib";
 import { verifyStaffJwt } from "@/lib/storage-sign.server";
 
 type Category = "general" | "special" | "sea";
-type Parsed = { row_number: number; id: string; tracking_number: string; consignee: string; pcs: number | null; weight: number | null; volume_cbm: number | null; cost: number | null; description: string | null; issue?: string };
+type Parsed = { row_number: number; id: string; tracking_number: string; consignee: string; pcs: number | null; weight: number | null; volume_cbm: number | null; cost: number | null; description: string | null; manifest_data: Record<string, unknown>; issue?: string };
 const clean = (value: unknown) => String(value ?? "").trim();
 const number = (value: unknown) => { const n = Number(String(value ?? "").replace(/,/g, "")); return Number.isFinite(n) ? n : null; };
 
@@ -23,6 +23,8 @@ function parseSheet(file: ArrayBuffer, category: Category): Parsed[] {
   const headerIndex = rows.findIndex((row) => sea ? column(row, ["入仓单号"]) >= 0 : column(row, ["ExpressNo"]) >= 0);
   if (headerIndex < 0) throw new Error(sea ? "Sea manifest header '入仓单号' was not found." : "Air manifest header 'ExpressNo' was not found.");
   const header = rows[headerIndex];
+  const metadata: Record<string, unknown> = {};
+  rows.slice(0, headerIndex).forEach((row) => { if (row?.[0] != null && row?.[1] != null) metadata[clean(row[0])] = row[1]; });
   const tracking = column(header, sea ? ["入仓单号"] : ["ExpressNo"]);
   const customer = column(header, sea ? ["客户名"] : ["Contact"]);
   const pcs = column(header, sea ? ["件数"] : ["PCS"]);
@@ -37,7 +39,9 @@ function parseSheet(file: ArrayBuffer, category: Category): Parsed[] {
     const rowNumber = headerIndex + offset + 2;
     const costValue = clean(row[kes]);
     const cost = sea ? number((costValue.match(/([\d,.]+)\s*KES/i) || [])[1]) : number(row[kes]);
-    output.push({ row_number: rowNumber, id: sea ? `${track}-S${rowNumber}` : track, tracking_number: track, consignee: clean(row[customer]) || "Unassigned client", pcs: number(row[pcs]), weight: number(row[weight]), volume_cbm: cbm >= 0 ? number(row[cbm]) : null, cost, description: description >= 0 ? clean(row[description]) || null : `${category === "special" ? "Special" : "General"} air cargo`, issue: clean(row[customer]) ? undefined : "Client name is missing" });
+    const columns: Record<string, unknown> = {};
+    header.forEach((name, index) => { const key = clean(name); if (key) columns[key] = row[index] ?? null; });
+    output.push({ row_number: rowNumber, id: sea ? `${track}-S${rowNumber}` : track, tracking_number: track, consignee: clean(row[customer]) || "Unassigned client", pcs: number(row[pcs]), weight: number(row[weight]), volume_cbm: cbm >= 0 ? number(row[cbm]) : null, cost, description: description >= 0 ? clean(row[description]) || null : `${category === "special" ? "Special" : "General"} air cargo`, manifest_data: { category, source_row: rowNumber, metadata, columns }, issue: clean(row[customer]) ? undefined : "Client name is missing" });
   });
   if (!output.length) throw new Error("No manifest package rows were found.");
   return output;
@@ -84,6 +88,7 @@ export const Route = createFileRoute("/api/public/import-manifest")({ server: { 
     imported_by: user.id,
     imported_at: new Date().toISOString(),
     created_by: user.id,
+    manifest_data: p.manifest_data,
   }));
   const { error: insertError } = payload.length ? await supabaseAdmin.from("cargo_packages").insert(payload) : { error: null };
   if (insertError) return Response.json({ error: insertError.message, ...preview }, { status: 400 });

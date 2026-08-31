@@ -7,7 +7,8 @@ type Parsed = { row_number: number; id: string; tracking_number: string; consign
 const clean = (value: unknown) => String(value ?? "").trim();
 const number = (value: unknown) => { const n = Number(String(value ?? "").replace(/,/g, "")); return Number.isFinite(n) ? n : null; };
 
-function column(row: unknown[], names: string[]) { return row.findIndex((cell) => names.some((name) => clean(cell).replace(/\s+/g, "").toLowerCase() === name.replace(/\s+/g, "").toLowerCase())); }
+const headerKey = (value: unknown) => clean(value).normalize("NFKC").replace(/[^\p{L}\p{N}]+/gu, "").toLowerCase();
+function column(row: unknown[], names: string[]) { return row.findIndex((cell) => names.some((name) => headerKey(cell) === headerKey(name))); }
 const decode = (s: string) => s.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
 function xlsxRows(source: ArrayBuffer): unknown[][] {
   const bytes = Buffer.from(source), end = bytes.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06])); if (end < 0) throw new Error("This is not a valid .xlsx workbook.");
@@ -38,10 +39,11 @@ function parseSheet(file: ArrayBuffer, category: Category): Parsed[] {
     if (!track) return;
     const rowNumber = headerIndex + offset + 2;
     const costValue = clean(row[kes]);
-    const cost = sea ? number((costValue.match(/([\d,.]+)\s*KES/i) || [])[1]) : number(row[kes]);
+    const billMatch = costValue.match(/=\s*([\d,.]+)\s*(KES|RMB|USD)?/i) || costValue.match(/([\d,.]+)\s*(KES|RMB|USD)/i);
+    const cost = sea ? number(billMatch?.[1]) : number(row[kes]);
     const columns: Record<string, unknown> = {};
     header.forEach((name, index) => { const key = clean(name); if (key) columns[key] = row[index] ?? null; });
-    output.push({ row_number: rowNumber, id: sea ? `${track}-S${rowNumber}` : track, tracking_number: track, consignee: clean(row[customer]) || "Unassigned client", pcs: number(row[pcs]), weight: number(row[weight]), volume_cbm: cbm >= 0 ? number(row[cbm]) : null, cost, description: description >= 0 ? clean(row[description]) || null : `${category === "special" ? "Special" : "General"} air cargo`, manifest_data: { category, source_row: rowNumber, metadata, columns }, issue: clean(row[customer]) ? undefined : "Client name is missing" });
+    output.push({ row_number: rowNumber, id: sea ? `${track}-S${rowNumber}` : track, tracking_number: track, consignee: clean(row[customer]) || "Unassigned client", pcs: number(row[pcs]), weight: number(row[weight]), volume_cbm: cbm >= 0 ? number(row[cbm]) : null, cost, description: description >= 0 ? clean(row[description]) || null : `${category === "special" ? "Special" : "General"} air cargo`, manifest_data: { category, source_row: rowNumber, metadata, columns, billing: { raw: costValue, amount: billMatch?.[1] ? number(billMatch[1]) : null, currency: billMatch?.[2]?.toUpperCase() ?? null } }, issue: clean(row[customer]) ? undefined : "Client name is missing" });
   });
   if (!output.length) throw new Error("No manifest package rows were found.");
   return output;

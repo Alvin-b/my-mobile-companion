@@ -648,14 +648,21 @@ export type Database = {
           customer_phone: string | null
           customer_pin: string | null
           due_date: string | null
+          etims_attempt_count: number
           etims_control_code: string | null
           etims_invoice_number: string | null
+          etims_last_attempt_at: string | null
+          etims_provider: string | null
+          etims_receipt_type: string
           etims_response: Json | null
+          etims_submission_id: string | null
+          etims_transaction_type: string
           id: string
           invoice_number: string
           issue_date: string
           notes: string | null
           package_ids: Json
+          payment_method: string | null
           rejection_reason: string | null
           status: string
           submitted_at: string | null
@@ -675,14 +682,21 @@ export type Database = {
           customer_phone?: string | null
           customer_pin?: string | null
           due_date?: string | null
+          etims_attempt_count?: number
           etims_control_code?: string | null
           etims_invoice_number?: string | null
+          etims_last_attempt_at?: string | null
+          etims_provider?: string | null
+          etims_receipt_type?: string
           etims_response?: Json | null
+          etims_submission_id?: string | null
+          etims_transaction_type?: string
           id?: string
           invoice_number: string
           issue_date?: string
           notes?: string | null
           package_ids?: Json
+          payment_method?: string | null
           rejection_reason?: string | null
           status?: string
           submitted_at?: string | null
@@ -702,14 +716,21 @@ export type Database = {
           customer_phone?: string | null
           customer_pin?: string | null
           due_date?: string | null
+          etims_attempt_count?: number
           etims_control_code?: string | null
           etims_invoice_number?: string | null
+          etims_last_attempt_at?: string | null
+          etims_provider?: string | null
+          etims_receipt_type?: string
           etims_response?: Json | null
+          etims_submission_id?: string | null
+          etims_transaction_type?: string
           id?: string
           invoice_number?: string
           issue_date?: string
           notes?: string | null
           package_ids?: Json
+          payment_method?: string | null
           rejection_reason?: string | null
           status?: string
           submitted_at?: string | null
@@ -766,7 +787,10 @@ export type Database = {
       finance_settings: {
         Row: {
           branch_name: string | null
+          etims_business_id: string | null
+          etims_last_checked_at: string | null
           etims_mode: string
+          etims_provider: string
           etims_status: string
           id: boolean
           invoice_prefix: string
@@ -778,7 +802,10 @@ export type Database = {
         }
         Insert: {
           branch_name?: string | null
+          etims_business_id?: string | null
+          etims_last_checked_at?: string | null
           etims_mode?: string
+          etims_provider?: string
           etims_status?: string
           id?: boolean
           invoice_prefix?: string
@@ -790,7 +817,10 @@ export type Database = {
         }
         Update: {
           branch_name?: string | null
+          etims_business_id?: string | null
+          etims_last_checked_at?: string | null
           etims_mode?: string
+          etims_provider?: string
           etims_status?: string
           id?: boolean
           invoice_prefix?: string

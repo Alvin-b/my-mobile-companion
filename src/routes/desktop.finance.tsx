@@ -76,6 +76,22 @@ function Finance() {
   const [invoice, setInvoice] = useState({ package_id: "", customer_name: "", due_date: "", notes: "", payment_method: "mpesa" });
   const [expense, setExpense] = useState({ supplier_name: "", category: "", amount: "", expense_date: new Date().toISOString().slice(0, 10), description: "", receipt_url: "" });
   const clearablePackages = rows.filter((r) => Boolean(r.paid_at) && !["collected", "released"].includes(r.status));
+  const settingsRow: any = finance.data?.settings ?? null;
+  const [etimsForm, setEtimsForm] = useState({ legal_name: "", kra_pin: "", branch_name: "", invoice_prefix: "DEX", etims_business_id: "", etims_provider: "deitax", etims_mode: "not_configured", vat_registered: false });
+  const [etimsSeeded, setEtimsSeeded] = useState(false);
+  if (settingsRow && !etimsSeeded) {
+    setEtimsSeeded(true);
+    setEtimsForm({
+      legal_name: settingsRow.legal_name ?? "",
+      kra_pin: settingsRow.kra_pin ?? "",
+      branch_name: settingsRow.branch_name ?? "",
+      invoice_prefix: settingsRow.invoice_prefix ?? "DEX",
+      etims_business_id: settingsRow.etims_business_id ?? "",
+      etims_provider: settingsRow.etims_provider ?? "deitax",
+      etims_mode: settingsRow.etims_mode ?? "not_configured",
+      vat_registered: Boolean(settingsRow.vat_registered),
+    });
+  }
 
   const createInvoice = useMutation({
     mutationFn: async () => {

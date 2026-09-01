@@ -219,10 +219,34 @@ function Finance() {
         <Panel title="Invoice register" subtitle="Draft, approved and eTIMS submission states" className="col-span-2">
           <div className="max-h-[220px] overflow-y-auto"><table className="w-full text-[12px]"><thead className="text-[10px] uppercase tracking-wider text-[--t3]"><tr className="text-left"><th className="py-2">Invoice</th><th>Customer</th><th>Total</th><th>Status</th><th>eTIMS</th></tr></thead><tbody>{invoices.slice(0, 12).map((x: any) => <tr key={x.id} className="border-t border-[--b1]"><td className="py-2 mono text-[--orange]">{x.invoice_number}</td><td>{x.customer_name}</td><td>{fmtKES(x.total)}</td><td className="capitalize">{x.status}</td><td>{x.status === "accepted" ? <span className="text-[--green]">{x.etims_control_code ?? "Accepted"}</span> : <button disabled={submitEtims.isPending || ["cancelled", "credited"].includes(x.status)} onClick={() => submitEtims.mutate(x.id)} className="text-[10px] font-bold text-[--blue] disabled:opacity-50">{submitEtims.isPending ? "Sending…" : "Send to Deitax"}</button>}</td></tr>)}{!invoices.length && <tr><td colSpan={5} className="py-6 text-center text-[--t3]">No invoices yet. Create invoices from cleared packages after running the finance migration.</td></tr>}</tbody></table></div>
         </Panel>
-        <Panel title="KRA / eTIMS control" subtitle="Compliance is deliberately controlled">
+        <Panel title="KRA / eTIMS control" subtitle="Finance Manager compliance profile">
           <div className="text-lg font-bold capitalize">{String(etims).replaceAll("_", " ")}</div>
-          <p className="text-[11px] text-[--t3] mt-2 leading-relaxed">Deitax is the configured eTIMS provider. Set the DEX legal name, KRA PIN, VAT status and branch, then configure Deitax server secrets. Submission is always manual from the invoice register.</p>
-          <div className="mt-3 text-[10px] font-bold uppercase tracking-wider text-[--orange]">Next: Deitax sandbox credentials</div>
+          <div className="mt-3 grid gap-2">
+            <input value={etimsForm.legal_name} onChange={(e) => setEtimsForm({ ...etimsForm, legal_name: e.target.value })} placeholder="Registered legal name" className="w-full rounded-lg bg-[--s2] border border-[--b1] px-2 py-1.5 text-[12px]" />
+            <input value={etimsForm.kra_pin} onChange={(e) => setEtimsForm({ ...etimsForm, kra_pin: e.target.value.toUpperCase() })} placeholder="KRA PIN (P051234567X)" className="w-full rounded-lg bg-[--s2] border border-[--b1] px-2 py-1.5 text-[12px] mono" />
+            <input value={etimsForm.branch_name} onChange={(e) => setEtimsForm({ ...etimsForm, branch_name: e.target.value })} placeholder="Branch name" className="w-full rounded-lg bg-[--s2] border border-[--b1] px-2 py-1.5 text-[12px]" />
+            <div className="grid grid-cols-2 gap-2">
+              <input value={etimsForm.invoice_prefix} onChange={(e) => setEtimsForm({ ...etimsForm, invoice_prefix: e.target.value })} placeholder="Invoice prefix" className="rounded-lg bg-[--s2] border border-[--b1] px-2 py-1.5 text-[12px]" />
+              <input value={etimsForm.etims_business_id} onChange={(e) => setEtimsForm({ ...etimsForm, etims_business_id: e.target.value })} placeholder="Deitax business ID" className="rounded-lg bg-[--s2] border border-[--b1] px-2 py-1.5 text-[12px]" />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <select value={etimsForm.etims_provider} onChange={(e) => setEtimsForm({ ...etimsForm, etims_provider: e.target.value })} className="rounded-lg bg-[--s2] border border-[--b1] px-2 py-1.5 text-[12px]">
+                <option value="deitax">Deitax</option>
+                <option value="none">No provider</option>
+              </select>
+              <select value={etimsForm.etims_mode} onChange={(e) => setEtimsForm({ ...etimsForm, etims_mode: e.target.value })} className="rounded-lg bg-[--s2] border border-[--b1] px-2 py-1.5 text-[12px]">
+                <option value="not_configured">Not configured</option>
+                <option value="sandbox">Sandbox</option>
+                <option value="production">Production</option>
+              </select>
+            </div>
+            <label className="flex items-center gap-2 text-[11px] text-[--t2]">
+              <input type="checkbox" checked={etimsForm.vat_registered} onChange={(e) => setEtimsForm({ ...etimsForm, vat_registered: e.target.checked })} />
+              VAT registered
+            </label>
+            <button disabled={saveEtims.isPending} onClick={() => saveEtims.mutate(etimsForm)} className="mt-1 rounded-lg bg-[--blue] text-white py-2 text-[11px] font-bold disabled:opacity-50">{saveEtims.isPending ? "Saving…" : "Save eTIMS profile"}</button>
+          </div>
+          <p className="text-[10px] text-[--t3] mt-2 leading-relaxed">Deitax credentials stay as server secrets. Submission is always manual from the invoice register.</p>
         </Panel>
       </div>
 

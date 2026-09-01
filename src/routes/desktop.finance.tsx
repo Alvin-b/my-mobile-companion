@@ -110,6 +110,25 @@ function Finance() {
     onSuccess: () => { setNotice("Current month closed. The finance snapshot and audit entry have been stored."); qc.invalidateQueries({ queryKey: ["finance-workspace"] }); },
     onError: (e: any) => setNotice(e?.message ?? "Month close failed."),
   });
+  const saveEtims = useMutation({
+    mutationFn: async (form: typeof etimsForm) => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) throw new Error("Sign in again to update eTIMS settings.");
+      const response = await fetch("/api/public/finance/etims-settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}` },
+        body: JSON.stringify(form),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error ?? "eTIMS settings could not be saved.");
+      return result;
+    },
+    onSuccess: (result: any) => {
+      setNotice(`eTIMS settings saved · status ${String(result?.settings?.etims_status ?? "not_connected").replaceAll("_", " ")}${result?.provider_credentials_configured ? "" : " (Deitax server credentials still missing)"}.`);
+      qc.invalidateQueries({ queryKey: ["finance-workspace"] });
+    },
+    onError: (e: any) => setNotice(e?.message ?? "eTIMS settings could not be saved."),
+  });
   const submitEtims = useMutation({
     mutationFn: async (id: string) => {
       const { data } = await supabase.auth.getSession();

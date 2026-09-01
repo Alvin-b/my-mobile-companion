@@ -20,7 +20,7 @@ export const Route = createFileRoute("/api/public/finance/expenses")({
         const body = await request.json() as { expense_id?: string; action?: string };
         const id = String(body.expense_id ?? "").trim(), action = String(body.action ?? "").trim();
         if (!id || !["approve", "paid", "reject", "void"].includes(action)) throw new FinanceApiError(400, "A valid expense action is required.");
-        const patch: Record<string, unknown> = { status: action === "reject" ? "rejected" : action };
+        const patch: { status: string; approved_by?: string; approved_at?: string } = { status: action === "reject" ? "rejected" : action };
         if (action === "approve") { patch.approved_by = user.id; patch.approved_at = new Date().toISOString(); }
         const { data, error } = await supabaseAdmin.from("finance_expenses").update(patch).eq("id", id).select().single();
         if (error) throw new FinanceApiError(400, error.message);

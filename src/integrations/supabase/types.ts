@@ -70,6 +70,7 @@ export type Database = {
       }
       cargo_packages: {
         Row: {
+          cargo_category: string
           collected_at: string | null
           collector_id: string | null
           collector_name: string | null
@@ -82,6 +83,11 @@ export type Database = {
           description: string | null
           dest: string | null
           id: string
+          imported_at: string | null
+          imported_by: string | null
+          manifest_data: Json
+          manifest_id: string | null
+          manifest_name: string | null
           mode: string | null
           origin: string | null
           package_photo_captured_at: string | null
@@ -98,9 +104,11 @@ export type Database = {
           status: string
           tracking_number: string | null
           updated_at: string
+          volume_cbm: number | null
           weight: number | null
         }
         Insert: {
+          cargo_category?: string
           collected_at?: string | null
           collector_id?: string | null
           collector_name?: string | null
@@ -113,6 +121,11 @@ export type Database = {
           description?: string | null
           dest?: string | null
           id: string
+          imported_at?: string | null
+          imported_by?: string | null
+          manifest_data?: Json
+          manifest_id?: string | null
+          manifest_name?: string | null
           mode?: string | null
           origin?: string | null
           package_photo_captured_at?: string | null
@@ -129,9 +142,11 @@ export type Database = {
           status?: string
           tracking_number?: string | null
           updated_at?: string
+          volume_cbm?: number | null
           weight?: number | null
         }
         Update: {
+          cargo_category?: string
           collected_at?: string | null
           collector_id?: string | null
           collector_name?: string | null
@@ -144,6 +159,11 @@ export type Database = {
           description?: string | null
           dest?: string | null
           id?: string
+          imported_at?: string | null
+          imported_by?: string | null
+          manifest_data?: Json
+          manifest_id?: string | null
+          manifest_name?: string | null
           mode?: string | null
           origin?: string | null
           package_photo_captured_at?: string | null
@@ -160,6 +180,7 @@ export type Database = {
           status?: string
           tracking_number?: string | null
           updated_at?: string
+          volume_cbm?: number | null
           weight?: number | null
         }
         Relationships: []
@@ -428,6 +449,425 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      finance_approvals: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision: string
+          entity_id: string
+          entity_type: string
+          id: string
+          note: string | null
+          requested_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          note?: string | null
+          requested_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          note?: string | null
+          requested_by?: string | null
+        }
+        Relationships: []
+      }
+      finance_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          details: Json
+          entity_id: string | null
+          entity_type: string
+          id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      finance_expenses: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          category: string
+          created_at: string
+          description: string | null
+          etims_invoice_number: string | null
+          expense_date: string
+          id: string
+          package_id: string | null
+          payment_method: string | null
+          receipt_url: string | null
+          status: string
+          submitted_by: string | null
+          supplier_name: string
+          supplier_pin: string | null
+          tax_amount: number
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          category: string
+          created_at?: string
+          description?: string | null
+          etims_invoice_number?: string | null
+          expense_date?: string
+          id?: string
+          package_id?: string | null
+          payment_method?: string | null
+          receipt_url?: string | null
+          status?: string
+          submitted_by?: string | null
+          supplier_name: string
+          supplier_pin?: string | null
+          tax_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          etims_invoice_number?: string | null
+          expense_date?: string
+          id?: string
+          package_id?: string | null
+          payment_method?: string | null
+          receipt_url?: string | null
+          status?: string
+          submitted_by?: string | null
+          supplier_name?: string
+          supplier_pin?: string | null
+          tax_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_expenses_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "cargo_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_invoice_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          invoice_id: string
+          line_total: number
+          package_id: string | null
+          quantity: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          invoice_id: string
+          line_total?: number
+          package_id?: string | null
+          quantity?: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_id?: string
+          line_total?: number
+          package_id?: string | null
+          quantity?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "finance_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_invoice_items_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "cargo_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_invoices: {
+        Row: {
+          accepted_at: string | null
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          customer_name: string
+          customer_phone: string | null
+          customer_pin: string | null
+          due_date: string | null
+          etims_attempt_count: number
+          etims_control_code: string | null
+          etims_invoice_number: string | null
+          etims_last_attempt_at: string | null
+          etims_provider: string | null
+          etims_receipt_type: string
+          etims_response: Json | null
+          etims_submission_id: string | null
+          etims_transaction_type: string
+          id: string
+          invoice_number: string
+          issue_date: string
+          notes: string | null
+          package_ids: Json
+          payment_method: string | null
+          rejection_reason: string | null
+          status: string
+          submitted_at: string | null
+          subtotal: number
+          tax_amount: number
+          tax_rate: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_name: string
+          customer_phone?: string | null
+          customer_pin?: string | null
+          due_date?: string | null
+          etims_attempt_count?: number
+          etims_control_code?: string | null
+          etims_invoice_number?: string | null
+          etims_last_attempt_at?: string | null
+          etims_provider?: string | null
+          etims_receipt_type?: string
+          etims_response?: Json | null
+          etims_submission_id?: string | null
+          etims_transaction_type?: string
+          id?: string
+          invoice_number: string
+          issue_date?: string
+          notes?: string | null
+          package_ids?: Json
+          payment_method?: string | null
+          rejection_reason?: string | null
+          status?: string
+          submitted_at?: string | null
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          customer_pin?: string | null
+          due_date?: string | null
+          etims_attempt_count?: number
+          etims_control_code?: string | null
+          etims_invoice_number?: string | null
+          etims_last_attempt_at?: string | null
+          etims_provider?: string | null
+          etims_receipt_type?: string
+          etims_response?: Json | null
+          etims_submission_id?: string | null
+          etims_transaction_type?: string
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          notes?: string | null
+          package_ids?: Json
+          payment_method?: string | null
+          rejection_reason?: string | null
+          status?: string
+          submitted_at?: string | null
+          subtotal?: number
+          tax_amount?: number
+          tax_rate?: number
+          total?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      finance_month_closes: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          commissions: number
+          created_at: string
+          expenses: number
+          id: string
+          net_profit: number
+          note: string | null
+          period: string
+          revenue: number
+          status: string
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          commissions?: number
+          created_at?: string
+          expenses?: number
+          id?: string
+          net_profit?: number
+          note?: string | null
+          period: string
+          revenue?: number
+          status?: string
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          commissions?: number
+          created_at?: string
+          expenses?: number
+          id?: string
+          net_profit?: number
+          note?: string | null
+          period?: string
+          revenue?: number
+          status?: string
+        }
+        Relationships: []
+      }
+      finance_settings: {
+        Row: {
+          branch_name: string | null
+          etims_business_id: string | null
+          etims_last_checked_at: string | null
+          etims_mode: string
+          etims_provider: string
+          etims_status: string
+          id: boolean
+          invoice_prefix: string
+          kra_pin: string | null
+          legal_name: string | null
+          updated_at: string
+          updated_by: string | null
+          vat_registered: boolean
+        }
+        Insert: {
+          branch_name?: string | null
+          etims_business_id?: string | null
+          etims_last_checked_at?: string | null
+          etims_mode?: string
+          etims_provider?: string
+          etims_status?: string
+          id?: boolean
+          invoice_prefix?: string
+          kra_pin?: string | null
+          legal_name?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          vat_registered?: boolean
+        }
+        Update: {
+          branch_name?: string | null
+          etims_business_id?: string | null
+          etims_last_checked_at?: string | null
+          etims_mode?: string
+          etims_provider?: string
+          etims_status?: string
+          id?: boolean
+          invoice_prefix?: string
+          kra_pin?: string | null
+          legal_name?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          vat_registered?: boolean
+        }
+        Relationships: []
+      }
+      manifest_imports: {
+        Row: {
+          category: string
+          duplicate_rows: number
+          id: string
+          imported_at: string
+          imported_by: string | null
+          imported_rows: number
+          invalid_rows: number
+          notes: Json
+          source_file_name: string
+          total_rows: number
+        }
+        Insert: {
+          category: string
+          duplicate_rows?: number
+          id: string
+          imported_at?: string
+          imported_by?: string | null
+          imported_rows?: number
+          invalid_rows?: number
+          notes?: Json
+          source_file_name: string
+          total_rows?: number
+        }
+        Update: {
+          category?: string
+          duplicate_rows?: number
+          id?: string
+          imported_at?: string
+          imported_by?: string | null
+          imported_rows?: number
+          invalid_rows?: number
+          notes?: Json
+          source_file_name?: string
+          total_rows?: number
         }
         Relationships: []
       }
@@ -1169,6 +1609,28 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      finance_close_month: {
+        Args: { _note?: string; _period: string }
+        Returns: {
+          closed_at: string | null
+          closed_by: string | null
+          commissions: number
+          created_at: string
+          expenses: number
+          id: string
+          net_profit: number
+          note: string | null
+          period: string
+          revenue: number
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "finance_month_closes"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       generate_tracking_number: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -1178,6 +1640,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_finance_manager: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       mark_commission_paid: {
         Args: { _id: string; _reference: string }
@@ -1280,10 +1743,10 @@ export type Database = {
         | "sales_manager"
         | "logistics_manager"
         | "sales_rep"
-        | "finance_manager"
         | "sr"
         | "lm"
         | "sm"
+        | "finance_manager"
       commission_status: "pending" | "approved" | "paid"
       commission_trigger: "received" | "payment" | "delivery"
       image_kind:
@@ -1435,10 +1898,10 @@ export const Constants = {
         "sales_manager",
         "logistics_manager",
         "sales_rep",
-        "finance_manager",
         "sr",
         "lm",
         "sm",
+        "finance_manager",
       ],
       commission_status: ["pending", "approved", "paid"],
       commission_trigger: ["received", "payment", "delivery"],

@@ -90,7 +90,7 @@ export const Route = createFileRoute("/api/public/import-manifest")({ server: { 
     imported_by: user.id,
     imported_at: new Date().toISOString(),
     created_by: user.id,
-    manifest_data: p.manifest_data,
+    manifest_data: p.manifest_data as never,
   }));
   const { error: insertError } = payload.length ? await supabaseAdmin.from("cargo_packages").insert(payload) : { error: null };
   if (insertError) return Response.json({ error: insertError.message, ...preview }, { status: 400 });

@@ -76,6 +76,22 @@ function Finance() {
   const [invoice, setInvoice] = useState({ package_id: "", customer_name: "", due_date: "", notes: "", payment_method: "mpesa" });
   const [expense, setExpense] = useState({ supplier_name: "", category: "", amount: "", expense_date: new Date().toISOString().slice(0, 10), description: "", receipt_url: "" });
   const clearablePackages = rows.filter((r) => Boolean(r.paid_at) && !["collected", "released"].includes(r.status));
+  const settingsRow: any = finance.data?.settings ?? null;
+  const [etimsForm, setEtimsForm] = useState({ legal_name: "", kra_pin: "", branch_name: "", invoice_prefix: "DEX", etims_business_id: "", etims_provider: "deitax", etims_mode: "not_configured", vat_registered: false });
+  const [etimsSeeded, setEtimsSeeded] = useState(false);
+  if (settingsRow && !etimsSeeded) {
+    setEtimsSeeded(true);
+    setEtimsForm({
+      legal_name: settingsRow.legal_name ?? "",
+      kra_pin: settingsRow.kra_pin ?? "",
+      branch_name: settingsRow.branch_name ?? "",
+      invoice_prefix: settingsRow.invoice_prefix ?? "DEX",
+      etims_business_id: settingsRow.etims_business_id ?? "",
+      etims_provider: settingsRow.etims_provider ?? "deitax",
+      etims_mode: settingsRow.etims_mode ?? "not_configured",
+      vat_registered: Boolean(settingsRow.vat_registered),
+    });
+  }
 
   const createInvoice = useMutation({
     mutationFn: async () => {
@@ -109,6 +125,25 @@ function Finance() {
     mutationFn: async () => { const { error } = await (supabase as any).rpc("finance_close_month", { _period: new Date().toISOString().slice(0, 7) + "-01", _note: "Closed from DEX Finance Workspace" }); if (error) throw error; },
     onSuccess: () => { setNotice("Current month closed. The finance snapshot and audit entry have been stored."); qc.invalidateQueries({ queryKey: ["finance-workspace"] }); },
     onError: (e: any) => setNotice(e?.message ?? "Month close failed."),
+  });
+  const saveEtims = useMutation({
+    mutationFn: async (form: typeof etimsForm) => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) throw new Error("Sign in again to update eTIMS settings.");
+      const response = await fetch("/api/public/finance/etims-settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session.access_token}` },
+        body: JSON.stringify(form),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error ?? "eTIMS settings could not be saved.");
+      return result;
+    },
+    onSuccess: (result: any) => {
+      setNotice(`eTIMS settings saved · status ${String(result?.settings?.etims_status ?? "not_connected").replaceAll("_", " ")}${result?.provider_credentials_configured ? "" : " (Deitax server credentials still missing)"}.`);
+      qc.invalidateQueries({ queryKey: ["finance-workspace"] });
+    },
+    onError: (e: any) => setNotice(e?.message ?? "eTIMS settings could not be saved."),
   });
   const submitEtims = useMutation({
     mutationFn: async (id: string) => {
@@ -184,10 +219,34 @@ function Finance() {
         <Panel title="Invoice register" subtitle="Draft, approved and eTIMS submission states" className="col-span-2">
           <div className="max-h-[220px] overflow-y-auto"><table className="w-full text-[12px]"><thead className="text-[10px] uppercase tracking-wider text-[--t3]"><tr className="text-left"><th className="py-2">Invoice</th><th>Customer</th><th>Total</th><th>Status</th><th>eTIMS</th></tr></thead><tbody>{invoices.slice(0, 12).map((x: any) => <tr key={x.id} className="border-t border-[--b1]"><td className="py-2 mono text-[--orange]">{x.invoice_number}</td><td>{x.customer_name}</td><td>{fmtKES(x.total)}</td><td className="capitalize">{x.status}</td><td>{x.status === "accepted" ? <span className="text-[--green]">{x.etims_control_code ?? "Accepted"}</span> : <button disabled={submitEtims.isPending || ["cancelled", "credited"].includes(x.status)} onClick={() => submitEtims.mutate(x.id)} className="text-[10px] font-bold text-[--blue] disabled:opacity-50">{submitEtims.isPending ? "Sending…" : "Send to Deitax"}</button>}</td></tr>)}{!invoices.length && <tr><td colSpan={5} className="py-6 text-center text-[--t3]">No invoices yet. Create invoices from cleared packages after running the finance migration.</td></tr>}</tbody></table></div>
         </Panel>
-        <Panel title="KRA / eTIMS control" subtitle="Compliance is deliberately controlled">
+        <Panel title="KRA / eTIMS control" subtitle="Finance Manager compliance profile">
           <div className="text-lg font-bold capitalize">{String(etims).replaceAll("_", " ")}</div>
-          <p className="text-[11px] text-[--t3] mt-2 leading-relaxed">Deitax is the configured eTIMS provider. Set the DEX legal name, KRA PIN, VAT status and branch, then configure Deitax server secrets. Submission is always manual from the invoice register.</p>
-          <div className="mt-3 text-[10px] font-bold uppercase tracking-wider text-[--orange]">Next: Deitax sandbox credentials</div>
+          <div className="mt-3 grid gap-2">
+            <input value={etimsForm.legal_name} onChange={(e) => setEtimsForm({ ...etimsForm, legal_name: e.target.value })} placeholder="Registered legal name" className="w-full rounded-lg bg-[--s2] border border-[--b1] px-2 py-1.5 text-[12px]" />
+            <input value={etimsForm.kra_pin} onChange={(e) => setEtimsForm({ ...etimsForm, kra_pin: e.target.value.toUpperCase() })} placeholder="KRA PIN (P051234567X)" className="w-full rounded-lg bg-[--s2] border border-[--b1] px-2 py-1.5 text-[12px] mono" />
+            <input value={etimsForm.branch_name} onChange={(e) => setEtimsForm({ ...etimsForm, branch_name: e.target.value })} placeholder="Branch name" className="w-full rounded-lg bg-[--s2] border border-[--b1] px-2 py-1.5 text-[12px]" />
+            <div className="grid grid-cols-2 gap-2">
+              <input value={etimsForm.invoice_prefix} onChange={(e) => setEtimsForm({ ...etimsForm, invoice_prefix: e.target.value })} placeholder="Invoice prefix" className="rounded-lg bg-[--s2] border border-[--b1] px-2 py-1.5 text-[12px]" />
+              <input value={etimsForm.etims_business_id} onChange={(e) => setEtimsForm({ ...etimsForm, etims_business_id: e.target.value })} placeholder="Deitax business ID" className="rounded-lg bg-[--s2] border border-[--b1] px-2 py-1.5 text-[12px]" />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <select value={etimsForm.etims_provider} onChange={(e) => setEtimsForm({ ...etimsForm, etims_provider: e.target.value })} className="rounded-lg bg-[--s2] border border-[--b1] px-2 py-1.5 text-[12px]">
+                <option value="deitax">Deitax</option>
+                <option value="none">No provider</option>
+              </select>
+              <select value={etimsForm.etims_mode} onChange={(e) => setEtimsForm({ ...etimsForm, etims_mode: e.target.value })} className="rounded-lg bg-[--s2] border border-[--b1] px-2 py-1.5 text-[12px]">
+                <option value="not_configured">Not configured</option>
+                <option value="sandbox">Sandbox</option>
+                <option value="production">Production</option>
+              </select>
+            </div>
+            <label className="flex items-center gap-2 text-[11px] text-[--t2]">
+              <input type="checkbox" checked={etimsForm.vat_registered} onChange={(e) => setEtimsForm({ ...etimsForm, vat_registered: e.target.checked })} />
+              VAT registered
+            </label>
+            <button disabled={saveEtims.isPending} onClick={() => saveEtims.mutate(etimsForm)} className="mt-1 rounded-lg bg-[--blue] text-white py-2 text-[11px] font-bold disabled:opacity-50">{saveEtims.isPending ? "Saving…" : "Save eTIMS profile"}</button>
+          </div>
+          <p className="text-[10px] text-[--t3] mt-2 leading-relaxed">Deitax credentials stay as server secrets. Submission is always manual from the invoice register.</p>
         </Panel>
       </div>
 

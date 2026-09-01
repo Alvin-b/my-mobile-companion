@@ -1100,3 +1100,27 @@ revenue and `/api/public/revenue-summary` now include them.
 `POST /api/public/admin/employees` returns `409` with a clear message when the email already
 belongs to an employee or an auth account. The database also enforces a case-insensitive
 unique email on `employees` and `profiles`.
+
+## 28. eTIMS (Finance Manager)
+
+All finance endpoints require an `Authorization: Bearer <supabase access token>` for a user whose `employees` row is active with role `finance_manager` or `admin`. Anything else returns 403.
+
+### GET /api/public/finance/etims-settings
+Returns the single compliance profile plus `provider_credentials_configured` (boolean; the Deitax URL/key are never returned).
+
+```json
+{ "settings": { "legal_name": "DEX Cargo Ltd", "kra_pin": "P051234567X", "branch_name": "HQ", "vat_registered": true,
+  "invoice_prefix": "DEX", "etims_provider": "deitax", "etims_mode": "sandbox", "etims_status": "connected",
+  "etims_business_id": "BIZ-1", "etims_last_checked_at": "2026-01-01T00:00:00Z" },
+  "provider_credentials_configured": false }
+```
+
+### PUT /api/public/finance/etims-settings
+Body: `legal_name`, `kra_pin`, `branch_name`, `vat_registered`, `invoice_prefix`, `etims_provider` (`deitax|none`), `etims_mode` (`not_configured|sandbox|production`), `etims_business_id`.
+The KRA PIN is validated (`P051234567X` shape). `etims_status` is derived server-side — it becomes `connected` only when the profile is complete AND the Deitax server secrets (`DEITAX_API_URL`, `DEITAX_API_KEY`) exist; otherwise `ready_for_sandbox` or `certification_pending`.
+
+### POST /api/public/finance/submit-etims
+Body: `{ "invoice_id": "<uuid>" }`. Requires `etims_provider = deitax`, `etims_status = connected` and at least one invoice line. Invoices already `accepted`, `cancelled` or `credited` return 409. On success the invoice stores `etims_submission_id`, `etims_invoice_number`, `etims_control_code`, `etims_attempt_count`, `etims_last_attempt_at` and moves to `accepted`, `submitted` or `rejected`.
+
+### Invoices
+`POST /api/public/finance/invoices` creates a draft invoice with line items; `PATCH` takes `{ invoice_id, action: "approve" | "cancel" | "credit" }`.

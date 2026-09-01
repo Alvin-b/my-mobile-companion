@@ -28,7 +28,7 @@ export function DesktopShell({ children }: { children: ReactNode }) {
     return null;
   }
 
-  if (!["admin", "finance_manager", "sales_manager", "sm"].includes(employee?.role ?? "")) {
+  if (!employee || !["admin", "finance_manager", "sales_manager", "sm"].includes(employee.role)) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="card-elevated p-6 max-w-sm text-center">

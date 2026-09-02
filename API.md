@@ -1124,3 +1124,83 @@ Body: `{ "invoice_id": "<uuid>" }`. Requires `etims_provider = deitax`, `etims_s
 
 ### Invoices
 `POST /api/public/finance/invoices` creates a draft invoice with line items; `PATCH` takes `{ invoice_id, action: "approve" | "cancel" | "credit" }`.
+
+---
+
+## 29. Package tracking agent (`GET /api/public/track`)
+
+Employees can track any tracking number — domestic leg or China/international
+dispatch — through one endpoint. There is no single paid API behind it: the
+server runs a **provider chain agent** and returns the first provider that
+yields real checkpoints, always merged with the internal DEXCARGO timeline.
+
+**Request**
+
+```
+GET /api/public/track?number=LP00680464093519
+Authorization: Bearer <supabase access token of the signed-in employee>
+```
+
+**Provider chain (in order)**
+
+| # | Provider | Key needed | Notes |
+|---|----------|-----------|-------|
+| 1 | Cainiao Global | none | Keyless, best for China-origin parcels (AliExpress, Yanwen, 4PX, China Post) |
+| 2 | 17TRACK API v2.2 | `SEVENTEEN_TRACK_API_KEY` | Auto-registers the number then reads it |
+| 3 | ParcelsApp API v3 | `PARCELSAPP_API_KEY` | Async — may answer "queued, retry shortly" |
+| 4 | TrackingMore v4 | `TRACKINGMORE_API_KEY` | Optional extra fallback |
+
+Providers without a configured key are skipped and reported in
+`providers_tried` with `note: "no api key configured"`. Adding a key later
+needs no code change — set the secret and republish.
+
+**Response**
+
+```json
+{
+  "tracking_number": "LP00680464093519",
+  "found_in_system": true,
+  "package": { "source": "cargo_packages", "id": "...", "consignee": "...", "status": "cleared", "cost": 12500 },
+  "external": { "provider": "cainiao", "carrier": "4PX", "status": "TRANSPORT", "event_count": 7 },
+  "latest_status": "Arrived at destination country",
+  "events": [ { "time": "2026-09-01T10:22:00.000Z", "status": "...", "location": "Guangzhou", "source": "cainiao" } ],
+  "providers_tried": [ { "provider": "cainiao", "ok": true, "events": 7, "note": null } ],
+  "manual_lookup": {
+    "17track": "https://t.17track.net/en#nums=LP00680464093519",
+    "parcelsapp": "https://parcelsapp.com/en/tracking/LP00680464093519",
+    "cainiao": "https://global.cainiao.com/detail.htm?mailNoList=LP00680464093519&lang=en",
+    "trackingmore": "https://www.trackingmore.com/track/en/LP00680464093519"
+  }
+}
+```
+
+`events` is newest-first and mixes internal DEXCARGO milestones
+(`source: "dexcargo"` — registered, paid/cleared, collected, plus
+`package_status_history`) with external carrier checkpoints. When no provider
+returns checkpoints, `external` is `null` and the app should show the internal
+timeline plus the `manual_lookup` links (open 17TRACK / ParcelsApp in a
+browser or WebView).
+
+**Kotlin / Retrofit**
+
+```kotlin
+data class TrackEvent(val time: String?, val status: String, val location: String?, val source: String)
+data class TrackResponse(
+    @SerializedName("tracking_number") val trackingNumber: String,
+    @SerializedName("found_in_system") val foundInSystem: Boolean,
+    @SerializedName("latest_status") val latestStatus: String?,
+    val events: List<TrackEvent>,
+    @SerializedName("manual_lookup") val manualLookup: Map<String, String>
+)
+
+interface TrackingApi {
+    @GET("api/public/track")
+    suspend fun track(
+        @Header("Authorization") bearer: String,
+        @Query("number") number: String
+    ): TrackResponse
+}
+```
+
+Errors: `401` missing/invalid staff token, `400` missing or over-long `number`.
+Each provider call is capped at 8s, so worst case latency is a few seconds.

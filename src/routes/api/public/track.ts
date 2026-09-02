@@ -91,7 +91,7 @@ export const Route = createFileRoute("/api/public/track")({
           }
         }
 
-        const { winner, attempts } = await runTrackingAgent(number);
+        const { winner, attempts, hits } = await runTrackingAgent(number);
 
         const merged = [...internalEvents, ...(winner?.events ?? [])].sort((a, b) => {
           const ta = a.time ? Date.parse(a.time) : 0;
@@ -107,10 +107,18 @@ export const Route = createFileRoute("/api/public/track")({
           external: winner
             ? { provider: winner.provider, carrier: winner.carrier ?? null, status: winner.status ?? null, event_count: winner.events.length }
             : null,
+          external_matches: hits.map((h) => ({
+            provider: h.provider,
+            carrier: h.carrier ?? null,
+            status: h.status ?? null,
+            event_count: h.events.length,
+            events: h.events,
+          })),
           latest_status: merged[0]?.status ?? (packageRef?.["status"] as string | undefined) ?? null,
           events: merged,
           providers_tried: attempts.map((a) => ({ provider: a.provider, ok: a.ok, events: a.events.length, note: a.note ?? null })),
           manual_lookup: webTrackerLinks(number),
+
           generated_at: new Date().toISOString(),
         });
       },

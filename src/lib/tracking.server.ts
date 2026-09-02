@@ -172,7 +172,102 @@ async function trackingMore(trackingNumber: string): Promise<ProviderResult> {
   }
 }
 
-export const PROVIDER_CHAIN = [cainiao, seventeenTrack, parcelsApp, trackingMore];
+/** 5. 4PX public tracking (keyless) — covers many China e-commerce forwarders. */
+async function fourPx(trackingNumber: string): Promise<ProviderResult> {
+  const out: ProviderResult = { provider: "4px", ok: false, events: [] };
+  try {
+    const res = await withTimeout((signal) =>
+      fetch(
+        `https://track.4px.com/track/v2/front/listTrackV2?serialNumber=${encodeURIComponent(trackingNumber)}&language=en-US`,
+        { headers: { "User-Agent": UA, Accept: "application/json" }, signal },
+      ),
+    );
+    if (!res.ok) return { ...out, note: `HTTP ${res.status}` };
+    const json = (await res.json()) as any;
+    const item = json?.data?.[0];
+    const events: any[] = item?.tracks ?? [];
+    out.carrier = item?.channelName ?? null;
+    out.status = item?.statusName ?? null;
+    out.events = events.map((e) => ({
+      time: normTime(e?.tkDate ?? e?.trackDate),
+      status: String(e?.tkDesc ?? e?.content ?? "").trim(),
+      location: e?.tkLocation ?? null,
+      source: "4px",
+    }));
+    out.ok = out.events.length > 0;
+    return out;
+  } catch (e) {
+    return { ...out, note: e instanceof Error ? e.message : "request failed" };
+  }
+}
+
+/** 6. YunExpress public tracking (keyless). */
+async function yunExpress(trackingNumber: string): Promise<ProviderResult> {
+  const out: ProviderResult = { provider: "yunexpress", ok: false, events: [] };
+  try {
+    const res = await withTimeout((signal) =>
+      fetch(
+        `https://services.yunexpress.com/track/api/v1/Tracking/GetTrackInfo?codes=${encodeURIComponent(trackingNumber)}&lang=en-US`,
+        { headers: { "User-Agent": UA, Accept: "application/json" }, signal },
+      ),
+    );
+    if (!res.ok) return { ...out, note: `HTTP ${res.status}` };
+    const json = (await res.json()) as any;
+    const item = json?.Item?.[0] ?? json?.data?.[0];
+    const events: any[] = item?.TrackingDetails ?? item?.trackingDetails ?? [];
+    out.carrier = item?.CarrierName ?? null;
+    out.status = item?.TrackingStatusName ?? null;
+    out.events = events.map((e) => ({
+      time: normTime(e?.TrackingTime ?? e?.trackingTime),
+      status: String(e?.TrackingDetail ?? e?.trackingDetail ?? "").trim(),
+      location: e?.TrackingLocation ?? null,
+      source: "yunexpress",
+    }));
+    out.ok = out.events.length > 0;
+    return out;
+  } catch (e) {
+    return { ...out, note: e instanceof Error ? e.message : "request failed" };
+  }
+}
+
+/** 7. Ship24 public tracker JSON (keyless best-effort). */
+async function ship24(trackingNumber: string): Promise<ProviderResult> {
+  const out: ProviderResult = { provider: "ship24", ok: false, events: [] };
+  try {
+    const res = await withTimeout((signal) =>
+      fetch(`https://www.ship24.com/_next/data/latest/en/tracking/${encodeURIComponent(trackingNumber)}.json`, {
+        headers: { "User-Agent": UA, Accept: "application/json" },
+        signal,
+      }),
+    );
+    if (!res.ok) return { ...out, note: `HTTP ${res.status}` };
+    const json = (await res.json()) as any;
+    const tracker = json?.pageProps?.trackings?.[0] ?? json?.pageProps?.tracking;
+    const events: any[] = tracker?.events ?? [];
+    out.carrier = tracker?.courier?.[0]?.name ?? null;
+    out.status = tracker?.shipment?.statusMilestone ?? null;
+    out.events = events.map((e) => ({
+      time: normTime(e?.occurrenceDatetime ?? e?.datetime),
+      status: String(e?.status ?? "").trim(),
+      location: e?.location ?? null,
+      source: "ship24",
+    }));
+    out.ok = out.events.length > 0;
+    return out;
+  } catch (e) {
+    return { ...out, note: e instanceof Error ? e.message : "request failed" };
+  }
+}
+
+export const PROVIDER_CHAIN = [
+  cainiao,
+  seventeenTrack,
+  parcelsApp,
+  trackingMore,
+  fourPx,
+  yunExpress,
+  ship24,
+];
 
 export function webTrackerLinks(trackingNumber: string) {
   const n = encodeURIComponent(trackingNumber);
@@ -181,16 +276,36 @@ export function webTrackerLinks(trackingNumber: string) {
     parcelsapp: `https://parcelsapp.com/en/tracking/${n}`,
     cainiao: `https://global.cainiao.com/detail.htm?mailNoList=${n}&lang=en`,
     trackingmore: `https://www.trackingmore.com/track/en/${n}`,
+    ship24: `https://www.ship24.com/tracking?p=${n}`,
+    "4px": `https://track.4px.com/#/result/0/${n}`,
   };
 }
 
-/** Runs the provider chain until one returns checkpoints. */
+/**
+ * Queries EVERY provider at the same time and returns the richest response.
+ * Fan-out keeps the lookup as fast as the slowest single provider (~8s cap)
+ * instead of the sum of all of them, and one carrier missing the parcel no
+ * longer blocks the others.
+ */
 export async function runTrackingAgent(trackingNumber: string) {
-  const attempts: ProviderResult[] = [];
-  for (const provider of PROVIDER_CHAIN) {
-    const result = await provider(trackingNumber);
-    attempts.push(result);
-    if (result.ok) return { winner: result, attempts };
-  }
-  return { winner: null, attempts };
+  const attempts = await Promise.all(
+    PROVIDER_CHAIN.map((provider) =>
+      provider(trackingNumber).catch(
+        (e): ProviderResult => ({
+          provider: provider.name,
+          ok: false,
+          events: [],
+          note: e instanceof Error ? e.message : "request failed",
+        }),
+      ),
+    ),
+  );
+
+  const hits = attempts.filter((a) => a.ok);
+  // Prefer the provider with the most checkpoints (richest history).
+  hits.sort((a, b) => b.events.length - a.events.length);
+  const winner = hits[0] ?? null;
+
+  return { winner, attempts, hits };
 }
+

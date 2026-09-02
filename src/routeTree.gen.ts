@@ -28,6 +28,7 @@ import { Route as DesktopFinanceRouteImport } from './routes/desktop.finance'
 import { Route as DesktopEmployeesRouteImport } from './routes/desktop.employees'
 import { Route as ApiMpesaStkPushRouteImport } from './routes/api/mpesa-stk-push'
 import { Route as AdminEmployeesRouteImport } from './routes/admin.employees'
+import { Route as ApiPublicTrackRouteImport } from './routes/api/public/track'
 import { Route as ApiPublicSendSmsRouteImport } from './routes/api/public/send-sms'
 import { Route as ApiPublicRevenueSummaryRouteImport } from './routes/api/public/revenue-summary'
 import { Route as ApiPublicPaymentEvidenceRouteImport } from './routes/api/public/payment-evidence'
@@ -140,6 +141,11 @@ const ApiMpesaStkPushRoute = ApiMpesaStkPushRouteImport.update({
 const AdminEmployeesRoute = AdminEmployeesRouteImport.update({
   id: '/admin/employees',
   path: '/admin/employees',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicTrackRoute = ApiPublicTrackRouteImport.update({
+  id: '/api/public/track',
+  path: '/api/public/track',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicSendSmsRoute = ApiPublicSendSmsRouteImport.update({
@@ -271,6 +277,7 @@ export interface FileRoutesByFullPath {
   '/api/public/payment-evidence': typeof ApiPublicPaymentEvidenceRoute
   '/api/public/revenue-summary': typeof ApiPublicRevenueSummaryRoute
   '/api/public/send-sms': typeof ApiPublicSendSmsRoute
+  '/api/public/track': typeof ApiPublicTrackRoute
   '/api/public/admin/delete-user': typeof ApiPublicAdminDeleteUserRoute
   '/api/public/admin/employees': typeof ApiPublicAdminEmployeesRoute
   '/api/public/finance/etims-settings': typeof ApiPublicFinanceEtimsSettingsRoute
@@ -309,6 +316,7 @@ export interface FileRoutesByTo {
   '/api/public/payment-evidence': typeof ApiPublicPaymentEvidenceRoute
   '/api/public/revenue-summary': typeof ApiPublicRevenueSummaryRoute
   '/api/public/send-sms': typeof ApiPublicSendSmsRoute
+  '/api/public/track': typeof ApiPublicTrackRoute
   '/api/public/admin/delete-user': typeof ApiPublicAdminDeleteUserRoute
   '/api/public/admin/employees': typeof ApiPublicAdminEmployeesRoute
   '/api/public/finance/etims-settings': typeof ApiPublicFinanceEtimsSettingsRoute
@@ -349,6 +357,7 @@ export interface FileRoutesById {
   '/api/public/payment-evidence': typeof ApiPublicPaymentEvidenceRoute
   '/api/public/revenue-summary': typeof ApiPublicRevenueSummaryRoute
   '/api/public/send-sms': typeof ApiPublicSendSmsRoute
+  '/api/public/track': typeof ApiPublicTrackRoute
   '/api/public/admin/delete-user': typeof ApiPublicAdminDeleteUserRoute
   '/api/public/admin/employees': typeof ApiPublicAdminEmployeesRoute
   '/api/public/finance/etims-settings': typeof ApiPublicFinanceEtimsSettingsRoute
@@ -390,6 +399,7 @@ export interface FileRouteTypes {
     | '/api/public/payment-evidence'
     | '/api/public/revenue-summary'
     | '/api/public/send-sms'
+    | '/api/public/track'
     | '/api/public/admin/delete-user'
     | '/api/public/admin/employees'
     | '/api/public/finance/etims-settings'
@@ -428,6 +438,7 @@ export interface FileRouteTypes {
     | '/api/public/payment-evidence'
     | '/api/public/revenue-summary'
     | '/api/public/send-sms'
+    | '/api/public/track'
     | '/api/public/admin/delete-user'
     | '/api/public/admin/employees'
     | '/api/public/finance/etims-settings'
@@ -467,6 +478,7 @@ export interface FileRouteTypes {
     | '/api/public/payment-evidence'
     | '/api/public/revenue-summary'
     | '/api/public/send-sms'
+    | '/api/public/track'
     | '/api/public/admin/delete-user'
     | '/api/public/admin/employees'
     | '/api/public/finance/etims-settings'
@@ -500,6 +512,7 @@ export interface RootRouteChildren {
   ApiPublicPaymentEvidenceRoute: typeof ApiPublicPaymentEvidenceRoute
   ApiPublicRevenueSummaryRoute: typeof ApiPublicRevenueSummaryRoute
   ApiPublicSendSmsRoute: typeof ApiPublicSendSmsRoute
+  ApiPublicTrackRoute: typeof ApiPublicTrackRoute
   ApiPublicAdminDeleteUserRoute: typeof ApiPublicAdminDeleteUserRoute
   ApiPublicAdminEmployeesRoute: typeof ApiPublicAdminEmployeesRoute
   ApiPublicFinanceEtimsSettingsRoute: typeof ApiPublicFinanceEtimsSettingsRoute
@@ -642,6 +655,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/employees'
       fullPath: '/admin/employees'
       preLoaderRoute: typeof AdminEmployeesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/track': {
+      id: '/api/public/track'
+      path: '/api/public/track'
+      fullPath: '/api/public/track'
+      preLoaderRoute: typeof ApiPublicTrackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/send-sms': {
@@ -830,6 +850,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicPaymentEvidenceRoute: ApiPublicPaymentEvidenceRoute,
   ApiPublicRevenueSummaryRoute: ApiPublicRevenueSummaryRoute,
   ApiPublicSendSmsRoute: ApiPublicSendSmsRoute,
+  ApiPublicTrackRoute: ApiPublicTrackRoute,
   ApiPublicAdminDeleteUserRoute: ApiPublicAdminDeleteUserRoute,
   ApiPublicAdminEmployeesRoute: ApiPublicAdminEmployeesRoute,
   ApiPublicFinanceEtimsSettingsRoute: ApiPublicFinanceEtimsSettingsRoute,

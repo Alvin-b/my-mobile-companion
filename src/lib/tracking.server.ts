@@ -172,102 +172,11 @@ async function trackingMore(trackingNumber: string): Promise<ProviderResult> {
   }
 }
 
-/** 5. 4PX public tracking (keyless) — covers many China e-commerce forwarders. */
-async function fourPx(trackingNumber: string): Promise<ProviderResult> {
-  const out: ProviderResult = { provider: "4px", ok: false, events: [] };
-  try {
-    const res = await withTimeout((signal) =>
-      fetch(
-        `https://track.4px.com/track/v2/front/listTrackV2?serialNumber=${encodeURIComponent(trackingNumber)}&language=en-US`,
-        { headers: { "User-Agent": UA, Accept: "application/json" }, signal },
-      ),
-    );
-    if (!res.ok) return { ...out, note: `HTTP ${res.status}` };
-    const json = (await res.json()) as any;
-    const item = json?.data?.[0];
-    const events: any[] = item?.tracks ?? [];
-    out.carrier = item?.channelName ?? null;
-    out.status = item?.statusName ?? null;
-    out.events = events.map((e) => ({
-      time: normTime(e?.tkDate ?? e?.trackDate),
-      status: String(e?.tkDesc ?? e?.content ?? "").trim(),
-      location: e?.tkLocation ?? null,
-      source: "4px",
-    }));
-    out.ok = out.events.length > 0;
-    return out;
-  } catch (e) {
-    return { ...out, note: e instanceof Error ? e.message : "request failed" };
-  }
-}
-
-/** 6. YunExpress public tracking (keyless). */
-async function yunExpress(trackingNumber: string): Promise<ProviderResult> {
-  const out: ProviderResult = { provider: "yunexpress", ok: false, events: [] };
-  try {
-    const res = await withTimeout((signal) =>
-      fetch(
-        `https://services.yunexpress.com/track/api/v1/Tracking/GetTrackInfo?codes=${encodeURIComponent(trackingNumber)}&lang=en-US`,
-        { headers: { "User-Agent": UA, Accept: "application/json" }, signal },
-      ),
-    );
-    if (!res.ok) return { ...out, note: `HTTP ${res.status}` };
-    const json = (await res.json()) as any;
-    const item = json?.Item?.[0] ?? json?.data?.[0];
-    const events: any[] = item?.TrackingDetails ?? item?.trackingDetails ?? [];
-    out.carrier = item?.CarrierName ?? null;
-    out.status = item?.TrackingStatusName ?? null;
-    out.events = events.map((e) => ({
-      time: normTime(e?.TrackingTime ?? e?.trackingTime),
-      status: String(e?.TrackingDetail ?? e?.trackingDetail ?? "").trim(),
-      location: e?.TrackingLocation ?? null,
-      source: "yunexpress",
-    }));
-    out.ok = out.events.length > 0;
-    return out;
-  } catch (e) {
-    return { ...out, note: e instanceof Error ? e.message : "request failed" };
-  }
-}
-
-/** 7. Ship24 public tracker JSON (keyless best-effort). */
-async function ship24(trackingNumber: string): Promise<ProviderResult> {
-  const out: ProviderResult = { provider: "ship24", ok: false, events: [] };
-  try {
-    const res = await withTimeout((signal) =>
-      fetch(`https://www.ship24.com/_next/data/latest/en/tracking/${encodeURIComponent(trackingNumber)}.json`, {
-        headers: { "User-Agent": UA, Accept: "application/json" },
-        signal,
-      }),
-    );
-    if (!res.ok) return { ...out, note: `HTTP ${res.status}` };
-    const json = (await res.json()) as any;
-    const tracker = json?.pageProps?.trackings?.[0] ?? json?.pageProps?.tracking;
-    const events: any[] = tracker?.events ?? [];
-    out.carrier = tracker?.courier?.[0]?.name ?? null;
-    out.status = tracker?.shipment?.statusMilestone ?? null;
-    out.events = events.map((e) => ({
-      time: normTime(e?.occurrenceDatetime ?? e?.datetime),
-      status: String(e?.status ?? "").trim(),
-      location: e?.location ?? null,
-      source: "ship24",
-    }));
-    out.ok = out.events.length > 0;
-    return out;
-  } catch (e) {
-    return { ...out, note: e instanceof Error ? e.message : "request failed" };
-  }
-}
-
-export const PROVIDER_CHAIN = [
-  cainiao,
-  seventeenTrack,
-  parcelsApp,
-  trackingMore,
-  fourPx,
-  yunExpress,
-  ship24,
-];
+// NOTE: 4PX, YunExpress and Ship24 have retired or bot-locked their public
+// tracking APIs (verified 2026-09), so they are not queried — they remain in
+// webTrackerLinks() below for manual one-click lookup. Adding a 17TRACK,
+// ParcelsApp or TrackingMore API key automatically activates that provider.
+export const PROVIDER_CHAIN = [cainiao, seventeenTrack, parcelsApp, trackingMore];
 
 export function webTrackerLinks(trackingNumber: string) {
   const n = encodeURIComponent(trackingNumber);

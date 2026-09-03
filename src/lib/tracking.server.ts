@@ -72,7 +72,74 @@ async function cainiao(trackingNumber: string): Promise<ProviderResult> {
   }
 }
 
-/** 2. 17TRACK official API — only used when a key is configured. */
+const BROWSER_UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36";
+
+/**
+ * 1b. Kuaidi100 (keyless) — China's largest tracking aggregator (1000+
+ * carriers incl. EMS, China Post, STO, YTO, SF, Yunda, international legs).
+ * Acts like a browsing agent: asks the site to auto-detect the carrier, then
+ * queries each candidate until one returns real checkpoints.
+ */
+async function kuaidi100(trackingNumber: string): Promise<ProviderResult> {
+  const out: ProviderResult = { provider: "kuaidi100", ok: false, events: [] };
+  const headers = {
+    "User-Agent": BROWSER_UA,
+    Accept: "application/json",
+    Referer: "https://www.kuaidi100.com/",
+  };
+  try {
+    // Step 1: carrier auto-detection (same endpoint their website calls).
+    const det = await withTimeout((signal) =>
+      fetch(
+        `https://www.kuaidi100.com/autonumber/autoComNum?resultv2=1&text=${encodeURIComponent(trackingNumber)}`,
+        { headers, signal },
+      ),
+    );
+    if (!det.ok) return { ...out, note: `detect HTTP ${det.status}` };
+    const detJson = (await det.json()) as any;
+    const candidates: { comCode: string; name: string }[] = [
+      ...(detJson?.auto ?? []),
+      ...(detJson?.autoDest ?? []),
+    ].filter((c: any) => c?.comCode);
+    if (!candidates.length) return { ...out, note: "no carrier candidates" };
+
+    // Step 2: try each detected carrier until one yields real checkpoints.
+    for (const cand of candidates.slice(0, 5)) {
+      const res = await withTimeout((signal) =>
+        fetch(
+          `https://www.kuaidi100.com/query?type=${encodeURIComponent(cand.comCode)}&postid=${encodeURIComponent(trackingNumber)}`,
+          { headers, signal },
+        ),
+      ).catch(() => null);
+      if (!res || !res.ok) continue;
+      const json = (await res.json()) as any;
+      const rows: any[] = Array.isArray(json?.data) ? json.data : [];
+      const events = rows
+        .filter((r) => r?.context && !String(r.context).includes("查无结果"))
+        .map((r) => ({
+          time: normTime(r.time ?? r.ftime),
+          status: String(r.context ?? "").trim(),
+          location: r.location ?? null,
+          source: "kuaidi100",
+        }));
+      if (events.length > 0) {
+        out.carrier = cand.name ?? cand.comCode;
+        out.status = json?.state === "3" ? "delivered" : (json?.message ?? null);
+        out.events = events;
+        out.ok = true;
+        return out;
+      }
+    }
+    out.carrier = candidates[0]?.name ?? null;
+    out.note = `tried ${Math.min(candidates.length, 5)} carriers, no checkpoints`;
+    return out;
+  } catch (e) {
+    return { ...out, note: e instanceof Error ? e.message : "request failed" };
+  }
+}
+
+/** 3. 17TRACK official API — only used when a key is configured. */
 async function seventeenTrack(trackingNumber: string): Promise<ProviderResult> {
   const out: ProviderResult = { provider: "17track", ok: false, events: [] };
   const key = process.env["SEVENTEEN_TRACK_API_KEY"];

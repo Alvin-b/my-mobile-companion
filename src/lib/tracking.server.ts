@@ -108,7 +108,7 @@ async function kuaidi100(trackingNumber: string): Promise<ProviderResult> {
     for (const cand of candidates.slice(0, 5)) {
       const res = await withTimeout((signal) =>
         fetch(
-          `https://www.kuaidi100.com/query?type=${encodeURIComponent(cand.comCode)}&postid=${encodeURIComponent(trackingNumber)}`,
+          `https://www.kuaidi100.com/query?type=${encodeURIComponent(cand.comCode)}&postid=${encodeURIComponent(trackingNumber)}&temp=${Math.random()}&phone=`,
           { headers, signal },
         ),
       ).catch(() => null);

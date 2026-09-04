@@ -243,7 +243,7 @@ async function trackingMore(trackingNumber: string): Promise<ProviderResult> {
 // tracking APIs (verified 2026-09), so they are not queried — they remain in
 // webTrackerLinks() below for manual one-click lookup. Adding a 17TRACK,
 // ParcelsApp or TrackingMore API key automatically activates that provider.
-export const PROVIDER_CHAIN = [cainiao, seventeenTrack, parcelsApp, trackingMore];
+export const PROVIDER_CHAIN = [cainiao, kuaidi100, seventeenTrack, parcelsApp, trackingMore];
 
 export function webTrackerLinks(trackingNumber: string) {
   const n = encodeURIComponent(trackingNumber);

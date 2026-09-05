@@ -263,11 +263,148 @@ async function trackingMore(trackingNumber: string): Promise<ProviderResult> {
   }
 }
 
-// NOTE: 4PX, YunExpress and Ship24 have retired or bot-locked their public
-// tracking APIs (verified 2026-09), so they are not queried — they remain in
-// webTrackerLinks() below for manual one-click lookup. Adding a 17TRACK,
-// ParcelsApp or TrackingMore API key automatically activates that provider.
-export const PROVIDER_CHAIN = [cainiao, kuaidi100, seventeenTrack, parcelsApp, trackingMore];
+/** 5. Cainiao Guoguo mirror — second Cainiao datacentre, different coverage. */
+async function cainiaoGuoguo(trackingNumber: string): Promise<ProviderResult> {
+  const out: ProviderResult = { provider: "cainiao-guoguo", ok: false, events: [] };
+  try {
+    const res = await withTimeout((signal) =>
+      fetch(
+        `https://global.cainiao.com/global/detail.json?mailNoList=${encodeURIComponent(trackingNumber)}&lang=en-US`,
+        { headers: { "User-Agent": BROWSER_UA, Accept: "application/json" }, signal },
+      ),
+    );
+    if (!res.ok) return { ...out, note: `HTTP ${res.status}` };
+    const json = (await res.json().catch(() => null)) as any;
+    const mod = json?.module?.[0];
+    const details: any[] = mod?.detailList ?? [];
+    out.carrier = mod?.latestTrackingInfo?.carrierCode ?? null;
+    out.status = mod?.status ?? null;
+    out.events = details.map((d) => ({
+      time: normTime(d?.time ?? d?.timeStr),
+      status: String(d?.desc ?? d?.standerdDesc ?? "").trim(),
+      location: d?.group?.name ?? null,
+      source: "cainiao-guoguo",
+    }));
+    out.ok = out.events.length > 0;
+    return out;
+  } catch (e) {
+    return { ...out, note: e instanceof Error ? e.message : "request failed" };
+  }
+}
+
+/** 6. Ship24 API — activates automatically when SHIP24_API_KEY is set. */
+async function ship24(trackingNumber: string): Promise<ProviderResult> {
+  const out: ProviderResult = { provider: "ship24", ok: false, events: [] };
+  const key = process.env["SHIP24_API_KEY"];
+  if (!key) return { ...out, note: "no api key configured" };
+  try {
+    const res = await withTimeout((signal) =>
+      fetch("https://api.ship24.com/public/v1/tracking/search", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ trackingNumber }),
+        signal,
+      }),
+    );
+    if (!res.ok) return { ...out, note: `HTTP ${res.status}` };
+    const json = (await res.json().catch(() => null)) as any;
+    const tr = json?.data?.trackings?.[0];
+    const events: any[] = tr?.events ?? [];
+    out.carrier = tr?.shipment?.recipient?.name ?? events[0]?.courierCode ?? null;
+    out.status = tr?.shipment?.statusMilestone ?? null;
+    out.events = events.map((e) => ({
+      time: normTime(e?.occurrenceDatetime ?? e?.datetime),
+      status: String(e?.status ?? "").trim(),
+      location: e?.location ?? null,
+      source: "ship24",
+    }));
+    out.ok = out.events.length > 0;
+    return out;
+  } catch (e) {
+    return { ...out, note: e instanceof Error ? e.message : "request failed" };
+  }
+}
+
+/** 7. AfterShip API — activates automatically when AFTERSHIP_API_KEY is set. */
+async function afterShip(trackingNumber: string): Promise<ProviderResult> {
+  const out: ProviderResult = { provider: "aftership", ok: false, events: [] };
+  const key = process.env["AFTERSHIP_API_KEY"];
+  if (!key) return { ...out, note: "no api key configured" };
+  try {
+    const res = await withTimeout((signal) =>
+      fetch(
+        `https://api.aftership.com/tracking/2024-04/trackings?tracking_numbers=${encodeURIComponent(trackingNumber)}`,
+        { headers: { "as-api-key": key, "Content-Type": "application/json" }, signal },
+      ),
+    );
+    if (!res.ok) return { ...out, note: `HTTP ${res.status}` };
+    const json = (await res.json().catch(() => null)) as any;
+    const t = json?.data?.trackings?.[0];
+    const events: any[] = t?.checkpoints ?? [];
+    out.carrier = t?.slug ?? null;
+    out.status = t?.tag ?? null;
+    out.events = events.map((e) => ({
+      time: normTime(e?.checkpoint_time ?? e?.created_at),
+      status: String(e?.message ?? e?.tag ?? "").trim(),
+      location: e?.location ?? e?.city ?? null,
+      source: "aftership",
+    }));
+    out.ok = out.events.length > 0;
+    return out;
+  } catch (e) {
+    return { ...out, note: e instanceof Error ? e.message : "request failed" };
+  }
+}
+
+/** 8. Track123 API — activates automatically when TRACK123_API_KEY is set. */
+async function track123(trackingNumber: string): Promise<ProviderResult> {
+  const out: ProviderResult = { provider: "track123", ok: false, events: [] };
+  const key = process.env["TRACK123_API_KEY"];
+  if (!key) return { ...out, note: "no api key configured" };
+  try {
+    const res = await withTimeout((signal) =>
+      fetch("https://api.track123.com/gateway/open-api/tk/v2/track/query", {
+        method: "POST",
+        headers: { "Track123-Api-Secret": key, "Content-Type": "application/json" },
+        body: JSON.stringify({ trackNos: [trackingNumber] }),
+        signal,
+      }),
+    );
+    if (!res.ok) return { ...out, note: `HTTP ${res.status}` };
+    const json = (await res.json().catch(() => null)) as any;
+    const item = json?.data?.content?.[0] ?? json?.data?.accepted?.[0];
+    const providers: any[] = item?.localLogisticsInfo?.trackingDetails ?? [];
+    const globalEv: any[] = item?.localProviderList?.[0]?.trackingDetails ?? [];
+    const rows = providers.length ? providers : globalEv;
+    out.carrier = item?.courierCode ?? null;
+    out.status = item?.trackStatus ?? null;
+    out.events = rows.map((e) => ({
+      time: normTime(e?.eventTime ?? e?.time),
+      status: String(e?.eventDetail ?? e?.status ?? "").trim(),
+      location: e?.address ?? null,
+      source: "track123",
+    }));
+    out.ok = out.events.length > 0;
+    return out;
+  } catch (e) {
+    return { ...out, note: e instanceof Error ? e.message : "request failed" };
+  }
+}
+
+// Keyless providers run always; keyed ones self-activate the moment their API
+// key exists in the environment. 4PX, YunExpress and Track718 have retired or
+// bot-locked their public APIs (verified 2026-09) so they stay as manual links.
+export const PROVIDER_CHAIN = [
+  cainiao,
+  cainiaoGuoguo,
+  kuaidi100,
+  seventeenTrack,
+  parcelsApp,
+  trackingMore,
+  ship24,
+  afterShip,
+  track123,
+];
 
 export function webTrackerLinks(trackingNumber: string) {
   const n = encodeURIComponent(trackingNumber);
@@ -278,8 +415,14 @@ export function webTrackerLinks(trackingNumber: string) {
     trackingmore: `https://www.trackingmore.com/track/en/${n}`,
     ship24: `https://www.ship24.com/tracking?p=${n}`,
     "4px": `https://track.4px.com/#/result/0/${n}`,
+    aftership: `https://www.aftership.com/track/${n}`,
+    track123: `https://www.track123.com/en/${n}`,
+    kuaidi100: `https://www.kuaidi100.com/chaxun?nu=${n}`,
+    yunexpress: `https://www.yuntrack.com/parcelTracking?id=${n}`,
+    postakenya: `https://www.posta.co.ke/track-trace?tracking=${n}`,
   };
 }
+
 
 /**
  * Queries EVERY provider at the same time and returns the richest response.

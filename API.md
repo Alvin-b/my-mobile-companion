@@ -1204,3 +1204,23 @@ interface TrackingApi {
 
 Errors: `401` missing/invalid staff token, `400` missing or over-long `number`.
 Each provider call is capped at 8s, so worst case latency is a few seconds.
+
+### 29.1 Provider fan-out (updated)
+
+Tracking now queries these providers concurrently and returns the richest result,
+with every successful provider also listed in `external_matches`:
+
+| Provider | Key needed | Env var |
+|---|---|---|
+| Cainiao Global | no | – |
+| Cainiao Guoguo mirror | no | – |
+| Kuaidi100 (auto-detect + 14-carrier sweep: EMS, China Post, YunExpress, SF, Yanwen, 4PX, J&T, STO/YTO/ZTO/Yunda…) | no | – |
+| 17TRACK | yes | `SEVENTEEN_TRACK_API_KEY` |
+| ParcelsApp | yes | `PARCELSAPP_API_KEY` |
+| TrackingMore | yes | `TRACKINGMORE_API_KEY` |
+| Ship24 | yes | `SHIP24_API_KEY` |
+| AfterShip | yes | `AFTERSHIP_API_KEY` |
+| Track123 | yes | `TRACK123_API_KEY` |
+
+Keyed providers activate automatically once their env var exists — no code change.
+`manual_lookup` now also returns AfterShip, Track123, Kuaidi100, YunExpress and Posta Kenya links.

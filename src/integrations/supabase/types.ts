@@ -593,31 +593,64 @@ export type Database = {
         Row: {
           created_at: string
           description: string
+          discount_amount: number
           id: string
           invoice_id: string
+          item_class_code: string | null
+          item_code: string | null
+          item_seq: number | null
           line_total: number
           package_id: string | null
+          packaging_unit_code: string
           quantity: number
+          quantity_unit_code: string
+          tax_amount: number
+          tax_class_code: string
+          tax_rate: number
+          taxable_amount: number
+          total_amount: number
           unit_price: number
         }
         Insert: {
           created_at?: string
           description: string
+          discount_amount?: number
           id?: string
           invoice_id: string
+          item_class_code?: string | null
+          item_code?: string | null
+          item_seq?: number | null
           line_total?: number
           package_id?: string | null
+          packaging_unit_code?: string
           quantity?: number
+          quantity_unit_code?: string
+          tax_amount?: number
+          tax_class_code?: string
+          tax_rate?: number
+          taxable_amount?: number
+          total_amount?: number
           unit_price?: number
         }
         Update: {
           created_at?: string
           description?: string
+          discount_amount?: number
           id?: string
           invoice_id?: string
+          item_class_code?: string | null
+          item_code?: string | null
+          item_seq?: number | null
           line_total?: number
           package_id?: string | null
+          packaging_unit_code?: string
           quantity?: number
+          quantity_unit_code?: string
+          tax_amount?: number
+          tax_class_code?: string
+          tax_rate?: number
+          taxable_amount?: number
+          total_amount?: number
           unit_price?: number
         }
         Relationships: [
@@ -644,6 +677,10 @@ export type Database = {
           approved_by: string | null
           created_at: string
           created_by: string | null
+          credit_note_reason_code: string | null
+          currency: string
+          customer_address: string | null
+          customer_email: string | null
           customer_name: string
           customer_phone: string | null
           customer_pin: string | null
@@ -657,19 +694,43 @@ export type Database = {
           etims_response: Json | null
           etims_submission_id: string | null
           etims_transaction_type: string
+          exchange_rate: number
           id: string
           invoice_number: string
+          invoice_seq: number | null
           issue_date: string
           notes: string | null
+          original_invoice_number: string | null
           package_ids: Json
           payment_method: string | null
+          payment_type_code: string
+          receipt_label: string | null
+          receipt_number: number | null
           rejection_reason: string | null
+          scu_id: string | null
+          scu_internal_data: string | null
+          scu_qr_url: string | null
+          scu_receipt_date: string | null
+          scu_receipt_number: number | null
+          scu_receipt_signature: string | null
+          scu_total_receipt_counter: number | null
           status: string
           submitted_at: string | null
           subtotal: number
           tax_amount: number
+          tax_amount_a: number
+          tax_amount_b: number
+          tax_amount_c: number
+          tax_amount_d: number
+          tax_amount_e: number
           tax_rate: number
+          taxable_amount_a: number
+          taxable_amount_b: number
+          taxable_amount_c: number
+          taxable_amount_d: number
+          taxable_amount_e: number
           total: number
+          total_discount: number
           updated_at: string
         }
         Insert: {
@@ -678,6 +739,10 @@ export type Database = {
           approved_by?: string | null
           created_at?: string
           created_by?: string | null
+          credit_note_reason_code?: string | null
+          currency?: string
+          customer_address?: string | null
+          customer_email?: string | null
           customer_name: string
           customer_phone?: string | null
           customer_pin?: string | null
@@ -691,19 +756,43 @@ export type Database = {
           etims_response?: Json | null
           etims_submission_id?: string | null
           etims_transaction_type?: string
+          exchange_rate?: number
           id?: string
           invoice_number: string
+          invoice_seq?: number | null
           issue_date?: string
           notes?: string | null
+          original_invoice_number?: string | null
           package_ids?: Json
           payment_method?: string | null
+          payment_type_code?: string
+          receipt_label?: string | null
+          receipt_number?: number | null
           rejection_reason?: string | null
+          scu_id?: string | null
+          scu_internal_data?: string | null
+          scu_qr_url?: string | null
+          scu_receipt_date?: string | null
+          scu_receipt_number?: number | null
+          scu_receipt_signature?: string | null
+          scu_total_receipt_counter?: number | null
           status?: string
           submitted_at?: string | null
           subtotal?: number
           tax_amount?: number
+          tax_amount_a?: number
+          tax_amount_b?: number
+          tax_amount_c?: number
+          tax_amount_d?: number
+          tax_amount_e?: number
           tax_rate?: number
+          taxable_amount_a?: number
+          taxable_amount_b?: number
+          taxable_amount_c?: number
+          taxable_amount_d?: number
+          taxable_amount_e?: number
           total?: number
+          total_discount?: number
           updated_at?: string
         }
         Update: {
@@ -712,6 +801,10 @@ export type Database = {
           approved_by?: string | null
           created_at?: string
           created_by?: string | null
+          credit_note_reason_code?: string | null
+          currency?: string
+          customer_address?: string | null
+          customer_email?: string | null
           customer_name?: string
           customer_phone?: string | null
           customer_pin?: string | null
@@ -725,19 +818,43 @@ export type Database = {
           etims_response?: Json | null
           etims_submission_id?: string | null
           etims_transaction_type?: string
+          exchange_rate?: number
           id?: string
           invoice_number?: string
+          invoice_seq?: number | null
           issue_date?: string
           notes?: string | null
+          original_invoice_number?: string | null
           package_ids?: Json
           payment_method?: string | null
+          payment_type_code?: string
+          receipt_label?: string | null
+          receipt_number?: number | null
           rejection_reason?: string | null
+          scu_id?: string | null
+          scu_internal_data?: string | null
+          scu_qr_url?: string | null
+          scu_receipt_date?: string | null
+          scu_receipt_number?: number | null
+          scu_receipt_signature?: string | null
+          scu_total_receipt_counter?: number | null
           status?: string
           submitted_at?: string | null
           subtotal?: number
           tax_amount?: number
+          tax_amount_a?: number
+          tax_amount_b?: number
+          tax_amount_c?: number
+          tax_amount_d?: number
+          tax_amount_e?: number
           tax_rate?: number
+          taxable_amount_a?: number
+          taxable_amount_b?: number
+          taxable_amount_c?: number
+          taxable_amount_d?: number
+          taxable_amount_e?: number
           total?: number
+          total_discount?: number
           updated_at?: string
         }
         Relationships: []
@@ -781,6 +898,24 @@ export type Database = {
           period?: string
           revenue?: number
           status?: string
+        }
+        Relationships: []
+      }
+      finance_receipt_counters: {
+        Row: {
+          label: string
+          last_number: number
+          updated_at: string
+        }
+        Insert: {
+          label: string
+          last_number?: number
+          updated_at?: string
+        }
+        Update: {
+          label?: string
+          last_number?: number
+          updated_at?: string
         }
         Relationships: []
       }

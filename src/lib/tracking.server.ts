@@ -98,14 +98,37 @@ async function kuaidi100(trackingNumber: string): Promise<ProviderResult> {
     );
     if (!det.ok) return { ...out, note: `detect HTTP ${det.status}` };
     const detJson = (await det.json()) as any;
-    const candidates: { comCode: string; name: string }[] = [
+    const detected: { comCode: string; name: string }[] = [
       ...(detJson?.auto ?? []),
       ...(detJson?.autoDest ?? []),
     ].filter((c: any) => c?.comCode);
-    if (!candidates.length) return { ...out, note: "no carrier candidates" };
 
-    // Step 2: try each detected carrier until one yields real checkpoints.
-    for (const cand of candidates.slice(0, 5)) {
+    // Always append the carriers that actually move China -> Kenya freight, so
+    // a failed auto-detection never means "not found".
+    const FALLBACK = [
+      "emsguoji",
+      "youzhengguonei",
+      "ems",
+      "yunexpress",
+      "sfguoji",
+      "yanwen",
+      "4px",
+      "jtexpress",
+      "cainiao",
+      "shunfeng",
+      "yuantong",
+      "zhongtong",
+      "shentong",
+      "yunda",
+    ];
+    const seen = new Set<string>();
+    const candidates = [
+      ...detected,
+      ...FALLBACK.map((c) => ({ comCode: c, name: c })),
+    ].filter((c) => (seen.has(c.comCode) ? false : (seen.add(c.comCode), true)));
+
+    // Step 2: try each carrier until one yields real checkpoints.
+    for (const cand of candidates.slice(0, 12)) {
       const res = await withTimeout((signal) =>
         fetch(
           `https://www.kuaidi100.com/query?type=${encodeURIComponent(cand.comCode)}&postid=${encodeURIComponent(trackingNumber)}&temp=${Math.random()}&phone=`,
@@ -113,7 +136,7 @@ async function kuaidi100(trackingNumber: string): Promise<ProviderResult> {
         ),
       ).catch(() => null);
       if (!res || !res.ok) continue;
-      const json = (await res.json()) as any;
+      const json = (await res.json().catch(() => null)) as any;
       const rows: any[] = Array.isArray(json?.data) ? json.data : [];
       const events = rows
         .filter((r) => r?.context && !String(r.context).includes("查无结果"))
@@ -132,8 +155,9 @@ async function kuaidi100(trackingNumber: string): Promise<ProviderResult> {
       }
     }
     out.carrier = candidates[0]?.name ?? null;
-    out.note = `tried ${Math.min(candidates.length, 5)} carriers, no checkpoints`;
+    out.note = `tried ${Math.min(candidates.length, 12)} carriers, no checkpoints`;
     return out;
+
   } catch (e) {
     return { ...out, note: e instanceof Error ? e.message : "request failed" };
   }

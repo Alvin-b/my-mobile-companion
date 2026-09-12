@@ -120,7 +120,7 @@ export type Database = {
           descr?: string | null
           description?: string | null
           dest?: string | null
-          id: string
+          id?: string
           imported_at?: string | null
           imported_by?: string | null
           manifest_data?: Json

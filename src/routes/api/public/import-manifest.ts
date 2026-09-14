@@ -15,7 +15,7 @@ type Parsed = {
   manifest_data: Record<string, unknown>; issue?: string;
 };
 const clean = (value: unknown) => String(value ?? "").trim();
-const number = (value: unknown) => { const n = Number(String(value ?? "").replace(/,/g, "")); return Number.isFinite(n) ? n : null; };
+const number = (value: unknown) => { const raw = String(value ?? "").replace(/,/g, "").trim(); if (!raw) return null; const n = Number(raw); return Number.isFinite(n) ? n : null; };
 
 const headerKey = (value: unknown) => clean(value).normalize("NFKC").replace(/[^\p{L}\p{N}]+/gu, "").toLowerCase();
 function column(row: unknown[], names: string[]) { return row.findIndex((cell) => names.some((name) => headerKey(cell) === headerKey(name))); }

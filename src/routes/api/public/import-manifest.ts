@@ -23,14 +23,49 @@ function flexibleColumn(row: unknown[], names: string[]) {
   const exact = column(row, names); if (exact >= 0) return exact;
   return row.findIndex((cell) => { const value = headerKey(cell); return names.some((name) => value.includes(headerKey(name))); });
 }
+function cellAddress(address: string) {
+  const match = /^([A-Z]+)(\d+)$/i.exec(address); if (!match) return null;
+  let columnNumber = 0; for (const character of match[1].toUpperCase()) columnNumber = columnNumber * 26 + character.charCodeAt(0) - 64;
+  return { row: Number(match[2]) - 1, column: columnNumber - 1 };
+}
 const decode = (s: string) => s.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
 function xlsxRows(source: ArrayBuffer): unknown[][] {
   const bytes = Buffer.from(source), end = bytes.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06])); if (end < 0) throw new Error("This is not a valid .xlsx workbook.");
   let at = bytes.readUInt32LE(end + 16); const count = bytes.readUInt16LE(end + 10), entries = new Map<string, Buffer>();
   for (let i = 0; i < count; i++) { const method = bytes.readUInt16LE(at + 10), size = bytes.readUInt32LE(at + 20), n = bytes.readUInt16LE(at + 28), e = bytes.readUInt16LE(at + 30), c = bytes.readUInt16LE(at + 32), local = bytes.readUInt32LE(at + 42), name = bytes.subarray(at + 46, at + 46 + n).toString(); const ln = bytes.readUInt16LE(local + 26), le = bytes.readUInt16LE(local + 28), data = bytes.subarray(local + 30 + ln + le, local + 30 + ln + le + size); entries.set(name, method === 8 ? inflateRawSync(data) : data); at += 46 + n + e + c; }
   const ss = entries.get("xl/sharedStrings.xml")?.toString() ?? "", strings = [...ss.matchAll(/<si>([\s\S]*?)<\/si>/g)].map(m => decode([...m[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map(x => x[1]).join(""))), sheet = entries.get("xl/worksheets/sheet1.xml")?.toString(); if (!sheet) throw new Error("The first worksheet could not be read."); const rows: unknown[][] = [];
-  for (const match of sheet.matchAll(/<row[^>]*r="(\d+)"[^>]*>([\s\S]*?)<\/row>/g)) { const row: unknown[] = []; for (const cell of match[2].matchAll(/<c[^>]*r="([A-Z]+)\d+"(?:[^>]*t="([^"]+)")?[^>]*>([\s\S]*?)<\/c>/g)) { let col = 0; for (const ch of cell[1]) col = col * 26 + ch.charCodeAt(0) - 64; const raw = /<v>([\s\S]*?)<\/v>/.exec(cell[3])?.[1] ?? "", inline = /<t[^>]*>([\s\S]*?)<\/t>/.exec(cell[3])?.[1], formula = /<f[^>]*>([\s\S]*?)<\/f>/.exec(cell[3])?.[1]; row[col - 1] = cell[2] === "s" ? strings[Number(raw)] ?? "" : inline != null ? decode(inline) : decode(raw || formula || ""); } rows[Number(match[1]) - 1] = row; }
+  for (const match of sheet.matchAll(/<row[^>]*r="(\d+)"[^>]*>([\s\S]*?)<\/row>/g)) { const row: unknown[] = []; for (const cell of match[2].matchAll(/<c[^>]*r="([A-Z]+)\d+"(?:[^>]*t="([^"]+)")?[^>]*>([\s\S]*?)<\/c>/g)) { let col = 0; for (const ch of cell[1]) col = col * 26 + ch.charCodeAt(0) - 64; const raw = /<v>([\s\S]*?)<\/v>/.exec(cell[3])?.[1] ?? "", inline = /<t[^>]*>([\s\S]*?)<\/t>/.exec(cell[3])?.[1], formula = /<f[^>]*>([\s\S]*?)<\/f>/.exec(cell[3])?.[1]; row[col - 1] = cell[2] === "s" ? strings[Number(raw)] ?? "" : inline != null ? decode(inline) : decode(formula || raw || ""); } rows[Number(match[1]) - 1] = row; }
+  // Sea manifests use vertically merged client and billing cells. Excel keeps
+  // a merged value only in its first cell, so copy that value to its lines.
+  for (const merged of sheet.matchAll(/<mergeCell\s+ref="([A-Z]+\d+):([A-Z]+\d+)"\s*\/>/g)) {
+    const start = cellAddress(merged[1]), endAddress = cellAddress(merged[2]); if (!start || !endAddress) continue;
+    const value = rows[start.row]?.[start.column]; if (value == null || value === "") continue;
+    for (let rowNumber = start.row; rowNumber <= endAddress.row; rowNumber++) {
+      rows[rowNumber] ??= [];
+      for (let columnNumber = start.column; columnNumber <= endAddress.column; columnNumber++) if (rows[rowNumber][columnNumber] == null || rows[rowNumber][columnNumber] === "") rows[rowNumber][columnNumber] = value;
+    }
+  }
   return rows;
+}
+function total(rows: Parsed[], field: "pcs" | "weight" | "volume_cbm") { const values = rows.map((row) => row[field]).filter((value): value is number => value != null); return values.length ? values.reduce((sum, value) => sum + value, 0) : null; }
+function consolidateSeaRows(rows: Parsed[]) {
+  const groups: Parsed[][] = [];
+  for (const row of rows) {
+    const previous = groups[groups.length - 1]; const grouped = previous?.[0];
+    const sameBill = grouped?.billing_formula && grouped.billing_formula === row.billing_formula;
+    const sameClient = grouped?.consignee === row.consignee;
+    if (sameBill && sameClient) previous.push(row); else groups.push([row]);
+  }
+  return groups.map((group) => {
+    if (group.length === 1) return group[0];
+    const first = group[0], lineItems = group.map((row) => ({ row_number: row.row_number, warehouse_receipt_number: row.warehouse_receipt_number, pcs: row.pcs, weight: row.weight, volume_cbm: row.volume_cbm, description: row.description, container_position: row.container_position, columns: row.manifest_data.columns }));
+    return {
+      ...first,
+      pcs: total(group, "pcs"), weight: total(group, "weight"), volume_cbm: total(group, "volume_cbm"),
+      description: [...new Set(group.map((row) => row.description).filter(Boolean))].join(" · ") || null,
+      manifest_data: { ...first.manifest_data, group: { line_count: group.length, receipt_numbers: group.map((row) => row.tracking_number), billing_is_group_total: true }, line_items: lineItems }
+    };
+  });
 }
 function parseSheet(file: ArrayBuffer, category: Category): Parsed[] {
   const rows = xlsxRows(file);
@@ -97,8 +132,9 @@ function parseSheet(file: ArrayBuffer, category: Category): Parsed[] {
       issue: clean(row[customer]) ? undefined : "Client name is missing"
     });
   });
-  if (!output.length) throw new Error("No manifest package rows were found.");
-  return output;
+  const parsed = sea ? consolidateSeaRows(output) : output;
+  if (!parsed.length) throw new Error("No manifest package rows were found.");
+  return parsed;
 }
 
 export const Route = createFileRoute("/api/public/import-manifest")({ server: { handlers: { POST: async ({ request }) => {

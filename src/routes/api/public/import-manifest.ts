@@ -11,7 +11,7 @@ type Parsed = {
   manifest_line_date: string | null; manifest_signature: string | null;
   warehouse_received_date: string | null; warehouse_receipt_number: string | null;
   container_position: string | null; billing_formula: string | null;
-  billing_amount: number | null; billing_currency: string | null; billing_rate: number | null;
+  billing_amount: number | null; billing_currency: string | null; billing_rate: number | null; billing_total_cbm: number | null;
   manifest_data: Record<string, unknown>; issue?: string;
 };
 const clean = (value: unknown) => String(value ?? "").trim();
@@ -67,15 +67,16 @@ function consolidateSeaRows(rows: Parsed[]) {
     const groupBillAmount = group.find((row) => row.billing_amount != null)?.billing_amount ?? null;
     const groupBillCurrency = group.find((row) => row.billing_currency)?.billing_currency ?? null;
     const groupBillRate = group.find((row) => row.billing_rate != null)?.billing_rate ?? null;
+    const groupTotalCbm = group.find((row) => row.billing_total_cbm != null)?.billing_total_cbm ?? total(group, "volume_cbm");
     const lineItems = group.map((row) => ({ row_number: row.row_number, warehouse_receipt_number: row.warehouse_receipt_number, client_name_on_line: row.consignee, pcs: row.pcs, weight: row.weight, volume_cbm: row.volume_cbm, description: row.description, container_position: row.container_position, columns: row.manifest_data.columns }));
     return {
       ...first,
       consignee: packageOwner,
-      pcs: total(group, "pcs"), weight: total(group, "weight"), volume_cbm: total(group, "volume_cbm"),
+      pcs: total(group, "pcs"), weight: total(group, "weight"), volume_cbm: groupTotalCbm,
       description: [...new Set(group.map((row) => row.description).filter(Boolean))].join(" · ") || null,
       cost: groupBillCurrency === "KES" ? groupBillAmount : null,
       billing_formula: groupBill, billing_amount: groupBillAmount, billing_currency: groupBillCurrency, billing_rate: groupBillRate,
-      manifest_data: { ...first.manifest_data, group: { line_count: group.length, parent_tracking_number: first.tracking_number, receipt_numbers: group.map((row) => row.tracking_number), package_owner: packageOwner, billing_is_group_total: true }, line_items: lineItems, billing: { raw: groupBill, amount: groupBillAmount, currency: groupBillCurrency, rate: groupBillRate } }
+      manifest_data: { ...first.manifest_data, group: { line_count: group.length, parent_tracking_number: first.tracking_number, receipt_numbers: group.map((row) => row.tracking_number), package_owner: packageOwner, billing_is_group_total: true }, line_items: lineItems, billing: { raw: groupBill, amount: groupBillAmount, currency: groupBillCurrency, rate: groupBillRate, total_cbm: groupTotalCbm } }
     };
   });
 }
@@ -118,6 +119,7 @@ function parseSheet(file: ArrayBuffer, category: Category): Parsed[] {
     const rawCurrency = billMatch?.[2]?.toUpperCase() ?? null;
     const billingCurrency = rawCurrency === "CNY" || rawCurrency === "元" || rawCurrency === "人民币" ? "RMB" : rawCurrency;
     const billingRate = number(rateMatch?.[2]);
+    const billingTotalCbm = number(rateMatch?.[1]);
     const kesAmount = totalKes >= 0 ? number(row[totalKes]) : null;
     // cargo_packages.cost is company KES revenue. Never store RMB/USD as KES.
     const cost = sea ? (billingCurrency === "KES" ? billingAmount : null) : kesAmount;
@@ -139,8 +141,8 @@ function parseSheet(file: ArrayBuffer, category: Category): Parsed[] {
       warehouse_receipt_number: sea ? track : null,
       container_position: containerPosition >= 0 ? clean(row[containerPosition]) || null : null,
       billing_formula: sea ? costValue || null : null,
-      billing_amount: sea ? billingAmount : null, billing_currency: sea ? billingCurrency : null, billing_rate: sea ? billingRate : null,
-      manifest_data: { category, source_row: rowNumber, metadata, columns, billing: { raw: costValue, amount: billingAmount, currency: billingCurrency, rate: billingRate } },
+      billing_amount: sea ? billingAmount : null, billing_currency: sea ? billingCurrency : null, billing_rate: sea ? billingRate : null, billing_total_cbm: sea ? billingTotalCbm : null,
+      manifest_data: { category, source_row: rowNumber, metadata, columns, billing: { raw: costValue, amount: billingAmount, currency: billingCurrency, rate: billingRate, total_cbm: billingTotalCbm } },
       issue: clean(row[customer]) ? undefined : "Client name is missing"
     });
   });

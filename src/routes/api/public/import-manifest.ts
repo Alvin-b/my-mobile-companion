@@ -36,13 +36,14 @@ function xlsxRows(source: ArrayBuffer): unknown[][] {
   const ss = entries.get("xl/sharedStrings.xml")?.toString() ?? "", strings = [...ss.matchAll(/<si>([\s\S]*?)<\/si>/g)].map(m => decode([...m[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map(x => x[1]).join(""))), sheet = entries.get("xl/worksheets/sheet1.xml")?.toString(); if (!sheet) throw new Error("The first worksheet could not be read."); const rows: unknown[][] = [];
   for (const match of sheet.matchAll(/<row[^>]*r="(\d+)"[^>]*>([\s\S]*?)<\/row>/g)) { const row: unknown[] = []; for (const cell of match[2].matchAll(/<c[^>]*r="([A-Z]+)\d+"(?:[^>]*t="([^"]+)")?[^>]*>([\s\S]*?)<\/c>/g)) { let col = 0; for (const ch of cell[1]) col = col * 26 + ch.charCodeAt(0) - 64; const raw = /<v>([\s\S]*?)<\/v>/.exec(cell[3])?.[1] ?? "", inline = /<t[^>]*>([\s\S]*?)<\/t>/.exec(cell[3])?.[1], formula = /<f[^>]*>([\s\S]*?)<\/f>/.exec(cell[3])?.[1]; row[col - 1] = cell[2] === "s" ? strings[Number(raw)] ?? "" : inline != null ? decode(inline) : decode(formula || raw || ""); } rows[Number(match[1]) - 1] = row; }
   // Sea manifests use vertically merged client and billing cells. Excel keeps
-  // a merged value only in its first cell, so copy that value to its lines.
+  // the authoritative owner/charge in the top-left cell. Some exports retain
+  // hidden values under a merge, which must not replace the visible parent.
   for (const merged of sheet.matchAll(/<mergeCell\s+ref="([A-Z]+\d+):([A-Z]+\d+)"\s*\/>/g)) {
     const start = cellAddress(merged[1]), endAddress = cellAddress(merged[2]); if (!start || !endAddress) continue;
     const value = rows[start.row]?.[start.column]; if (value == null || value === "") continue;
     for (let rowNumber = start.row; rowNumber <= endAddress.row; rowNumber++) {
       rows[rowNumber] ??= [];
-      for (let columnNumber = start.column; columnNumber <= endAddress.column; columnNumber++) if (rows[rowNumber][columnNumber] == null || rows[rowNumber][columnNumber] === "") rows[rowNumber][columnNumber] = value;
+      for (let columnNumber = start.column; columnNumber <= endAddress.column; columnNumber++) rows[rowNumber][columnNumber] = value;
     }
   }
   return rows;
@@ -50,12 +51,15 @@ function xlsxRows(source: ArrayBuffer): unknown[][] {
 function total(rows: Parsed[], field: "pcs" | "weight" | "volume_cbm") { const values = rows.map((row) => row[field]).filter((value): value is number => value != null); return values.length ? values.reduce((sum, value) => sum + value, 0) : null; }
 function usableClientName(value: string) { return Boolean(value && value !== "Unassigned client" && !/^\d+$/.test(value)); }
 function consolidateSeaRows(rows: Parsed[]) {
-  const groups = new Map<string, Parsed[]>();
+  const groups: Parsed[][] = [];
   for (const row of rows) {
-    const group = groups.get(row.tracking_number) ?? [];
-    group.push(row); groups.set(row.tracking_number, group);
+    const previous = groups[groups.length - 1]; const parent = previous?.[0];
+    // The merged 客户名 + 账单 cells define a payable client package. This is
+    // intentionally not just a matching tracking number: a parent can contain
+    // several tracking/warehouse receipt lines under one client and one bill.
+    if (parent?.consignee === row.consignee && parent.billing_formula && parent.billing_formula === row.billing_formula) previous.push(row); else groups.push([row]);
   }
-  return [...groups.values()].map((group) => {
+  return groups.map((group) => {
     if (group.length === 1) return group[0];
     const first = group[0];
     const packageOwner = group.find((row) => usableClientName(row.consignee))?.consignee ?? first.consignee;
@@ -71,7 +75,7 @@ function consolidateSeaRows(rows: Parsed[]) {
       description: [...new Set(group.map((row) => row.description).filter(Boolean))].join(" · ") || null,
       cost: groupBillCurrency === "KES" ? groupBillAmount : null,
       billing_formula: groupBill, billing_amount: groupBillAmount, billing_currency: groupBillCurrency, billing_rate: groupBillRate,
-      manifest_data: { ...first.manifest_data, group: { line_count: group.length, receipt_number: first.tracking_number, package_owner: packageOwner, billing_is_group_total: true }, line_items: lineItems, billing: { raw: groupBill, amount: groupBillAmount, currency: groupBillCurrency, rate: groupBillRate } }
+      manifest_data: { ...first.manifest_data, group: { line_count: group.length, parent_tracking_number: first.tracking_number, receipt_numbers: group.map((row) => row.tracking_number), package_owner: packageOwner, billing_is_group_total: true }, line_items: lineItems, billing: { raw: groupBill, amount: groupBillAmount, currency: groupBillCurrency, rate: groupBillRate } }
     };
   });
 }

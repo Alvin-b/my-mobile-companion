@@ -19,13 +19,17 @@ const number = (value: unknown) => { const n = Number(String(value ?? "").replac
 
 const headerKey = (value: unknown) => clean(value).normalize("NFKC").replace(/[^\p{L}\p{N}]+/gu, "").toLowerCase();
 function column(row: unknown[], names: string[]) { return row.findIndex((cell) => names.some((name) => headerKey(cell) === headerKey(name))); }
+function flexibleColumn(row: unknown[], names: string[]) {
+  const exact = column(row, names); if (exact >= 0) return exact;
+  return row.findIndex((cell) => { const value = headerKey(cell); return names.some((name) => value.includes(headerKey(name))); });
+}
 const decode = (s: string) => s.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
 function xlsxRows(source: ArrayBuffer): unknown[][] {
   const bytes = Buffer.from(source), end = bytes.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06])); if (end < 0) throw new Error("This is not a valid .xlsx workbook.");
   let at = bytes.readUInt32LE(end + 16); const count = bytes.readUInt16LE(end + 10), entries = new Map<string, Buffer>();
   for (let i = 0; i < count; i++) { const method = bytes.readUInt16LE(at + 10), size = bytes.readUInt32LE(at + 20), n = bytes.readUInt16LE(at + 28), e = bytes.readUInt16LE(at + 30), c = bytes.readUInt16LE(at + 32), local = bytes.readUInt32LE(at + 42), name = bytes.subarray(at + 46, at + 46 + n).toString(); const ln = bytes.readUInt16LE(local + 26), le = bytes.readUInt16LE(local + 28), data = bytes.subarray(local + 30 + ln + le, local + 30 + ln + le + size); entries.set(name, method === 8 ? inflateRawSync(data) : data); at += 46 + n + e + c; }
   const ss = entries.get("xl/sharedStrings.xml")?.toString() ?? "", strings = [...ss.matchAll(/<si>([\s\S]*?)<\/si>/g)].map(m => decode([...m[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map(x => x[1]).join(""))), sheet = entries.get("xl/worksheets/sheet1.xml")?.toString(); if (!sheet) throw new Error("The first worksheet could not be read."); const rows: unknown[][] = [];
-  for (const match of sheet.matchAll(/<row[^>]*r="(\d+)"[^>]*>([\s\S]*?)<\/row>/g)) { const row: unknown[] = []; for (const cell of match[2].matchAll(/<c[^>]*r="([A-Z]+)\d+"(?:[^>]*t="([^"]+)")?[^>]*>([\s\S]*?)<\/c>/g)) { let col = 0; for (const ch of cell[1]) col = col * 26 + ch.charCodeAt(0) - 64; const raw = /<v>([\s\S]*?)<\/v>/.exec(cell[3])?.[1] ?? "", inline = /<t[^>]*>([\s\S]*?)<\/t>/.exec(cell[3])?.[1]; row[col - 1] = cell[2] === "s" ? strings[Number(raw)] ?? "" : inline != null ? decode(inline) : decode(raw); } rows[Number(match[1]) - 1] = row; }
+  for (const match of sheet.matchAll(/<row[^>]*r="(\d+)"[^>]*>([\s\S]*?)<\/row>/g)) { const row: unknown[] = []; for (const cell of match[2].matchAll(/<c[^>]*r="([A-Z]+)\d+"(?:[^>]*t="([^"]+)")?[^>]*>([\s\S]*?)<\/c>/g)) { let col = 0; for (const ch of cell[1]) col = col * 26 + ch.charCodeAt(0) - 64; const raw = /<v>([\s\S]*?)<\/v>/.exec(cell[3])?.[1] ?? "", inline = /<t[^>]*>([\s\S]*?)<\/t>/.exec(cell[3])?.[1], formula = /<f[^>]*>([\s\S]*?)<\/f>/.exec(cell[3])?.[1]; row[col - 1] = cell[2] === "s" ? strings[Number(raw)] ?? "" : inline != null ? decode(inline) : decode(raw || formula || ""); } rows[Number(match[1]) - 1] = row; }
   return rows;
 }
 function parseSheet(file: ArrayBuffer, category: Category): Parsed[] {
@@ -52,17 +56,21 @@ function parseSheet(file: ArrayBuffer, category: Category): Parsed[] {
   const paymentMode = sea ? -1 : column(header, ["Payment mode"]);
   const lineDate = sea ? -1 : column(header, ["DATE"]);
   const signature = sea ? -1 : column(header, ["Signature"]);
-  const billing = sea ? column(header, ["账单"]) : -1;
+  const billing = sea ? flexibleColumn(header, ["账单", "账单金额", "费用", "应收", "结算金额", "Bill", "Billing"]) : -1;
   const output: Parsed[] = [];
   rows.slice(headerIndex + 1).forEach((row, offset) => {
     const track = clean(row[tracking]);
     if (!track) return;
     const rowNumber = headerIndex + offset + 2;
     const costValue = sea ? clean(row[billing]) : "";
-    const billMatch = costValue.match(/=\s*([\d,.]+)\s*(KES|RMB|USD)?/i) || costValue.match(/([\d,.]+)\s*(KES|RMB|USD)/i);
-    const billingAmount = number(billMatch?.[1]);
-    const billingCurrency = billMatch?.[2]?.toUpperCase() ?? null;
-    const rateMatch = costValue.match(/^\s*([\d,.]+)\s*\*\s*([\d,.]+)/);
+    const billMatch = costValue.match(/=\s*([\d,.]+)\s*(KES|RMB|USD|CNY|元|人民币)?/i) || costValue.match(/([\d,.]+)\s*(KES|RMB|USD|CNY|元|人民币)/i);
+    const rateMatch = costValue.match(/([\d,.]+)\s*[x×*]\s*([\d,.]+)/i);
+    // Some Excel exports save only a formula such as 0.11*3800. Safely derive
+    // the result without evaluating arbitrary formula text.
+    const calculatedAmount = rateMatch ? number(rateMatch[1])! * number(rateMatch[2])! : null;
+    const billingAmount = number(billMatch?.[1]) ?? calculatedAmount;
+    const rawCurrency = billMatch?.[2]?.toUpperCase() ?? null;
+    const billingCurrency = rawCurrency === "CNY" || rawCurrency === "元" || rawCurrency === "人民币" ? "RMB" : rawCurrency;
     const billingRate = number(rateMatch?.[2]);
     const kesAmount = totalKes >= 0 ? number(row[totalKes]) : null;
     // cargo_packages.cost is company KES revenue. Never store RMB/USD as KES.

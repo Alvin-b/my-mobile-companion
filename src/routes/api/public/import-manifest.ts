@@ -3,7 +3,17 @@ import { inflateRawSync } from "node:zlib";
 import { verifyStaffJwt } from "@/lib/storage-sign.server";
 
 type Category = "general" | "special" | "sea";
-type Parsed = { row_number: number; id: string; tracking_number: string; consignee: string; pcs: number | null; weight: number | null; volume_cbm: number | null; cost: number | null; description: string | null; manifest_data: Record<string, unknown>; issue?: string };
+type Parsed = {
+  row_number: number; id: string; tracking_number: string; consignee: string;
+  pcs: number | null; weight: number | null; volume_cbm: number | null; cost: number | null;
+  description: string | null; unit_price_usd: number | null; total_price_rmb: number | null;
+  total_price_usd: number | null; total_price_kes: number | null; payment_mode: string | null;
+  manifest_line_date: string | null; manifest_signature: string | null;
+  warehouse_received_date: string | null; warehouse_receipt_number: string | null;
+  container_position: string | null; billing_formula: string | null;
+  billing_amount: number | null; billing_currency: string | null; billing_rate: number | null;
+  manifest_data: Record<string, unknown>; issue?: string;
+};
 const clean = (value: unknown) => String(value ?? "").trim();
 const number = (value: unknown) => { const n = Number(String(value ?? "").replace(/,/g, "")); return Number.isFinite(n) ? n : null; };
 
@@ -32,18 +42,53 @@ function parseSheet(file: ArrayBuffer, category: Category): Parsed[] {
   const weight = column(header, sea ? ["重量"] : ["Chargeable Weight"]);
   const cbm = sea ? column(header, ["体积"]) : -1;
   const description = sea ? column(header, ["入库品名"]) : -1;
-  const kes = sea ? column(header, ["账单"]) : column(header, ["Total price KES"]);
+  const receivedDate = sea ? column(header, ["入仓日期"]) : -1;
+  const serialNumber = sea ? column(header, ["序号"]) : -1;
+  const containerPosition = sea ? column(header, ["装柜位置"]) : -1;
+  const unitUsd = sea ? -1 : column(header, ["Unit Price USD"]);
+  const totalRmb = sea ? -1 : column(header, ["Total price RMB"]);
+  const totalUsd = sea ? -1 : column(header, ["Total price USD"]);
+  const totalKes = sea ? -1 : column(header, ["Total price KES"]);
+  const paymentMode = sea ? -1 : column(header, ["Payment mode"]);
+  const lineDate = sea ? -1 : column(header, ["DATE"]);
+  const signature = sea ? -1 : column(header, ["Signature"]);
+  const billing = sea ? column(header, ["账单"]) : -1;
   const output: Parsed[] = [];
   rows.slice(headerIndex + 1).forEach((row, offset) => {
     const track = clean(row[tracking]);
     if (!track) return;
     const rowNumber = headerIndex + offset + 2;
-    const costValue = clean(row[kes]);
+    const costValue = sea ? clean(row[billing]) : "";
     const billMatch = costValue.match(/=\s*([\d,.]+)\s*(KES|RMB|USD)?/i) || costValue.match(/([\d,.]+)\s*(KES|RMB|USD)/i);
-    const cost = sea ? number(billMatch?.[1]) : number(row[kes]);
+    const billingAmount = number(billMatch?.[1]);
+    const billingCurrency = billMatch?.[2]?.toUpperCase() ?? null;
+    const rateMatch = costValue.match(/^\s*([\d,.]+)\s*\*\s*([\d,.]+)/);
+    const billingRate = number(rateMatch?.[2]);
+    const kesAmount = totalKes >= 0 ? number(row[totalKes]) : null;
+    // cargo_packages.cost is company KES revenue. Never store RMB/USD as KES.
+    const cost = sea ? (billingCurrency === "KES" ? billingAmount : null) : kesAmount;
     const columns: Record<string, unknown> = {};
     header.forEach((name, index) => { const key = clean(name); if (key) columns[key] = row[index] ?? null; });
-    output.push({ row_number: rowNumber, id: sea ? `${track}-S${rowNumber}` : track, tracking_number: track, consignee: clean(row[customer]) || "Unassigned client", pcs: number(row[pcs]), weight: number(row[weight]), volume_cbm: cbm >= 0 ? number(row[cbm]) : null, cost, description: description >= 0 ? clean(row[description]) || null : `${category === "special" ? "Special" : "General"} air cargo`, manifest_data: { category, source_row: rowNumber, metadata, columns, billing: { raw: costValue, amount: billMatch?.[1] ? number(billMatch[1]) : null, currency: billMatch?.[2]?.toUpperCase() ?? null } }, issue: clean(row[customer]) ? undefined : "Client name is missing" });
+    output.push({
+      row_number: rowNumber, id: sea ? `${track}-S${rowNumber}` : track,
+      tracking_number: track, consignee: clean(row[customer]) || "Unassigned client",
+      pcs: number(row[pcs]), weight: number(row[weight]), volume_cbm: cbm >= 0 ? number(row[cbm]) : null,
+      cost, description: description >= 0 ? clean(row[description]) || null : `${category === "special" ? "Special" : "General"} air cargo`,
+      unit_price_usd: unitUsd >= 0 ? number(row[unitUsd]) : null,
+      total_price_rmb: totalRmb >= 0 ? number(row[totalRmb]) : null,
+      total_price_usd: totalUsd >= 0 ? number(row[totalUsd]) : null,
+      total_price_kes: kesAmount,
+      payment_mode: paymentMode >= 0 ? clean(row[paymentMode]) || null : null,
+      manifest_line_date: lineDate >= 0 ? clean(row[lineDate]) || null : null,
+      manifest_signature: signature >= 0 ? clean(row[signature]) || null : null,
+      warehouse_received_date: receivedDate >= 0 ? clean(row[receivedDate]) || null : null,
+      warehouse_receipt_number: sea ? track : null,
+      container_position: containerPosition >= 0 ? clean(row[containerPosition]) || null : null,
+      billing_formula: sea ? costValue || null : null,
+      billing_amount: sea ? billingAmount : null, billing_currency: sea ? billingCurrency : null, billing_rate: sea ? billingRate : null,
+      manifest_data: { category, source_row: rowNumber, metadata, columns, billing: { raw: costValue, amount: billingAmount, currency: billingCurrency, rate: billingRate } },
+      issue: clean(row[customer]) ? undefined : "Client name is missing"
+    });
   });
   if (!output.length) throw new Error("No manifest package rows were found.");
   return output;
@@ -54,7 +99,7 @@ export const Route = createFileRoute("/api/public/import-manifest")({ server: { 
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: employee } = await supabaseAdmin.from("employees").select("role,is_active").eq("user_id", user.id).maybeSingle();
-  if (!employee?.is_active || !["admin", "sales_manager", "sm"].includes(employee.role)) return Response.json({ error: "Active Sales Manager or administrator access is required" }, { status: 403 });
+  if (!employee?.is_active) return Response.json({ error: "An active DEX employee account is required" }, { status: 403 });
   const form = await request.formData(); const category = clean(form.get("category")) as Category; const upload = form.get("file"); const commit = clean(form.get("commit")) === "true";
   if (!["general", "special", "sea"].includes(category)) return Response.json({ error: "Choose General, Special, or Sea cargo." }, { status: 400 });
   if (!(upload instanceof File) || !upload.name.toLowerCase().endsWith(".xlsx")) return Response.json({ error: "Upload an Excel .xlsx manifest." }, { status: 400 });
@@ -79,6 +124,21 @@ export const Route = createFileRoute("/api/public/import-manifest")({ server: { 
     weight: p.weight,
     volume_cbm: p.volume_cbm,
     cost: p.cost,
+    chargeable_weight: p.weight,
+    unit_price_usd: p.unit_price_usd,
+    total_price_rmb: p.total_price_rmb,
+    total_price_usd: p.total_price_usd,
+    total_price_kes: p.total_price_kes,
+    payment_mode: p.payment_mode,
+    manifest_line_date: p.manifest_line_date,
+    manifest_signature: p.manifest_signature,
+    warehouse_received_date: p.warehouse_received_date,
+    warehouse_receipt_number: p.warehouse_receipt_number,
+    container_position: p.container_position,
+    billing_formula: p.billing_formula,
+    billing_amount: p.billing_amount,
+    billing_currency: p.billing_currency,
+    billing_rate: p.billing_rate,
     description: p.description,
     mode: category === "sea" ? "sea" : "air",
     cargo_category: category,

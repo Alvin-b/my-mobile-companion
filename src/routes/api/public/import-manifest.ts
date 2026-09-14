@@ -96,13 +96,16 @@ function parseSheet(file: ArrayBuffer, category: Category): Parsed[] {
   const description = sea ? column(header, ["入库品名"]) : -1;
   const receivedDate = sea ? column(header, ["入仓日期"]) : -1;
   const containerPosition = sea ? column(header, ["装柜位置"]) : -1;
-  const unitUsd = sea ? -1 : column(header, ["Unit Price USD"]);
-  const totalRmb = sea ? -1 : column(header, ["Total price RMB"]);
-  const totalUsd = sea ? -1 : column(header, ["Total price USD"]);
-  const totalKes = sea ? -1 : column(header, ["Total price KES"]);
-  const paymentMode = sea ? -1 : column(header, ["Payment mode"]);
-  const lineDate = sea ? -1 : column(header, ["DATE"]);
-  const signature = sea ? -1 : column(header, ["Signature"]);
+  // Air manifests are supplied by more than one forwarding partner.  Keep the
+  // strict names first, but accept harmless spelling/line-break variants so
+  // General and Special sheets retain every commercial value.
+  const unitUsd = sea ? -1 : flexibleColumn(header, ["Unit Price USD", "Unit price (USD)", "Unit price"]);
+  const totalRmb = sea ? -1 : flexibleColumn(header, ["Total price RMB", "Total Price (RMB)", "Total RMB", "RMB"]);
+  const totalUsd = sea ? -1 : flexibleColumn(header, ["Total price USD", "Total Price (USD)", "Total USD"]);
+  const totalKes = sea ? -1 : flexibleColumn(header, ["Total price KES", "Total Price (KES)", "Total KES", "KES"]);
+  const paymentMode = sea ? -1 : flexibleColumn(header, ["Payment mode", "Payment Mode", "Payment method"]);
+  const lineDate = sea ? -1 : flexibleColumn(header, ["DATE", "Date"]);
+  const signature = sea ? -1 : flexibleColumn(header, ["Signature", "Signed by"]);
   const billing = sea ? flexibleColumn(header, ["账单", "账单金额", "费用", "应收", "结算金额", "Bill", "Billing"]) : -1;
   const output: Parsed[] = [];
   rows.slice(headerIndex + 1).forEach((row, offset) => {
@@ -122,6 +125,8 @@ function parseSheet(file: ArrayBuffer, category: Category): Parsed[] {
     const billingTotalCbm = number(rateMatch?.[1]);
     const kesAmount = totalKes >= 0 ? number(row[totalKes]) : null;
     // cargo_packages.cost is company KES revenue. Never store RMB/USD as KES.
+    // For air cargo the source KES total is the company package value; RMB and
+    // USD are retained separately and never converted or guessed.
     const cost = sea ? (billingCurrency === "KES" ? billingAmount : null) : kesAmount;
     const columns: Record<string, unknown> = {};
     header.forEach((name, index) => { const key = clean(name); if (key) columns[key] = row[index] ?? null; });

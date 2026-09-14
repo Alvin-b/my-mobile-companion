@@ -44,6 +44,7 @@ export const Route = createFileRoute("/api/public/link-payment")({
 
         // Resolve every target package before writing anything.
         const targets: { id: string; cost: number | null; requested: number | null }[] = [];
+        const targetIds = new Set<string>();
         for (const input of inputs) {
           const key = (input.package_id ?? input.order_id ?? input.tracking_number ?? "").trim();
           if (!key) return Response.json({ error: "Every allocation needs a package_id" }, { status: 400 });
@@ -59,6 +60,8 @@ export const Route = createFileRoute("/api/public/link-payment")({
           if (requested != null && (!isFinite(requested) || requested <= 0)) {
             return Response.json({ error: `Invalid amount for package ${key}` }, { status: 400 });
           }
+          if (targetIds.has(pkg.id)) return Response.json({ error: `Package "${key}" was selected more than once` }, { status: 400 });
+          targetIds.add(pkg.id);
           targets.push({ id: pkg.id, cost: pkg.cost == null ? null : Number(pkg.cost), requested });
         }
 
@@ -93,6 +96,17 @@ export const Route = createFileRoute("/api/public/link-payment")({
           if (error) return Response.json({ error: error.message, linked: inserted }, { status: 400 });
           inserted.push(row.id);
         }
+
+        // The SQL trigger also performs this update, but doing it here makes
+        // the API contract explicit and supports installations that have not
+        // yet refreshed their trigger definition.  Paid is the only settled
+        // status exposed by DEX; it is the same business state as "cleared".
+        const { error: paidError } = await supabaseAdmin
+          .from("cargo_packages")
+          .update({ status: "paid", paid_at: new Date().toISOString(), payment_ref: notification.notification_number ?? notification.id, payment_method: "payment_evidence" })
+          .in("id", inserted)
+          .not("status", "in", "(collected,released)");
+        if (paidError) return Response.json({ error: paidError.message, linked: inserted }, { status: 400 });
 
         const { data: updated } = await supabaseAdmin
           .from("cargo_packages")

@@ -48,22 +48,30 @@ function xlsxRows(source: ArrayBuffer): unknown[][] {
   return rows;
 }
 function total(rows: Parsed[], field: "pcs" | "weight" | "volume_cbm") { const values = rows.map((row) => row[field]).filter((value): value is number => value != null); return values.length ? values.reduce((sum, value) => sum + value, 0) : null; }
+function usableClientName(value: string) { return Boolean(value && value !== "Unassigned client" && !/^\d+$/.test(value)); }
 function consolidateSeaRows(rows: Parsed[]) {
-  const groups: Parsed[][] = [];
+  const groups = new Map<string, Parsed[]>();
   for (const row of rows) {
-    const previous = groups[groups.length - 1]; const grouped = previous?.[0];
-    const sameBill = grouped?.billing_formula && grouped.billing_formula === row.billing_formula;
-    const sameClient = grouped?.consignee === row.consignee;
-    if (sameBill && sameClient) previous.push(row); else groups.push([row]);
+    const group = groups.get(row.tracking_number) ?? [];
+    group.push(row); groups.set(row.tracking_number, group);
   }
-  return groups.map((group) => {
+  return [...groups.values()].map((group) => {
     if (group.length === 1) return group[0];
-    const first = group[0], lineItems = group.map((row) => ({ row_number: row.row_number, warehouse_receipt_number: row.warehouse_receipt_number, pcs: row.pcs, weight: row.weight, volume_cbm: row.volume_cbm, description: row.description, container_position: row.container_position, columns: row.manifest_data.columns }));
+    const first = group[0];
+    const packageOwner = group.find((row) => usableClientName(row.consignee))?.consignee ?? first.consignee;
+    const groupBill = group.find((row) => row.billing_amount != null || row.billing_formula)?.billing_formula ?? null;
+    const groupBillAmount = group.find((row) => row.billing_amount != null)?.billing_amount ?? null;
+    const groupBillCurrency = group.find((row) => row.billing_currency)?.billing_currency ?? null;
+    const groupBillRate = group.find((row) => row.billing_rate != null)?.billing_rate ?? null;
+    const lineItems = group.map((row) => ({ row_number: row.row_number, warehouse_receipt_number: row.warehouse_receipt_number, client_name_on_line: row.consignee, pcs: row.pcs, weight: row.weight, volume_cbm: row.volume_cbm, description: row.description, container_position: row.container_position, columns: row.manifest_data.columns }));
     return {
       ...first,
+      consignee: packageOwner,
       pcs: total(group, "pcs"), weight: total(group, "weight"), volume_cbm: total(group, "volume_cbm"),
       description: [...new Set(group.map((row) => row.description).filter(Boolean))].join(" · ") || null,
-      manifest_data: { ...first.manifest_data, group: { line_count: group.length, receipt_numbers: group.map((row) => row.tracking_number), billing_is_group_total: true }, line_items: lineItems }
+      cost: groupBillCurrency === "KES" ? groupBillAmount : null,
+      billing_formula: groupBill, billing_amount: groupBillAmount, billing_currency: groupBillCurrency, billing_rate: groupBillRate,
+      manifest_data: { ...first.manifest_data, group: { line_count: group.length, receipt_number: first.tracking_number, package_owner: packageOwner, billing_is_group_total: true }, line_items: lineItems, billing: { raw: groupBill, amount: groupBillAmount, currency: groupBillCurrency, rate: groupBillRate } }
     };
   });
 }

@@ -47,7 +47,6 @@ function parseSheet(file: ArrayBuffer, category: Category): Parsed[] {
   const cbm = sea ? column(header, ["体积"]) : -1;
   const description = sea ? column(header, ["入库品名"]) : -1;
   const receivedDate = sea ? column(header, ["入仓日期"]) : -1;
-  const serialNumber = sea ? column(header, ["序号"]) : -1;
   const containerPosition = sea ? column(header, ["装柜位置"]) : -1;
   const unitUsd = sea ? -1 : column(header, ["Unit Price USD"]);
   const totalRmb = sea ? -1 : column(header, ["Total price RMB"]);

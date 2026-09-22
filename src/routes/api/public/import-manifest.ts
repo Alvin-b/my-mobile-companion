@@ -206,7 +206,10 @@ export const Route = createFileRoute("/api/public/import-manifest")({ server: { 
     cargo_category: category,
     origin: category === "sea" ? "China" : "Guangzhou",
     dest: "Nairobi",
-    status: "registered",
+    // The operational payment model deliberately has only unpaid and paid.
+    // Imported manifests have not been paid yet, so never re-introduce the
+    // old "registered" status (the database correctly rejects it).
+    status: "unpaid",
     manifest_id: manifestId,
     manifest_name: upload.name,
     imported_by: user.id,

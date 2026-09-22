@@ -108,6 +108,15 @@ export const Route = createFileRoute("/api/public/link-payment")({
           .not("status", "in", "(collected,released)");
         if (paidError) return Response.json({ error: paidError.message, linked: inserted }, { status: 400 });
 
+        // Do not rely only on an installation's database trigger for this
+        // visible queue state.  Once allocations were accepted, the evidence
+        // is no longer actionable and belongs in the linked-evidence archive.
+        const { error: linkedEvidenceError } = await supabaseAdmin
+          .from("payment_notifications")
+          .update({ status: "LINKED", updated_at: new Date().toISOString() })
+          .eq("id", notification.id);
+        if (linkedEvidenceError) return Response.json({ error: linkedEvidenceError.message, linked: inserted }, { status: 400 });
+
         const { data: updated } = await supabaseAdmin
           .from("cargo_packages")
           .select("id, status, cost, paid_at, payment_ref, sales_rep")

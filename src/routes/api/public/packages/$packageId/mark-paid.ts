@@ -11,7 +11,7 @@ export const Route = createFileRoute("/api/public/packages/$packageId/mark-paid"
         const user = await verifyStaffJwt(request);
         if (!user) return new Response("Unauthorized", { status: 401 });
 
-        let body: { payment_method?: string; payment_reference?: string; note?: string };
+        let body: { payment_method?: string; payment_reference?: string; note?: string; commission_employee_id?: string };
         try {
           body = await request.json();
         } catch {
@@ -41,6 +41,26 @@ export const Route = createFileRoute("/api/public/packages/$packageId/mark-paid"
           .maybeSingle();
         if (packageError) return Response.json({ error: packageError.message }, { status: 500 });
         if (!pkg) return Response.json({ error: "Package was not found" }, { status: 404 });
+
+        const commissionEmployeeId = String(body.commission_employee_id ?? "").trim();
+        if (commissionEmployeeId) {
+          const { data: commissionEmployee, error: commissionEmployeeError } = await supabaseAdmin
+            .from("employees")
+            .select("id,role,is_active")
+            .eq("id", commissionEmployeeId)
+            .maybeSingle();
+          if (commissionEmployeeError) return Response.json({ error: commissionEmployeeError.message }, { status: 500 });
+          if (!commissionEmployee?.is_active || ["admin", "finance_manager"].includes(String(commissionEmployee.role).toLowerCase())) {
+            return Response.json({ error: "Choose an active commission-eligible employee." }, { status: 400 });
+          }
+          // Set the owner before the allocation is inserted: the SQL payment
+          // trigger then creates the commission against the selected employee.
+          const { error: assignmentError } = await supabaseAdmin
+            .from("cargo_packages")
+            .update({ commission_employee_id: commissionEmployee.id })
+            .eq("id", pkg.id);
+          if (assignmentError) return Response.json({ error: assignmentError.message }, { status: 400 });
+        }
 
         const alreadyPaid = ["paid", "cleared", "released", "collected"].includes(String(pkg.status ?? "").toLowerCase());
         if (alreadyPaid) {

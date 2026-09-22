@@ -81,7 +81,15 @@ export async function createManagedEmployee(input: z.infer<typeof createEmployee
   if (createError || !created.user) {
     const message = createError?.message ?? "Unable to create the authentication account";
     const duplicate = /already|registered|exists/i.test(message);
-    throw new ApiError(duplicate ? 409 : 400, duplicate ? `The email ${email} is already registered` : message);
+    const weakPassword = /weak|easy to guess|compromised|password/i.test(message);
+    throw new ApiError(
+      duplicate ? 409 : 400,
+      duplicate
+        ? `The email ${email} is already registered`
+        : weakPassword
+          ? "Choose a different temporary password. Use 12+ characters with uppercase, lowercase, a number, and a symbol; do not use a common password."
+          : message,
+    );
   }
 
   const userId = created.user.id;

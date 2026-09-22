@@ -13,14 +13,9 @@ export const rolePrefix: Record<AppRole, string> = {
 
 export const createEmployeeInput = z.object({
   email: z.string().email(),
-  // This mirrors the minimum we present in both desktop and mobile.  Supabase
-  // also checks compromised passwords, so the server still remains the final
-  // authority even when a password passes this local policy.
-  password: z.string().min(12, "Use at least 12 characters.")
-    .regex(/[a-z]/, "Include a lowercase letter.")
-    .regex(/[A-Z]/, "Include an uppercase letter.")
-    .regex(/\d/, "Include a number.")
-    .regex(/[^A-Za-z0-9]/, "Include a symbol."),
+  // Password choice belongs to the company and its users.  The desktop app
+  // deliberately does not impose a length or complexity policy here.
+  password: z.string().min(1, "Enter a password."),
   full_name: z.string().trim().min(2),
   phone: z.string().trim().min(7).max(30).nullable().optional(),
   role: z.enum(appRoles),

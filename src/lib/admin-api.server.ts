@@ -81,13 +81,13 @@ export async function createManagedEmployee(input: z.infer<typeof createEmployee
   if (createError || !created.user) {
     const message = createError?.message ?? "Unable to create the authentication account";
     const duplicate = /already|registered|exists/i.test(message);
-    const weakPassword = /weak|easy to guess|compromised|password/i.test(message);
+    const protectedPassword = /weak|easy to guess|compromised|password/i.test(message);
     throw new ApiError(
       duplicate ? 409 : 400,
       duplicate
         ? `The email ${email} is already registered`
-        : weakPassword
-          ? "Choose a different temporary password. Use 12+ characters with uppercase, lowercase, a number, and a symbol; do not use a common password."
+        : protectedPassword
+          ? "This password is blocked by the Supabase Auth security setting. Disable leaked-password protection in Supabase Authentication settings if you want to permit it."
           : message,
     );
   }

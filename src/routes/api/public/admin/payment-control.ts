@@ -21,6 +21,22 @@ function responseError(error: unknown) {
 
 export const Route = createFileRoute("/api/public/admin/payment-control")({
   server: { handlers: {
+    DELETE: async ({ request }) => {
+      try {
+        const actor = await requireActiveAdmin(request);
+        const input = z.object({
+          allocation_id: z.string().trim().min(1),
+          reason: z.string().trim().min(5).max(1000),
+        }).parse(await request.json());
+        const { data, error } = await supabaseAdmin.rpc("admin_unlink_payment_allocation", {
+          _allocation_id: input.allocation_id,
+          _actor_employee_id: actor.employee.id,
+          _reason: input.reason,
+        });
+        if (error) throw new ApiError(400, error.message);
+        return Response.json({ ok: true, result: data }, { headers: { "cache-control": "no-store" } });
+      } catch (error) { return responseError(error); }
+    },
     PATCH: async ({ request }) => {
       try {
         const actor = await requireActiveAdmin(request);

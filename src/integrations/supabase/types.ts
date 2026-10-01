@@ -1709,6 +1709,14 @@ export type Database = {
       }
     }
     Functions: {
+      admin_unlink_payment_allocation: {
+        Args: {
+          _allocation_id: string
+          _actor_employee_id: string
+          _reason: string
+        }
+        Returns: Json
+      }
       apply_mpesa_payment: {
         Args: {
           _amount: number

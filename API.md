@@ -1224,3 +1224,12 @@ with every successful provider also listed in `external_matches`:
 
 Keyed providers activate automatically once their env var exists — no code change.
 `manual_lookup` now also returns AfterShip, Track123, Kuaidi100, YunExpress and Posta Kenya links.
+## 30. Admin payment control and monthly commissions
+
+All endpoints in this section require an active administrator Supabase bearer token.
+
+- `PATCH /api/public/admin/employees` accepts `employee_id`, `full_name`, `email`, `phone`, and `role`. It synchronizes the employee row, Supabase Auth email/metadata, profile, and role assignment.
+- `PATCH /api/public/admin/payment-control` accepts `payment_notification_id`, corrected `amount`, `sender_phone`, `text_content`, and a required `reason`. The API writes an immutable before/after audit entry to `payment_control_audit`; package allocations are not silently changed by a metadata correction.
+- `GET /api/public/admin/commissions-report?month=YYYY-MM` returns every eligible commission created in the selected month, with employee names, excluding administrators and finance managers. The desktop PDF export formats this response locally.
+
+Apply migrations `20261001090000_admin_payment_control_audit.sql` and `20261001091000_reassign_pending_package_commission.sql` before enabling these admin workflows. The package Sales action uses `PUT /api/public/packages/:packageId/operations` with `commission_employee_id`; reassignment refreshes a pending commission while preserving approved or paid commission records.

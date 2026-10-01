@@ -40,8 +40,10 @@ import { Route as ApiPublicPaymentEvidenceRouteImport } from './routes/api/publi
 import { Route as ApiPublicRevenueSummaryRouteImport } from './routes/api/public/revenue-summary'
 import { Route as ApiPublicSendSmsRouteImport } from './routes/api/public/send-sms'
 import { Route as ApiPublicTrackRouteImport } from './routes/api/public/track'
+import { Route as ApiPublicAdminCommissionsReportRouteImport } from './routes/api/public/admin/commissions-report'
 import { Route as ApiPublicAdminDeleteUserRouteImport } from './routes/api/public/admin/delete-user'
 import { Route as ApiPublicAdminEmployeesRouteImport } from './routes/api/public/admin/employees'
+import { Route as ApiPublicAdminPaymentControlRouteImport } from './routes/api/public/admin/payment-control'
 import { Route as ApiPublicFinanceEtimsSettingsRouteImport } from './routes/api/public/finance/etims-settings'
 import { Route as ApiPublicFinanceExpensesRouteImport } from './routes/api/public/finance/expenses'
 import { Route as ApiPublicFinanceInvoicesRouteImport } from './routes/api/public/finance/invoices'
@@ -207,6 +209,12 @@ const ApiPublicTrackRoute = ApiPublicTrackRouteImport.update({
   path: '/api/public/track',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAdminCommissionsReportRoute =
+  ApiPublicAdminCommissionsReportRouteImport.update({
+    id: '/api/public/admin/commissions-report',
+    path: '/api/public/admin/commissions-report',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicAdminDeleteUserRoute =
   ApiPublicAdminDeleteUserRouteImport.update({
     id: '/api/public/admin/delete-user',
@@ -218,6 +226,12 @@ const ApiPublicAdminEmployeesRoute = ApiPublicAdminEmployeesRouteImport.update({
   path: '/api/public/admin/employees',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAdminPaymentControlRoute =
+  ApiPublicAdminPaymentControlRouteImport.update({
+    id: '/api/public/admin/payment-control',
+    path: '/api/public/admin/payment-control',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicFinanceEtimsSettingsRoute =
   ApiPublicFinanceEtimsSettingsRouteImport.update({
     id: '/api/public/finance/etims-settings',
@@ -299,8 +313,10 @@ export interface FileRoutesByFullPath {
   '/api/public/revenue-summary': typeof ApiPublicRevenueSummaryRoute
   '/api/public/send-sms': typeof ApiPublicSendSmsRoute
   '/api/public/track': typeof ApiPublicTrackRoute
+  '/api/public/admin/commissions-report': typeof ApiPublicAdminCommissionsReportRoute
   '/api/public/admin/delete-user': typeof ApiPublicAdminDeleteUserRoute
   '/api/public/admin/employees': typeof ApiPublicAdminEmployeesRoute
+  '/api/public/admin/payment-control': typeof ApiPublicAdminPaymentControlRoute
   '/api/public/finance/etims-settings': typeof ApiPublicFinanceEtimsSettingsRoute
   '/api/public/finance/expenses': typeof ApiPublicFinanceExpensesRoute
   '/api/public/finance/invoices': typeof ApiPublicFinanceInvoicesRoute
@@ -341,8 +357,10 @@ export interface FileRoutesByTo {
   '/api/public/revenue-summary': typeof ApiPublicRevenueSummaryRoute
   '/api/public/send-sms': typeof ApiPublicSendSmsRoute
   '/api/public/track': typeof ApiPublicTrackRoute
+  '/api/public/admin/commissions-report': typeof ApiPublicAdminCommissionsReportRoute
   '/api/public/admin/delete-user': typeof ApiPublicAdminDeleteUserRoute
   '/api/public/admin/employees': typeof ApiPublicAdminEmployeesRoute
+  '/api/public/admin/payment-control': typeof ApiPublicAdminPaymentControlRoute
   '/api/public/finance/etims-settings': typeof ApiPublicFinanceEtimsSettingsRoute
   '/api/public/finance/expenses': typeof ApiPublicFinanceExpensesRoute
   '/api/public/finance/invoices': typeof ApiPublicFinanceInvoicesRoute
@@ -385,8 +403,10 @@ export interface FileRoutesById {
   '/api/public/revenue-summary': typeof ApiPublicRevenueSummaryRoute
   '/api/public/send-sms': typeof ApiPublicSendSmsRoute
   '/api/public/track': typeof ApiPublicTrackRoute
+  '/api/public/admin/commissions-report': typeof ApiPublicAdminCommissionsReportRoute
   '/api/public/admin/delete-user': typeof ApiPublicAdminDeleteUserRoute
   '/api/public/admin/employees': typeof ApiPublicAdminEmployeesRoute
+  '/api/public/admin/payment-control': typeof ApiPublicAdminPaymentControlRoute
   '/api/public/finance/etims-settings': typeof ApiPublicFinanceEtimsSettingsRoute
   '/api/public/finance/expenses': typeof ApiPublicFinanceExpensesRoute
   '/api/public/finance/invoices': typeof ApiPublicFinanceInvoicesRoute
@@ -430,8 +450,10 @@ export interface FileRouteTypes {
     | '/api/public/revenue-summary'
     | '/api/public/send-sms'
     | '/api/public/track'
+    | '/api/public/admin/commissions-report'
     | '/api/public/admin/delete-user'
     | '/api/public/admin/employees'
+    | '/api/public/admin/payment-control'
     | '/api/public/finance/etims-settings'
     | '/api/public/finance/expenses'
     | '/api/public/finance/invoices'
@@ -472,8 +494,10 @@ export interface FileRouteTypes {
     | '/api/public/revenue-summary'
     | '/api/public/send-sms'
     | '/api/public/track'
+    | '/api/public/admin/commissions-report'
     | '/api/public/admin/delete-user'
     | '/api/public/admin/employees'
+    | '/api/public/admin/payment-control'
     | '/api/public/finance/etims-settings'
     | '/api/public/finance/expenses'
     | '/api/public/finance/invoices'
@@ -515,8 +539,10 @@ export interface FileRouteTypes {
     | '/api/public/revenue-summary'
     | '/api/public/send-sms'
     | '/api/public/track'
+    | '/api/public/admin/commissions-report'
     | '/api/public/admin/delete-user'
     | '/api/public/admin/employees'
+    | '/api/public/admin/payment-control'
     | '/api/public/finance/etims-settings'
     | '/api/public/finance/expenses'
     | '/api/public/finance/invoices'
@@ -552,8 +578,10 @@ export interface RootRouteChildren {
   ApiPublicRevenueSummaryRoute: typeof ApiPublicRevenueSummaryRoute
   ApiPublicSendSmsRoute: typeof ApiPublicSendSmsRoute
   ApiPublicTrackRoute: typeof ApiPublicTrackRoute
+  ApiPublicAdminCommissionsReportRoute: typeof ApiPublicAdminCommissionsReportRoute
   ApiPublicAdminDeleteUserRoute: typeof ApiPublicAdminDeleteUserRoute
   ApiPublicAdminEmployeesRoute: typeof ApiPublicAdminEmployeesRoute
+  ApiPublicAdminPaymentControlRoute: typeof ApiPublicAdminPaymentControlRoute
   ApiPublicFinanceEtimsSettingsRoute: typeof ApiPublicFinanceEtimsSettingsRoute
   ApiPublicFinanceExpensesRoute: typeof ApiPublicFinanceExpensesRoute
   ApiPublicFinanceInvoicesRoute: typeof ApiPublicFinanceInvoicesRoute
@@ -783,6 +811,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTrackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/admin/commissions-report': {
+      id: '/api/public/admin/commissions-report'
+      path: '/api/public/admin/commissions-report'
+      fullPath: '/api/public/admin/commissions-report'
+      preLoaderRoute: typeof ApiPublicAdminCommissionsReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/admin/delete-user': {
       id: '/api/public/admin/delete-user'
       path: '/api/public/admin/delete-user'
@@ -795,6 +830,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/admin/employees'
       fullPath: '/api/public/admin/employees'
       preLoaderRoute: typeof ApiPublicAdminEmployeesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/admin/payment-control': {
+      id: '/api/public/admin/payment-control'
+      path: '/api/public/admin/payment-control'
+      fullPath: '/api/public/admin/payment-control'
+      preLoaderRoute: typeof ApiPublicAdminPaymentControlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/finance/etims-settings': {
@@ -914,8 +956,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicRevenueSummaryRoute: ApiPublicRevenueSummaryRoute,
   ApiPublicSendSmsRoute: ApiPublicSendSmsRoute,
   ApiPublicTrackRoute: ApiPublicTrackRoute,
+  ApiPublicAdminCommissionsReportRoute: ApiPublicAdminCommissionsReportRoute,
   ApiPublicAdminDeleteUserRoute: ApiPublicAdminDeleteUserRoute,
   ApiPublicAdminEmployeesRoute: ApiPublicAdminEmployeesRoute,
+  ApiPublicAdminPaymentControlRoute: ApiPublicAdminPaymentControlRoute,
   ApiPublicFinanceEtimsSettingsRoute: ApiPublicFinanceEtimsSettingsRoute,
   ApiPublicFinanceExpensesRoute: ApiPublicFinanceExpensesRoute,
   ApiPublicFinanceInvoicesRoute: ApiPublicFinanceInvoicesRoute,

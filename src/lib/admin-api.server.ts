@@ -146,6 +146,33 @@ export async function setManagedEmployeeActive(input: z.infer<typeof setEmployee
   if (error) throw new ApiError(500, error.message);
 }
 
+export async function updateManagedEmployee(input: { employee_id: string; full_name: string; email: string; phone: string | null; role: AppRole }, actorEmployeeId: string) {
+  if (input.employee_id === actorEmployeeId && input.role !== "admin") throw new ApiError(400, "You cannot remove administrator access from your own account");
+  const { data: target, error: targetError } = await supabaseAdmin.from("employees")
+    .select("id,user_id,role").eq("id", input.employee_id).maybeSingle();
+  if (targetError) throw new ApiError(500, targetError.message);
+  if (!target) throw new ApiError(404, "Employee not found");
+  if (target.role === "admin" && input.role !== "admin" && target.id === actorEmployeeId) throw new ApiError(400, "You cannot demote your own administrator account");
+  const email = input.email.trim().toLowerCase();
+  const { data: duplicate, error: duplicateError } = await supabaseAdmin.from("employees").select("id").ilike("email", email).neq("id", input.employee_id).maybeSingle();
+  if (duplicateError) throw new ApiError(500, duplicateError.message);
+  if (duplicate) throw new ApiError(409, "That email address belongs to another employee");
+  if (target.user_id) {
+    const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(target.user_id, { email, email_confirm: true, user_metadata: { full_name: input.full_name } });
+    if (authError) throw new ApiError(400, authError.message);
+  }
+  const { error: profileError } = await supabaseAdmin.from("profiles").update({ name: input.full_name, email }).eq("id", target.user_id);
+  if (profileError && profileError.code !== "42P01") throw new ApiError(400, profileError.message);
+  const { error: employeeError } = await supabaseAdmin.from("employees").update({ full_name: input.full_name, email, phone: input.phone, role: input.role }).eq("id", input.employee_id);
+  if (employeeError) throw new ApiError(400, employeeError.message);
+  if (target.user_id && target.role !== input.role) {
+    const { error: removeRoleError } = await supabaseAdmin.from("user_roles").delete().eq("user_id", target.user_id);
+    if (removeRoleError) throw new ApiError(400, removeRoleError.message);
+    const { error: addRoleError } = await supabaseAdmin.from("user_roles").insert({ user_id: target.user_id, role: input.role });
+    if (addRoleError) throw new ApiError(400, addRoleError.message);
+  }
+}
+
 export async function deleteManagedEmployee(input: z.infer<typeof deleteEmployeeInput>, actorEmployeeId: string) {
   if (input.employee_id === actorEmployeeId) throw new ApiError(400, "You cannot delete your own account");
   const { data: target, error: targetError } = await supabaseAdmin

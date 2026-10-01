@@ -21,7 +21,7 @@ export const Route = createFileRoute("/api/public/packages/$packageId/operations
           .select("role,is_active")
           .eq("user_id", user.id)
           .maybeSingle();
-        if (!actor?.is_active || !["admin", "logistics_manager", "sales_manager"].includes(String(actor.role).toLowerCase())) {
+        if (!actor?.is_active || !["admin", "logistics_manager", "sales_manager", "sales_rep"].includes(String(actor.role).toLowerCase())) {
           return Response.json({ error: "Your account does not have permission to update package operations." }, { status: 403 });
         }
 

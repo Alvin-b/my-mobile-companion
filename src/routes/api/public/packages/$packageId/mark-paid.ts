@@ -68,6 +68,7 @@ export const Route = createFileRoute("/api/public/packages/$packageId/mark-paid"
         }
 
         const reference = String(body.payment_reference ?? "").trim() || `MANUAL-${Date.now()}`;
+        const note = String(body.note ?? "").trim();
         const now = new Date().toISOString();
 
         // A manual collection still enters the same payment-allocation path as
@@ -115,7 +116,6 @@ export const Route = createFileRoute("/api/public/packages/$packageId/mark-paid"
         // Record the collection note without making it part of the status
         // machine. audit_logs differs in older deployments, so an audit write
         // must not cause a successful payment to be reported as failed.
-        const note = String(body.note ?? "").trim();
         if (note) {
           await supabaseAdmin.from("audit_logs").insert({
             id: `AL-${Date.now()}`,

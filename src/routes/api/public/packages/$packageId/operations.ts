@@ -65,7 +65,7 @@ export const Route = createFileRoute("/api/public/packages/$packageId/operations
         if (!Object.keys(patch).length) return Response.json({ error: "No package operation was supplied" }, { status: 400 });
         const { data, error } = await supabaseAdmin
           .from("cargo_packages")
-          .update(patch)
+          .update(patch as never)
           .eq("id", pkg.id)
           .select("id,tracking_number,commission_employee_id,is_international_forwarding,forward_destination_country")
           .maybeSingle();

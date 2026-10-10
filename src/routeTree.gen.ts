@@ -9,88 +9,53 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as CommissionsRouteImport } from './routes/commissions'
-import { Route as CustomersRouteImport } from './routes/customers'
-import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as DesktopRouteImport } from './routes/desktop'
-import { Route as MpesaTestRouteImport } from './routes/mpesa-test'
-import { Route as NotificationsRouteImport } from './routes/notifications'
-import { Route as PackagesRouteImport } from './routes/packages'
 import { Route as ScanRouteImport } from './routes/scan'
-import { Route as AdminEmployeesRouteImport } from './routes/admin.employees'
-import { Route as ApiMpesaStkPushRouteImport } from './routes/api/mpesa-stk-push'
+import { Route as PackagesRouteImport } from './routes/packages'
+import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as MpesaTestRouteImport } from './routes/mpesa-test'
+import { Route as DesktopRouteImport } from './routes/desktop'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as CustomersRouteImport } from './routes/customers'
+import { Route as CommissionsRouteImport } from './routes/commissions'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as DesktopIndexRouteImport } from './routes/desktop.index'
-import { Route as DesktopEmployeesRouteImport } from './routes/desktop.employees'
-import { Route as DesktopFinanceRouteImport } from './routes/desktop.finance'
-import { Route as DesktopManifestsRouteImport } from './routes/desktop.manifests'
-import { Route as DesktopOperationsRouteImport } from './routes/desktop.operations'
-import { Route as DesktopPackagesRouteImport } from './routes/desktop.packages'
 import { Route as PackagesIdRouteImport } from './routes/packages.$id'
-import { Route as ApiAdminDeleteUserRouteImport } from './routes/api/admin/delete-user'
-import { Route as ApiAdminEmployeesRouteImport } from './routes/api/admin/employees'
-import { Route as ApiPublicGeminiOcrRouteImport } from './routes/api/public/gemini-ocr'
-import { Route as ApiPublicImportManifestRouteImport } from './routes/api/public/import-manifest'
-import { Route as ApiPublicLinkPaymentRouteImport } from './routes/api/public/link-payment'
-import { Route as ApiPublicMediaRouteImport } from './routes/api/public/media'
-import { Route as ApiPublicMpesaWebhookRouteImport } from './routes/api/public/mpesa-webhook'
-import { Route as ApiPublicPackageMediaRouteImport } from './routes/api/public/package-media'
-import { Route as ApiPublicPaymentEvidenceRouteImport } from './routes/api/public/payment-evidence'
-import { Route as ApiPublicRevenueSummaryRouteImport } from './routes/api/public/revenue-summary'
-import { Route as ApiPublicSendSmsRouteImport } from './routes/api/public/send-sms'
+import { Route as DesktopPackagesRouteImport } from './routes/desktop.packages'
+import { Route as DesktopOperationsRouteImport } from './routes/desktop.operations'
+import { Route as DesktopManifestsRouteImport } from './routes/desktop.manifests'
+import { Route as DesktopFinanceRouteImport } from './routes/desktop.finance'
+import { Route as DesktopEmployeesRouteImport } from './routes/desktop.employees'
+import { Route as ApiMpesaStkPushRouteImport } from './routes/api/mpesa-stk-push'
+import { Route as AdminEmployeesRouteImport } from './routes/admin.employees'
 import { Route as ApiPublicTrackRouteImport } from './routes/api/public/track'
-import { Route as ApiPublicAdminCommissionsReportRouteImport } from './routes/api/public/admin/commissions-report'
-import { Route as ApiPublicAdminDeleteUserRouteImport } from './routes/api/public/admin/delete-user'
-import { Route as ApiPublicAdminEmployeesRouteImport } from './routes/api/public/admin/employees'
-import { Route as ApiPublicAdminPaymentControlRouteImport } from './routes/api/public/admin/payment-control'
-import { Route as ApiPublicFinanceEtimsSettingsRouteImport } from './routes/api/public/finance/etims-settings'
-import { Route as ApiPublicFinanceExpensesRouteImport } from './routes/api/public/finance/expenses'
-import { Route as ApiPublicFinanceInvoicesRouteImport } from './routes/api/public/finance/invoices'
-import { Route as ApiPublicFinanceSubmitEtimsRouteImport } from './routes/api/public/finance/submit-etims'
+import { Route as ApiPublicSendSmsRouteImport } from './routes/api/public/send-sms'
+import { Route as ApiPublicRevenueSummaryRouteImport } from './routes/api/public/revenue-summary'
+import { Route as ApiPublicPaymentEvidenceRouteImport } from './routes/api/public/payment-evidence'
+import { Route as ApiPublicPackageMediaRouteImport } from './routes/api/public/package-media'
+import { Route as ApiPublicMpesaWebhookRouteImport } from './routes/api/public/mpesa-webhook'
+import { Route as ApiPublicMediaRouteImport } from './routes/api/public/media'
+import { Route as ApiPublicLinkPaymentRouteImport } from './routes/api/public/link-payment'
+import { Route as ApiPublicImportManifestRouteImport } from './routes/api/public/import-manifest'
+import { Route as ApiPublicGeminiOcrRouteImport } from './routes/api/public/gemini-ocr'
+import { Route as ApiAdminEmployeesRouteImport } from './routes/api/admin/employees'
+import { Route as ApiAdminDeleteUserRouteImport } from './routes/api/admin/delete-user'
 import { Route as ApiPublicFinanceWorkspaceRouteImport } from './routes/api/public/finance/workspace'
-import { Route as ApiPublicPackagesPackageIdLocationRouteImport } from './routes/api/public/packages/$packageId/location'
-import { Route as ApiPublicPackagesPackageIdMarkPaidRouteImport } from './routes/api/public/packages/$packageId/mark-paid'
+import { Route as ApiPublicFinanceSubmitEtimsRouteImport } from './routes/api/public/finance/submit-etims'
+import { Route as ApiPublicFinanceInvoicesRouteImport } from './routes/api/public/finance/invoices'
+import { Route as ApiPublicFinanceExpensesRouteImport } from './routes/api/public/finance/expenses'
+import { Route as ApiPublicFinanceEtimsSettingsRouteImport } from './routes/api/public/finance/etims-settings'
+import { Route as ApiPublicAdminPaymentControlRouteImport } from './routes/api/public/admin/payment-control'
+import { Route as ApiPublicAdminEmployeesRouteImport } from './routes/api/public/admin/employees'
+import { Route as ApiPublicAdminDeleteUserRouteImport } from './routes/api/public/admin/delete-user'
+import { Route as ApiPublicAdminCommissionsReportRouteImport } from './routes/api/public/admin/commissions-report'
 import { Route as ApiPublicPackagesPackageIdOperationsRouteImport } from './routes/api/public/packages/$packageId/operations'
+import { Route as ApiPublicPackagesPackageIdMarkPaidRouteImport } from './routes/api/public/packages/$packageId/mark-paid'
+import { Route as ApiPublicPackagesPackageIdLocationRouteImport } from './routes/api/public/packages/$packageId/location'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CommissionsRoute = CommissionsRouteImport.update({
-  id: '/commissions',
-  path: '/commissions',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CustomersRoute = CustomersRouteImport.update({
-  id: '/customers',
-  path: '/customers',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DesktopRoute = DesktopRouteImport.update({
-  id: '/desktop',
-  path: '/desktop',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MpesaTestRoute = MpesaTestRouteImport.update({
-  id: '/mpesa-test',
-  path: '/mpesa-test',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NotificationsRoute = NotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
+const ScanRoute = ScanRouteImport.update({
+  id: '/scan',
+  path: '/scan',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PackagesRoute = PackagesRouteImport.update({
@@ -98,19 +63,44 @@ const PackagesRoute = PackagesRouteImport.update({
   path: '/packages',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ScanRoute = ScanRouteImport.update({
-  id: '/scan',
-  path: '/scan',
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminEmployeesRoute = AdminEmployeesRouteImport.update({
-  id: '/admin/employees',
-  path: '/admin/employees',
+const MpesaTestRoute = MpesaTestRouteImport.update({
+  id: '/mpesa-test',
+  path: '/mpesa-test',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiMpesaStkPushRoute = ApiMpesaStkPushRouteImport.update({
-  id: '/api/mpesa-stk-push',
-  path: '/api/mpesa-stk-push',
+const DesktopRoute = DesktopRouteImport.update({
+  id: '/desktop',
+  path: '/desktop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CustomersRoute = CustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommissionsRoute = CommissionsRouteImport.update({
+  id: '/commissions',
+  path: '/commissions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DesktopIndexRoute = DesktopIndexRouteImport.update({
@@ -118,19 +108,14 @@ const DesktopIndexRoute = DesktopIndexRouteImport.update({
   path: '/',
   getParentRoute: () => DesktopRoute,
 } as any)
-const DesktopEmployeesRoute = DesktopEmployeesRouteImport.update({
-  id: '/employees',
-  path: '/employees',
-  getParentRoute: () => DesktopRoute,
+const PackagesIdRoute = PackagesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => PackagesRoute,
 } as any)
-const DesktopFinanceRoute = DesktopFinanceRouteImport.update({
-  id: '/finance',
-  path: '/finance',
-  getParentRoute: () => DesktopRoute,
-} as any)
-const DesktopManifestsRoute = DesktopManifestsRouteImport.update({
-  id: '/manifests',
-  path: '/manifests',
+const DesktopPackagesRoute = DesktopPackagesRouteImport.update({
+  id: '/packages',
+  path: '/packages',
   getParentRoute: () => DesktopRoute,
 } as any)
 const DesktopOperationsRoute = DesktopOperationsRouteImport.update({
@@ -138,54 +123,44 @@ const DesktopOperationsRoute = DesktopOperationsRouteImport.update({
   path: '/operations',
   getParentRoute: () => DesktopRoute,
 } as any)
-const DesktopPackagesRoute = DesktopPackagesRouteImport.update({
-  id: '/packages',
-  path: '/packages',
+const DesktopManifestsRoute = DesktopManifestsRouteImport.update({
+  id: '/manifests',
+  path: '/manifests',
   getParentRoute: () => DesktopRoute,
 } as any)
-const PackagesIdRoute = PackagesIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => PackagesRoute,
+const DesktopFinanceRoute = DesktopFinanceRouteImport.update({
+  id: '/finance',
+  path: '/finance',
+  getParentRoute: () => DesktopRoute,
 } as any)
-const ApiAdminDeleteUserRoute = ApiAdminDeleteUserRouteImport.update({
-  id: '/api/admin/delete-user',
-  path: '/api/admin/delete-user',
+const DesktopEmployeesRoute = DesktopEmployeesRouteImport.update({
+  id: '/employees',
+  path: '/employees',
+  getParentRoute: () => DesktopRoute,
+} as any)
+const ApiMpesaStkPushRoute = ApiMpesaStkPushRouteImport.update({
+  id: '/api/mpesa-stk-push',
+  path: '/api/mpesa-stk-push',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAdminEmployeesRoute = ApiAdminEmployeesRouteImport.update({
-  id: '/api/admin/employees',
-  path: '/api/admin/employees',
+const AdminEmployeesRoute = AdminEmployeesRouteImport.update({
+  id: '/admin/employees',
+  path: '/admin/employees',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicGeminiOcrRoute = ApiPublicGeminiOcrRouteImport.update({
-  id: '/api/public/gemini-ocr',
-  path: '/api/public/gemini-ocr',
+const ApiPublicTrackRoute = ApiPublicTrackRouteImport.update({
+  id: '/api/public/track',
+  path: '/api/public/track',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicImportManifestRoute = ApiPublicImportManifestRouteImport.update({
-  id: '/api/public/import-manifest',
-  path: '/api/public/import-manifest',
+const ApiPublicSendSmsRoute = ApiPublicSendSmsRouteImport.update({
+  id: '/api/public/send-sms',
+  path: '/api/public/send-sms',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicLinkPaymentRoute = ApiPublicLinkPaymentRouteImport.update({
-  id: '/api/public/link-payment',
-  path: '/api/public/link-payment',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicMediaRoute = ApiPublicMediaRouteImport.update({
-  id: '/api/public/media',
-  path: '/api/public/media',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicMpesaWebhookRoute = ApiPublicMpesaWebhookRouteImport.update({
-  id: '/api/public/mpesa-webhook',
-  path: '/api/public/mpesa-webhook',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicPackageMediaRoute = ApiPublicPackageMediaRouteImport.update({
-  id: '/api/public/package-media',
-  path: '/api/public/package-media',
+const ApiPublicRevenueSummaryRoute = ApiPublicRevenueSummaryRouteImport.update({
+  id: '/api/public/revenue-summary',
+  path: '/api/public/revenue-summary',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicPaymentEvidenceRoute =
@@ -194,60 +169,50 @@ const ApiPublicPaymentEvidenceRoute =
     path: '/api/public/payment-evidence',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicRevenueSummaryRoute = ApiPublicRevenueSummaryRouteImport.update({
-  id: '/api/public/revenue-summary',
-  path: '/api/public/revenue-summary',
+const ApiPublicPackageMediaRoute = ApiPublicPackageMediaRouteImport.update({
+  id: '/api/public/package-media',
+  path: '/api/public/package-media',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicSendSmsRoute = ApiPublicSendSmsRouteImport.update({
-  id: '/api/public/send-sms',
-  path: '/api/public/send-sms',
+const ApiPublicMpesaWebhookRoute = ApiPublicMpesaWebhookRouteImport.update({
+  id: '/api/public/mpesa-webhook',
+  path: '/api/public/mpesa-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicTrackRoute = ApiPublicTrackRouteImport.update({
-  id: '/api/public/track',
-  path: '/api/public/track',
+const ApiPublicMediaRoute = ApiPublicMediaRouteImport.update({
+  id: '/api/public/media',
+  path: '/api/public/media',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicAdminCommissionsReportRoute =
-  ApiPublicAdminCommissionsReportRouteImport.update({
-    id: '/api/public/admin/commissions-report',
-    path: '/api/public/admin/commissions-report',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicAdminDeleteUserRoute =
-  ApiPublicAdminDeleteUserRouteImport.update({
-    id: '/api/public/admin/delete-user',
-    path: '/api/public/admin/delete-user',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicAdminEmployeesRoute = ApiPublicAdminEmployeesRouteImport.update({
-  id: '/api/public/admin/employees',
-  path: '/api/public/admin/employees',
+const ApiPublicLinkPaymentRoute = ApiPublicLinkPaymentRouteImport.update({
+  id: '/api/public/link-payment',
+  path: '/api/public/link-payment',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicAdminPaymentControlRoute =
-  ApiPublicAdminPaymentControlRouteImport.update({
-    id: '/api/public/admin/payment-control',
-    path: '/api/public/admin/payment-control',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicFinanceEtimsSettingsRoute =
-  ApiPublicFinanceEtimsSettingsRouteImport.update({
-    id: '/api/public/finance/etims-settings',
-    path: '/api/public/finance/etims-settings',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicFinanceExpensesRoute =
-  ApiPublicFinanceExpensesRouteImport.update({
-    id: '/api/public/finance/expenses',
-    path: '/api/public/finance/expenses',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicFinanceInvoicesRoute =
-  ApiPublicFinanceInvoicesRouteImport.update({
-    id: '/api/public/finance/invoices',
-    path: '/api/public/finance/invoices',
+const ApiPublicImportManifestRoute = ApiPublicImportManifestRouteImport.update({
+  id: '/api/public/import-manifest',
+  path: '/api/public/import-manifest',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicGeminiOcrRoute = ApiPublicGeminiOcrRouteImport.update({
+  id: '/api/public/gemini-ocr',
+  path: '/api/public/gemini-ocr',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminEmployeesRoute = ApiAdminEmployeesRouteImport.update({
+  id: '/api/admin/employees',
+  path: '/api/admin/employees',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminDeleteUserRoute = ApiAdminDeleteUserRouteImport.update({
+  id: '/api/admin/delete-user',
+  path: '/api/admin/delete-user',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicFinanceWorkspaceRoute =
+  ApiPublicFinanceWorkspaceRouteImport.update({
+    id: '/api/public/finance/workspace',
+    path: '/api/public/finance/workspace',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicFinanceSubmitEtimsRoute =
@@ -256,16 +221,51 @@ const ApiPublicFinanceSubmitEtimsRoute =
     path: '/api/public/finance/submit-etims',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicFinanceWorkspaceRoute =
-  ApiPublicFinanceWorkspaceRouteImport.update({
-    id: '/api/public/finance/workspace',
-    path: '/api/public/finance/workspace',
+const ApiPublicFinanceInvoicesRoute =
+  ApiPublicFinanceInvoicesRouteImport.update({
+    id: '/api/public/finance/invoices',
+    path: '/api/public/finance/invoices',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicPackagesPackageIdLocationRoute =
-  ApiPublicPackagesPackageIdLocationRouteImport.update({
-    id: '/api/public/packages/$packageId/location',
-    path: '/api/public/packages/$packageId/location',
+const ApiPublicFinanceExpensesRoute =
+  ApiPublicFinanceExpensesRouteImport.update({
+    id: '/api/public/finance/expenses',
+    path: '/api/public/finance/expenses',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicFinanceEtimsSettingsRoute =
+  ApiPublicFinanceEtimsSettingsRouteImport.update({
+    id: '/api/public/finance/etims-settings',
+    path: '/api/public/finance/etims-settings',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicAdminPaymentControlRoute =
+  ApiPublicAdminPaymentControlRouteImport.update({
+    id: '/api/public/admin/payment-control',
+    path: '/api/public/admin/payment-control',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicAdminEmployeesRoute = ApiPublicAdminEmployeesRouteImport.update({
+  id: '/api/public/admin/employees',
+  path: '/api/public/admin/employees',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicAdminDeleteUserRoute =
+  ApiPublicAdminDeleteUserRouteImport.update({
+    id: '/api/public/admin/delete-user',
+    path: '/api/public/admin/delete-user',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicAdminCommissionsReportRoute =
+  ApiPublicAdminCommissionsReportRouteImport.update({
+    id: '/api/public/admin/commissions-report',
+    path: '/api/public/admin/commissions-report',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicPackagesPackageIdOperationsRoute =
+  ApiPublicPackagesPackageIdOperationsRouteImport.update({
+    id: '/api/public/packages/$packageId/operations',
+    path: '/api/public/packages/$packageId/operations',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicPackagesPackageIdMarkPaidRoute =
@@ -274,10 +274,10 @@ const ApiPublicPackagesPackageIdMarkPaidRoute =
     path: '/api/public/packages/$packageId/mark-paid',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicPackagesPackageIdOperationsRoute =
-  ApiPublicPackagesPackageIdOperationsRouteImport.update({
-    id: '/api/public/packages/$packageId/operations',
-    path: '/api/public/packages/$packageId/operations',
+const ApiPublicPackagesPackageIdLocationRoute =
+  ApiPublicPackagesPackageIdLocationRouteImport.update({
+    id: '/api/public/packages/$packageId/location',
+    path: '/api/public/packages/$packageId/location',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -594,60 +594,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/commissions': {
-      id: '/commissions'
-      path: '/commissions'
-      fullPath: '/commissions'
-      preLoaderRoute: typeof CommissionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/customers': {
-      id: '/customers'
-      path: '/customers'
-      fullPath: '/customers'
-      preLoaderRoute: typeof CustomersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/desktop': {
-      id: '/desktop'
-      path: '/desktop'
-      fullPath: '/desktop'
-      preLoaderRoute: typeof DesktopRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/mpesa-test': {
-      id: '/mpesa-test'
-      path: '/mpesa-test'
-      fullPath: '/mpesa-test'
-      preLoaderRoute: typeof MpesaTestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/notifications': {
-      id: '/notifications'
-      path: '/notifications'
-      fullPath: '/notifications'
-      preLoaderRoute: typeof NotificationsRouteImport
+    '/scan': {
+      id: '/scan'
+      path: '/scan'
+      fullPath: '/scan'
+      preLoaderRoute: typeof ScanRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/packages': {
@@ -657,25 +608,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PackagesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/scan': {
-      id: '/scan'
-      path: '/scan'
-      fullPath: '/scan'
-      preLoaderRoute: typeof ScanRouteImport
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/employees': {
-      id: '/admin/employees'
-      path: '/admin/employees'
-      fullPath: '/admin/employees'
-      preLoaderRoute: typeof AdminEmployeesRouteImport
+    '/mpesa-test': {
+      id: '/mpesa-test'
+      path: '/mpesa-test'
+      fullPath: '/mpesa-test'
+      preLoaderRoute: typeof MpesaTestRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/mpesa-stk-push': {
-      id: '/api/mpesa-stk-push'
-      path: '/api/mpesa-stk-push'
-      fullPath: '/api/mpesa-stk-push'
-      preLoaderRoute: typeof ApiMpesaStkPushRouteImport
+    '/desktop': {
+      id: '/desktop'
+      path: '/desktop'
+      fullPath: '/desktop'
+      preLoaderRoute: typeof DesktopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/customers': {
+      id: '/customers'
+      path: '/customers'
+      fullPath: '/customers'
+      preLoaderRoute: typeof CustomersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/commissions': {
+      id: '/commissions'
+      path: '/commissions'
+      fullPath: '/commissions'
+      preLoaderRoute: typeof CommissionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/desktop/': {
@@ -685,25 +671,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DesktopIndexRouteImport
       parentRoute: typeof DesktopRoute
     }
-    '/desktop/employees': {
-      id: '/desktop/employees'
-      path: '/employees'
-      fullPath: '/desktop/employees'
-      preLoaderRoute: typeof DesktopEmployeesRouteImport
-      parentRoute: typeof DesktopRoute
+    '/packages/$id': {
+      id: '/packages/$id'
+      path: '/$id'
+      fullPath: '/packages/$id'
+      preLoaderRoute: typeof PackagesIdRouteImport
+      parentRoute: typeof PackagesRoute
     }
-    '/desktop/finance': {
-      id: '/desktop/finance'
-      path: '/finance'
-      fullPath: '/desktop/finance'
-      preLoaderRoute: typeof DesktopFinanceRouteImport
-      parentRoute: typeof DesktopRoute
-    }
-    '/desktop/manifests': {
-      id: '/desktop/manifests'
-      path: '/manifests'
-      fullPath: '/desktop/manifests'
-      preLoaderRoute: typeof DesktopManifestsRouteImport
+    '/desktop/packages': {
+      id: '/desktop/packages'
+      path: '/packages'
+      fullPath: '/desktop/packages'
+      preLoaderRoute: typeof DesktopPackagesRouteImport
       parentRoute: typeof DesktopRoute
     }
     '/desktop/operations': {
@@ -713,95 +692,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DesktopOperationsRouteImport
       parentRoute: typeof DesktopRoute
     }
-    '/desktop/packages': {
-      id: '/desktop/packages'
-      path: '/packages'
-      fullPath: '/desktop/packages'
-      preLoaderRoute: typeof DesktopPackagesRouteImport
+    '/desktop/manifests': {
+      id: '/desktop/manifests'
+      path: '/manifests'
+      fullPath: '/desktop/manifests'
+      preLoaderRoute: typeof DesktopManifestsRouteImport
       parentRoute: typeof DesktopRoute
     }
-    '/packages/$id': {
-      id: '/packages/$id'
-      path: '/$id'
-      fullPath: '/packages/$id'
-      preLoaderRoute: typeof PackagesIdRouteImport
-      parentRoute: typeof PackagesRoute
+    '/desktop/finance': {
+      id: '/desktop/finance'
+      path: '/finance'
+      fullPath: '/desktop/finance'
+      preLoaderRoute: typeof DesktopFinanceRouteImport
+      parentRoute: typeof DesktopRoute
     }
-    '/api/admin/delete-user': {
-      id: '/api/admin/delete-user'
-      path: '/api/admin/delete-user'
-      fullPath: '/api/admin/delete-user'
-      preLoaderRoute: typeof ApiAdminDeleteUserRouteImport
+    '/desktop/employees': {
+      id: '/desktop/employees'
+      path: '/employees'
+      fullPath: '/desktop/employees'
+      preLoaderRoute: typeof DesktopEmployeesRouteImport
+      parentRoute: typeof DesktopRoute
+    }
+    '/api/mpesa-stk-push': {
+      id: '/api/mpesa-stk-push'
+      path: '/api/mpesa-stk-push'
+      fullPath: '/api/mpesa-stk-push'
+      preLoaderRoute: typeof ApiMpesaStkPushRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/employees': {
-      id: '/api/admin/employees'
-      path: '/api/admin/employees'
-      fullPath: '/api/admin/employees'
-      preLoaderRoute: typeof ApiAdminEmployeesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/gemini-ocr': {
-      id: '/api/public/gemini-ocr'
-      path: '/api/public/gemini-ocr'
-      fullPath: '/api/public/gemini-ocr'
-      preLoaderRoute: typeof ApiPublicGeminiOcrRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/import-manifest': {
-      id: '/api/public/import-manifest'
-      path: '/api/public/import-manifest'
-      fullPath: '/api/public/import-manifest'
-      preLoaderRoute: typeof ApiPublicImportManifestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/link-payment': {
-      id: '/api/public/link-payment'
-      path: '/api/public/link-payment'
-      fullPath: '/api/public/link-payment'
-      preLoaderRoute: typeof ApiPublicLinkPaymentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/media': {
-      id: '/api/public/media'
-      path: '/api/public/media'
-      fullPath: '/api/public/media'
-      preLoaderRoute: typeof ApiPublicMediaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/mpesa-webhook': {
-      id: '/api/public/mpesa-webhook'
-      path: '/api/public/mpesa-webhook'
-      fullPath: '/api/public/mpesa-webhook'
-      preLoaderRoute: typeof ApiPublicMpesaWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/package-media': {
-      id: '/api/public/package-media'
-      path: '/api/public/package-media'
-      fullPath: '/api/public/package-media'
-      preLoaderRoute: typeof ApiPublicPackageMediaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/payment-evidence': {
-      id: '/api/public/payment-evidence'
-      path: '/api/public/payment-evidence'
-      fullPath: '/api/public/payment-evidence'
-      preLoaderRoute: typeof ApiPublicPaymentEvidenceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/revenue-summary': {
-      id: '/api/public/revenue-summary'
-      path: '/api/public/revenue-summary'
-      fullPath: '/api/public/revenue-summary'
-      preLoaderRoute: typeof ApiPublicRevenueSummaryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/send-sms': {
-      id: '/api/public/send-sms'
-      path: '/api/public/send-sms'
-      fullPath: '/api/public/send-sms'
-      preLoaderRoute: typeof ApiPublicSendSmsRouteImport
+    '/admin/employees': {
+      id: '/admin/employees'
+      path: '/admin/employees'
+      fullPath: '/admin/employees'
+      preLoaderRoute: typeof AdminEmployeesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/track': {
@@ -811,60 +734,81 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTrackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/admin/commissions-report': {
-      id: '/api/public/admin/commissions-report'
-      path: '/api/public/admin/commissions-report'
-      fullPath: '/api/public/admin/commissions-report'
-      preLoaderRoute: typeof ApiPublicAdminCommissionsReportRouteImport
+    '/api/public/send-sms': {
+      id: '/api/public/send-sms'
+      path: '/api/public/send-sms'
+      fullPath: '/api/public/send-sms'
+      preLoaderRoute: typeof ApiPublicSendSmsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/admin/delete-user': {
-      id: '/api/public/admin/delete-user'
-      path: '/api/public/admin/delete-user'
-      fullPath: '/api/public/admin/delete-user'
-      preLoaderRoute: typeof ApiPublicAdminDeleteUserRouteImport
+    '/api/public/revenue-summary': {
+      id: '/api/public/revenue-summary'
+      path: '/api/public/revenue-summary'
+      fullPath: '/api/public/revenue-summary'
+      preLoaderRoute: typeof ApiPublicRevenueSummaryRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/admin/employees': {
-      id: '/api/public/admin/employees'
-      path: '/api/public/admin/employees'
-      fullPath: '/api/public/admin/employees'
-      preLoaderRoute: typeof ApiPublicAdminEmployeesRouteImport
+    '/api/public/payment-evidence': {
+      id: '/api/public/payment-evidence'
+      path: '/api/public/payment-evidence'
+      fullPath: '/api/public/payment-evidence'
+      preLoaderRoute: typeof ApiPublicPaymentEvidenceRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/admin/payment-control': {
-      id: '/api/public/admin/payment-control'
-      path: '/api/public/admin/payment-control'
-      fullPath: '/api/public/admin/payment-control'
-      preLoaderRoute: typeof ApiPublicAdminPaymentControlRouteImport
+    '/api/public/package-media': {
+      id: '/api/public/package-media'
+      path: '/api/public/package-media'
+      fullPath: '/api/public/package-media'
+      preLoaderRoute: typeof ApiPublicPackageMediaRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/finance/etims-settings': {
-      id: '/api/public/finance/etims-settings'
-      path: '/api/public/finance/etims-settings'
-      fullPath: '/api/public/finance/etims-settings'
-      preLoaderRoute: typeof ApiPublicFinanceEtimsSettingsRouteImport
+    '/api/public/mpesa-webhook': {
+      id: '/api/public/mpesa-webhook'
+      path: '/api/public/mpesa-webhook'
+      fullPath: '/api/public/mpesa-webhook'
+      preLoaderRoute: typeof ApiPublicMpesaWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/finance/expenses': {
-      id: '/api/public/finance/expenses'
-      path: '/api/public/finance/expenses'
-      fullPath: '/api/public/finance/expenses'
-      preLoaderRoute: typeof ApiPublicFinanceExpensesRouteImport
+    '/api/public/media': {
+      id: '/api/public/media'
+      path: '/api/public/media'
+      fullPath: '/api/public/media'
+      preLoaderRoute: typeof ApiPublicMediaRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/finance/invoices': {
-      id: '/api/public/finance/invoices'
-      path: '/api/public/finance/invoices'
-      fullPath: '/api/public/finance/invoices'
-      preLoaderRoute: typeof ApiPublicFinanceInvoicesRouteImport
+    '/api/public/link-payment': {
+      id: '/api/public/link-payment'
+      path: '/api/public/link-payment'
+      fullPath: '/api/public/link-payment'
+      preLoaderRoute: typeof ApiPublicLinkPaymentRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/finance/submit-etims': {
-      id: '/api/public/finance/submit-etims'
-      path: '/api/public/finance/submit-etims'
-      fullPath: '/api/public/finance/submit-etims'
-      preLoaderRoute: typeof ApiPublicFinanceSubmitEtimsRouteImport
+    '/api/public/import-manifest': {
+      id: '/api/public/import-manifest'
+      path: '/api/public/import-manifest'
+      fullPath: '/api/public/import-manifest'
+      preLoaderRoute: typeof ApiPublicImportManifestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/gemini-ocr': {
+      id: '/api/public/gemini-ocr'
+      path: '/api/public/gemini-ocr'
+      fullPath: '/api/public/gemini-ocr'
+      preLoaderRoute: typeof ApiPublicGeminiOcrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/employees': {
+      id: '/api/admin/employees'
+      path: '/api/admin/employees'
+      fullPath: '/api/admin/employees'
+      preLoaderRoute: typeof ApiAdminEmployeesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/delete-user': {
+      id: '/api/admin/delete-user'
+      path: '/api/admin/delete-user'
+      fullPath: '/api/admin/delete-user'
+      preLoaderRoute: typeof ApiAdminDeleteUserRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/finance/workspace': {
@@ -874,11 +818,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicFinanceWorkspaceRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/packages/$packageId/location': {
-      id: '/api/public/packages/$packageId/location'
-      path: '/api/public/packages/$packageId/location'
-      fullPath: '/api/public/packages/$packageId/location'
-      preLoaderRoute: typeof ApiPublicPackagesPackageIdLocationRouteImport
+    '/api/public/finance/submit-etims': {
+      id: '/api/public/finance/submit-etims'
+      path: '/api/public/finance/submit-etims'
+      fullPath: '/api/public/finance/submit-etims'
+      preLoaderRoute: typeof ApiPublicFinanceSubmitEtimsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/finance/invoices': {
+      id: '/api/public/finance/invoices'
+      path: '/api/public/finance/invoices'
+      fullPath: '/api/public/finance/invoices'
+      preLoaderRoute: typeof ApiPublicFinanceInvoicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/finance/expenses': {
+      id: '/api/public/finance/expenses'
+      path: '/api/public/finance/expenses'
+      fullPath: '/api/public/finance/expenses'
+      preLoaderRoute: typeof ApiPublicFinanceExpensesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/finance/etims-settings': {
+      id: '/api/public/finance/etims-settings'
+      path: '/api/public/finance/etims-settings'
+      fullPath: '/api/public/finance/etims-settings'
+      preLoaderRoute: typeof ApiPublicFinanceEtimsSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/admin/payment-control': {
+      id: '/api/public/admin/payment-control'
+      path: '/api/public/admin/payment-control'
+      fullPath: '/api/public/admin/payment-control'
+      preLoaderRoute: typeof ApiPublicAdminPaymentControlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/admin/employees': {
+      id: '/api/public/admin/employees'
+      path: '/api/public/admin/employees'
+      fullPath: '/api/public/admin/employees'
+      preLoaderRoute: typeof ApiPublicAdminEmployeesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/admin/delete-user': {
+      id: '/api/public/admin/delete-user'
+      path: '/api/public/admin/delete-user'
+      fullPath: '/api/public/admin/delete-user'
+      preLoaderRoute: typeof ApiPublicAdminDeleteUserRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/admin/commissions-report': {
+      id: '/api/public/admin/commissions-report'
+      path: '/api/public/admin/commissions-report'
+      fullPath: '/api/public/admin/commissions-report'
+      preLoaderRoute: typeof ApiPublicAdminCommissionsReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/packages/$packageId/operations': {
+      id: '/api/public/packages/$packageId/operations'
+      path: '/api/public/packages/$packageId/operations'
+      fullPath: '/api/public/packages/$packageId/operations'
+      preLoaderRoute: typeof ApiPublicPackagesPackageIdOperationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/packages/$packageId/mark-paid': {
@@ -888,11 +888,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPackagesPackageIdMarkPaidRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/packages/$packageId/operations': {
-      id: '/api/public/packages/$packageId/operations'
-      path: '/api/public/packages/$packageId/operations'
-      fullPath: '/api/public/packages/$packageId/operations'
-      preLoaderRoute: typeof ApiPublicPackagesPackageIdOperationsRouteImport
+    '/api/public/packages/$packageId/location': {
+      id: '/api/public/packages/$packageId/location'
+      path: '/api/public/packages/$packageId/location'
+      fullPath: '/api/public/packages/$packageId/location'
+      preLoaderRoute: typeof ApiPublicPackagesPackageIdLocationRouteImport
       parentRoute: typeof rootRouteImport
     }
   }

@@ -70,24 +70,36 @@ export type Database = {
       }
       cargo_packages: {
         Row: {
+          billing_amount: number | null
+          billing_currency: string | null
+          billing_formula: string | null
+          billing_rate: number | null
           cargo_category: string
+          chargeable_weight: number | null
           collected_at: string | null
           collector_id: string | null
           collector_name: string | null
           collector_phone: string | null
+          commission_employee_id: string | null
           consignee: string
+          container_position: string | null
           cost: number | null
           created_at: string
           created_by: string | null
           descr: string | null
           description: string | null
           dest: string | null
+          forward_destination_country: string | null
           id: string
           imported_at: string | null
           imported_by: string | null
+          is_international_forwarding: boolean
+          location: string | null
           manifest_data: Json
           manifest_id: string | null
+          manifest_line_date: string | null
           manifest_name: string | null
+          manifest_signature: string | null
           mode: string | null
           origin: string | null
           package_photo_captured_at: string | null
@@ -95,6 +107,7 @@ export type Database = {
           package_photo_url: string | null
           paid_at: string | null
           payment_method: string | null
+          payment_mode: string | null
           payment_ref: string | null
           pcs: number | null
           phone: string | null
@@ -102,30 +115,48 @@ export type Database = {
           sales_rep: string | null
           signature_points: string | null
           status: string
+          total_price_kes: number | null
+          total_price_rmb: number | null
+          total_price_usd: number | null
           tracking_number: string | null
+          unit_price_usd: number | null
           updated_at: string
           volume_cbm: number | null
+          warehouse_receipt_number: string | null
+          warehouse_received_date: string | null
           weight: number | null
         }
         Insert: {
+          billing_amount?: number | null
+          billing_currency?: string | null
+          billing_formula?: string | null
+          billing_rate?: number | null
           cargo_category?: string
+          chargeable_weight?: number | null
           collected_at?: string | null
           collector_id?: string | null
           collector_name?: string | null
           collector_phone?: string | null
+          commission_employee_id?: string | null
           consignee: string
+          container_position?: string | null
           cost?: number | null
           created_at?: string
           created_by?: string | null
           descr?: string | null
           description?: string | null
           dest?: string | null
+          forward_destination_country?: string | null
           id?: string
           imported_at?: string | null
           imported_by?: string | null
+          is_international_forwarding?: boolean
+          location?: string | null
           manifest_data?: Json
           manifest_id?: string | null
+          manifest_line_date?: string | null
           manifest_name?: string | null
+          manifest_signature?: string | null
           mode?: string | null
           origin?: string | null
           package_photo_captured_at?: string | null
@@ -133,6 +164,7 @@ export type Database = {
           package_photo_url?: string | null
           paid_at?: string | null
           payment_method?: string | null
+          payment_mode?: string | null
           payment_ref?: string | null
           pcs?: number | null
           phone?: string | null
@@ -140,30 +172,48 @@ export type Database = {
           sales_rep?: string | null
           signature_points?: string | null
           status?: string
+          total_price_kes?: number | null
+          total_price_rmb?: number | null
+          total_price_usd?: number | null
           tracking_number?: string | null
+          unit_price_usd?: number | null
           updated_at?: string
           volume_cbm?: number | null
+          warehouse_receipt_number?: string | null
+          warehouse_received_date?: string | null
           weight?: number | null
         }
         Update: {
+          billing_amount?: number | null
+          billing_currency?: string | null
+          billing_formula?: string | null
+          billing_rate?: number | null
           cargo_category?: string
+          chargeable_weight?: number | null
           collected_at?: string | null
           collector_id?: string | null
           collector_name?: string | null
           collector_phone?: string | null
+          commission_employee_id?: string | null
           consignee?: string
+          container_position?: string | null
           cost?: number | null
           created_at?: string
           created_by?: string | null
           descr?: string | null
           description?: string | null
           dest?: string | null
+          forward_destination_country?: string | null
           id?: string
           imported_at?: string | null
           imported_by?: string | null
+          is_international_forwarding?: boolean
+          location?: string | null
           manifest_data?: Json
           manifest_id?: string | null
+          manifest_line_date?: string | null
           manifest_name?: string | null
+          manifest_signature?: string | null
           mode?: string | null
           origin?: string | null
           package_photo_captured_at?: string | null
@@ -171,6 +221,7 @@ export type Database = {
           package_photo_url?: string | null
           paid_at?: string | null
           payment_method?: string | null
+          payment_mode?: string | null
           payment_ref?: string | null
           pcs?: number | null
           phone?: string | null
@@ -178,12 +229,26 @@ export type Database = {
           sales_rep?: string | null
           signature_points?: string | null
           status?: string
+          total_price_kes?: number | null
+          total_price_rmb?: number | null
+          total_price_usd?: number | null
           tracking_number?: string | null
+          unit_price_usd?: number | null
           updated_at?: string
           volume_cbm?: number | null
+          warehouse_receipt_number?: string | null
+          warehouse_received_date?: string | null
           weight?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cargo_packages_commission_employee_id_fkey"
+            columns: ["commission_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       commission_rules: {
         Row: {
@@ -1315,6 +1380,44 @@ export type Database = {
           },
         ]
       }
+      payment_control_audit: {
+        Row: {
+          actor_employee_id: string | null
+          after_record: Json
+          before_record: Json
+          created_at: string
+          id: string
+          payment_notification_id: string
+          reason: string
+        }
+        Insert: {
+          actor_employee_id?: string | null
+          after_record: Json
+          before_record: Json
+          created_at?: string
+          id?: string
+          payment_notification_id: string
+          reason: string
+        }
+        Update: {
+          actor_employee_id?: string | null
+          after_record?: Json
+          before_record?: Json
+          created_at?: string
+          id?: string
+          payment_notification_id?: string
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_control_audit_actor_employee_id_fkey"
+            columns: ["actor_employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_notifications: {
         Row: {
           account_reference: string | null
@@ -1711,8 +1814,8 @@ export type Database = {
     Functions: {
       admin_unlink_payment_allocation: {
         Args: {
-          _allocation_id: string
           _actor_employee_id: string
+          _allocation_id: string
           _reason: string
         }
         Returns: Json
@@ -1751,6 +1854,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      create_cargo_commission_if_eligible: {
+        Args: { _package_id: string }
+        Returns: undefined
       }
       finance_close_month: {
         Args: { _note?: string; _period: string }

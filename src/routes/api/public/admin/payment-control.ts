@@ -51,7 +51,7 @@ export const Route = createFileRoute("/api/public/admin/payment-control")({
         if (Object.prototype.hasOwnProperty.call(input, "sender_phone")) patch.sender_phone = input.sender_phone;
         if (Object.prototype.hasOwnProperty.call(input, "text_content")) patch.text_content = input.text_content;
         if (!Object.keys(patch).length) throw new ApiError(400, "No payment fields were supplied for correction");
-        const { data: after, error: updateError } = await supabaseAdmin.from("payment_notifications").update(patch)
+        const { data: after, error: updateError } = await supabaseAdmin.from("payment_notifications").update(patch as never)
           .eq("id", input.payment_notification_id).select("id,notification_number,evidence_type,image_url,text_content,amount,sender_phone,status,uploaded_at").single();
         if (updateError) throw new ApiError(400, updateError.message);
         const { error: auditError } = await supabaseAdmin.from("payment_control_audit").insert({

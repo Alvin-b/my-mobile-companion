@@ -177,19 +177,38 @@ export async function deleteManagedEmployee(input: z.infer<typeof deleteEmployee
   if (input.employee_id === actorEmployeeId) throw new ApiError(400, "You cannot delete your own account");
   const { data: target, error: targetError } = await supabaseAdmin
     .from("employees")
-    .select("id, user_id, employee_code, role")
+    .select("id, user_id, employee_code, full_name, email, role")
     .eq("id", input.employee_id)
     .maybeSingle();
   if (targetError) throw new ApiError(500, targetError.message);
   if (!target) throw new ApiError(404, "Employee not found");
 
-  const { error: deleteError } = await supabaseAdmin.from("employees").delete().eq("id", target.id);
-  if (deleteError) throw new ApiError(500, deleteError.message);
-
+  // Remove the sign-in first. Auth deletion sets employees.user_id to NULL and
+  // cascades roles/profile records, while the employee row may still be
+  // referenced by historical packages, commissions, and audit rows.
   if (target.user_id) {
-    await supabaseAdmin.from("user_roles").delete().eq("user_id", target.user_id);
     const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(target.user_id);
-    if (authError) throw new ApiError(500, authError.message);
+    if (authError) throw new ApiError(400, authError.message);
+    const { error: roleError } = await supabaseAdmin.from("user_roles").delete().eq("user_id", target.user_id);
+    if (roleError) console.warn("[admin/delete-user] role cleanup failed after auth deletion", roleError);
   }
-  return { employee_id: target.id, employee_code: target.employee_code };
+
+  const { error: deleteError } = await supabaseAdmin.from("employees").delete().eq("id", target.id);
+  if (!deleteError) return { employee_id: target.id, employee_code: target.employee_code, archived: false };
+
+  // Older installations have non-cascading foreign keys from operational
+  // history to employees. Preserve that history while removing all login
+  // access; this is the safe equivalent of deletion for a referenced user.
+  if (deleteError.code === "23503" || /foreign key|violates/i.test(deleteError.message)) {
+    const { error: archiveError } = await supabaseAdmin.from("employees").update({
+      user_id: null,
+      is_active: false,
+      email: null,
+      full_name: `[Deleted] ${target.employee_code}`,
+      phone: null,
+    }).eq("id", target.id);
+    if (archiveError) throw new ApiError(500, archiveError.message);
+    return { employee_id: target.id, employee_code: target.employee_code, archived: true };
+  }
+  throw new ApiError(500, deleteError.message);
 }

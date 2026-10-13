@@ -13,9 +13,7 @@ export const rolePrefix: Record<AppRole, string> = {
 
 export const createEmployeeInput = z.object({
   email: z.string().email(),
-  // Password choice belongs to the company and its users.  The desktop app
-  // deliberately does not impose a length or complexity policy here.
-  password: z.string().min(1, "Enter a password."),
+  password: z.string().min(8, "Temporary passwords must be at least 8 characters."),
   full_name: z.string().trim().min(2),
   phone: z.string().trim().min(7).max(30).nullable().optional(),
   role: z.enum(appRoles),

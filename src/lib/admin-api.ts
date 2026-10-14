@@ -25,6 +25,14 @@ export const setEmployeeActiveInput = z.object({
   is_active: z.boolean(),
 });
 
+export const updateEmployeeInput = z.object({
+  employee_id: z.string().uuid(),
+  full_name: z.string().trim().min(2, "Full name must contain at least 2 characters."),
+  email: z.string().trim().email("Enter a valid employee email address."),
+  phone: z.string().trim().max(30).nullable(),
+  role: z.enum(appRoles),
+});
+
 export const deleteEmployeeInput = z.object({
   employee_id: z.string().uuid(),
 });

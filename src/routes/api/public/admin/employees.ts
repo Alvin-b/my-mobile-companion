@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { ApiError, createEmployeeInput, setEmployeeActiveInput } from "@/lib/admin-api";
+import { ApiError, createEmployeeInput, setEmployeeActiveInput, updateEmployeeInput } from "@/lib/admin-api";
 import {
   createManagedEmployee,
   listManagedEmployees,
@@ -14,8 +14,12 @@ import {
 // access token via requireActiveAdmin.
 function errorResponse(error: unknown) {
   if (error instanceof ApiError) return Response.json({ error: error.message }, { status: error.status });
+  if (error instanceof z.ZodError) {
+    const details = error.issues.map((issue) => `${issue.path.join(".") || "request"}: ${issue.message}`).join("; ");
+    return Response.json({ error: `Employee update validation failed: ${details}` }, { status: 400 });
+  }
   console.error("[public/admin/employees]", error);
-  return Response.json({ error: "Internal server error" }, { status: 500 });
+  return Response.json({ error: error instanceof Error ? error.message : "Employee update failed on the backend" }, { status: 500 });
 }
 
 export const Route = createFileRoute("/api/public/admin/employees")({
@@ -46,7 +50,7 @@ export const Route = createFileRoute("/api/public/admin/employees")({
             const input = setEmployeeActiveInput.parse(body);
             await setManagedEmployeeActive(input, actor.employee.id);
           } else {
-            const input = z.object({ employee_id: z.string().uuid(), full_name: z.string().trim().min(2), email: z.string().email(), phone: z.string().trim().max(30).nullable(), role: z.enum(["admin", "sales_manager", "logistics_manager", "sales_rep", "finance_manager"]) }).parse(body);
+            const input = updateEmployeeInput.parse(body);
             await updateManagedEmployee(input, actor.employee.id);
           }
           return Response.json({ ok: true });

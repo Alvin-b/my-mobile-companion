@@ -188,8 +188,10 @@ export async function updateManagedEmployee(input: { employee_id: string; full_n
     const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(target.user_id, { email, email_confirm: true, user_metadata: { full_name: input.full_name } });
     if (authError) throw new ApiError(400, `Unable to update the sign-in account: ${authError.message}`);
   }
-  const { error: profileError } = await supabaseAdmin.from("profiles").update({ name: input.full_name, email }).eq("id", target.user_id ?? "");
-  if (profileError && profileError.code !== "42P01") throw new ApiError(400, `Unable to update the employee profile: ${profileError.message}`);
+  if (target.user_id) {
+    const { error: profileError } = await supabaseAdmin.from("profiles").update({ name: input.full_name, email }).eq("id", target.user_id);
+    if (profileError && profileError.code !== "42P01") throw new ApiError(400, `Unable to update the employee profile: ${profileError.message}`);
+  }
   const { error: employeeError } = await supabaseAdmin.from("employees").update({ full_name: input.full_name, email, phone: input.phone, role: input.role }).eq("id", employeeId);
   if (employeeError) throw new ApiError(400, `Unable to update the employee record: ${employeeError.message}`);
   if (target.user_id && target.role !== input.role) {

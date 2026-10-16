@@ -29,9 +29,18 @@ export const updateEmployeeInput = z.object({
   employee_id: z.string().uuid(),
   full_name: z.string().trim().min(2, "Full name must contain at least 2 characters."),
   email: z.string().trim().email("Enter a valid employee email address."),
-  phone: z.string().trim().max(30).nullable(),
+  phone: z.string().trim().max(30).nullable().default(null),
   role: z.enum(appRoles),
 });
+
+// Profile edits may include is_active from a full employee response. Select
+// the action by the edited profile fields, not by incidental response fields.
+export function parseEmployeePatch(input: unknown) {
+  const profileEdit = input !== null && typeof input === "object" &&
+    ["full_name", "email", "role"].some((key) => key in input);
+  if (profileEdit) return { action: "profile" as const, data: updateEmployeeInput.parse(input) };
+  return { action: "access" as const, data: setEmployeeActiveInput.parse(input) };
+}
 
 export const deleteEmployeeInput = z.object({
   employee_id: z.string().uuid(),

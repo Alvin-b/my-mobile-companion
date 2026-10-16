@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { ApiError, createEmployeeInput, setEmployeeActiveInput, updateEmployeeInput } from "@/lib/admin-api";
+import { ApiError, createEmployeeInput, parseEmployeePatch } from "@/lib/admin-api";
 import {
   createManagedEmployee,
   listManagedEmployees,
@@ -49,13 +49,11 @@ export const Route = createFileRoute("/api/public/admin/employees")({
       PATCH: async ({ request }) => {
         try {
           const actor = await requireActiveAdmin(request);
-          const body = await request.json();
-          if (body && typeof body === "object" && "is_active" in body) {
-            const input = setEmployeeActiveInput.parse(body);
-            await setManagedEmployeeActive(input, actor.employee.id);
+          const patch = parseEmployeePatch(await request.json());
+          if (patch.action === "access") {
+            await setManagedEmployeeActive(patch.data, actor.employee.id);
           } else {
-            const input = updateEmployeeInput.parse(body);
-            await updateManagedEmployee(input, actor.employee.id);
+            await updateManagedEmployee(patch.data, actor.employee.id);
           }
           return Response.json({ ok: true });
         } catch (error) {

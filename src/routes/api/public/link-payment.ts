@@ -73,6 +73,7 @@ export const Route = createFileRoute("/api/public/link-payment")({
           amount: t.requested ?? (t.cost && t.cost > 0 ? t.cost : fallbackShare),
           id: t.id,
         }));
+        const allocatedTotal = rows.reduce((sum, r) => sum + Number(r.amount ?? 0), 0);
         // No cap against the evidence amount: admins may link evidence to
         // packages whose total exceeds the evidence (owner decision).
 

@@ -19,7 +19,11 @@ function errorResponse(error: unknown) {
     return Response.json({ error: `Employee update validation failed: ${details}` }, { status: 400 });
   }
   console.error("[public/admin/employees]", error);
-  return Response.json({ error: error instanceof Error ? error.message : "Employee update failed on the backend" }, { status: 500 });
+  const candidate = error as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown } | null;
+  const message = [candidate?.message, candidate?.details, candidate?.hint]
+    .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+    .join(" — ");
+  return Response.json({ error: message || (error instanceof Error ? error.message : "Employee update failed on the backend") }, { status: 500 });
 }
 
 export const Route = createFileRoute("/api/public/admin/employees")({

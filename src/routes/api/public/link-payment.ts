@@ -74,12 +74,8 @@ export const Route = createFileRoute("/api/public/link-payment")({
           id: t.id,
         }));
         const allocatedTotal = rows.reduce((sum, r) => sum + Number(r.amount ?? 0), 0);
-        if (evidenceTotal != null && allocatedTotal - evidenceTotal > 0.01) {
-          return Response.json(
-            { error: `Allocations (${allocatedTotal}) exceed the evidence amount (${evidenceTotal})` },
-            { status: 400 },
-          );
-        }
+        // No cap against the evidence amount: admins may link evidence to
+        // packages whose total exceeds the evidence (owner decision).
 
         const stamp = Date.now();
         const inserted: string[] = [];

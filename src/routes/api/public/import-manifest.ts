@@ -83,13 +83,21 @@ function consolidateSeaRows(rows: Parsed[]) {
 function parseSheet(file: ArrayBuffer, category: Category): Parsed[] {
   const rows = xlsxRows(file);
   const sea = category === "sea";
+  // The uploaded file may not match the category chosen in the UI. Point the
+  // operator at the right cargo category instead of a generic header error.
+  const hasSeaHeader = rows.some((row) => column(row, ["入仓单号"]) >= 0);
+  const hasAirHeader = rows.some((row) => column(row, ["ExpressNo"]) >= 0);
+  if (sea && !hasSeaHeader && hasAirHeader) throw new Error("This file is an air manifest (ExpressNo) — select General or Special Cargo, not Sea Cargo.");
+  if (!sea && hasSeaHeader && !hasAirHeader) throw new Error("This file is a sea manifest (入仓单号) — select Sea Cargo, not General or Special Cargo.");
   const headerIndex = rows.findIndex((row) => sea ? column(row, ["入仓单号"]) >= 0 : column(row, ["ExpressNo"]) >= 0);
   if (headerIndex < 0) throw new Error(sea ? "Sea manifest header '入仓单号' was not found." : "Air manifest header 'ExpressNo' was not found.");
   const header = rows[headerIndex];
   const metadata: Record<string, unknown> = {};
   rows.slice(0, headerIndex).forEach((row) => { if (row?.[0] != null && row?.[1] != null) metadata[clean(row[0])] = row[1]; });
   const tracking = column(header, sea ? ["入仓单号"] : ["ExpressNo"]);
-  const customer = column(header, sea ? ["客户名"] : ["Contact"]);
+  // Sea manifests label the client column 客户, 客户名 or 客户名称 depending on
+  // the forwarding partner that produced the bill.
+  const customer = column(header, sea ? ["客户名", "客户名称", "客户", "客户姓名"] : ["Contact"]);
   const pcs = column(header, sea ? ["件数"] : ["PCS"]);
   const weight = column(header, sea ? ["重量"] : ["Chargeable Weight"]);
   const cbm = sea ? column(header, ["体积"]) : -1;

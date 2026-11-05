@@ -762,3 +762,1010 @@ paymentLinkDialog=function(id){
   modal.querySelector('[data-payment-search]').oninput=event=>{const query=String(event.target.value||'').toLocaleLowerCase().trim();let shown=0;modal.querySelectorAll('[data-payment-search-row]').forEach(row=>{const match=!query||String(row.textContent||'').toLocaleLowerCase().includes(query);row.style.display=match?'grid':'none';if(match&&!row.querySelector('[data-payment-package]')?.disabled)shown++});modal.querySelector('[data-visible-count]').textContent=shown};
   modal.querySelector('[data-confirm-payment-link]').onclick=async event=>{const button=event.currentTarget,chosen=[...modal.querySelectorAll('[data-payment-package]:checked')].map(input=>input.value),total=chosen.reduce((sum,packageId)=>sum+Number(rowData.find(x=>String(x.package.id)===String(packageId))?.value||0),0);if(!chosen.length)return toast('Select at least one eligible package.','error');if(evidenceTotal&&total>evidenceTotal+0.01)return toast(`Selected packages total ${money(total)}, but this evidence is only ${money(evidenceTotal)}. Link fewer packages or upload the complete payment evidence.`,'error');button.disabled=true;button.textContent='Linking packages…';try{await adminRequest('/api/public/link-payment',{method:'POST',body:JSON.stringify({payment_notification_id:id,allocations:chosen.map(package_id=>({package_id}))})});modal.remove();state.paymentEvidenceView='linked';toast(`${chosen.length} package${chosen.length===1?'':'s'} marked Paid; evidence moved to Linked evidence.`);await refreshData()}catch(error){button.disabled=false;button.textContent='Link selected packages';toast(`Payment link failed: ${error.message}`,'error')}};
 };
+
+
+/* Desktop business workflow improvements. These last bindings intentionally
+   override legacy renderer definitions without changing the mobile client. */
+const hydrateIdentityBeforeDesktopImprovements = hydrateIdentity;
+hydrateIdentity = async function () {
+  await hydrateIdentityBeforeDesktopImprovements();
+  const userId = state.session?.user?.id;
+  if (!userId) return;
+  const rows = await request(
+    `rest/v1/employees?user_id=eq.${encodeURIComponent(userId)}&select=*`,
+  ).catch(() => []);
+  state.employee =
+    rows?.[0] ||
+    (state.data?.employees || []).find((employee) => String(employee.user_id) === String(userId)) ||
+    null;
+};
+
+const refreshDataBeforeDesktopImprovements = refreshData;
+refreshData = async function () {
+  await refreshDataBeforeDesktopImprovements();
+  const userId = state.session?.user?.id;
+  if (userId) {
+    const rows = await request(
+      `rest/v1/employees?user_id=eq.${encodeURIComponent(userId)}&select=*`,
+    ).catch(() => []);
+    state.employee =
+      rows?.[0] ||
+      (state.data?.employees || []).find(
+        (employee) => String(employee.user_id) === String(userId),
+      ) ||
+      state.employee ||
+      null;
+    if (state.session) render();
+  }
+};
+
+function currentEmployee() {
+  const userId = String(state.session?.user?.id || "");
+  return (
+    state.employee ||
+    (state.data?.employees || []).find((employee) => String(employee.user_id || "") === userId) ||
+    null
+  );
+}
+
+function eligibleCommissionStaff() {
+  const rows = (state.data?.employees || []).filter(
+    (employee) =>
+      employee.is_active !== false &&
+      !["admin", "finance_manager"].includes(String(employee.role || "").toLowerCase()),
+  );
+  const own = currentEmployee();
+  if (
+    own &&
+    !["admin", "finance_manager"].includes(String(own.role || "").toLowerCase()) &&
+    !rows.some((employee) => String(employee.id) === String(own.id))
+  ) {
+    rows.push(own);
+  }
+  return rows;
+}
+
+function employeeKeys(employee) {
+  return [
+    employee?.id,
+    employee?.employee_id,
+    employee?.employee_code,
+    employee?.user_id,
+    employee?.email,
+    employee?.full_name,
+  ]
+    .filter(Boolean)
+    .map((value) => String(value).trim().toLowerCase());
+}
+
+function employeeMatchesValue(value, employee) {
+  const candidate = String(value || "")
+    .trim()
+    .toLowerCase();
+  return Boolean(candidate && employeeKeys(employee).includes(candidate));
+}
+
+function rowBelongsToEmployee(row, employee) {
+  return [row?.employee_id, row?.employee_code, row?.employee_email, row?.user_id].some((value) =>
+    employeeMatchesValue(value, employee),
+  );
+}
+
+function packageBelongsToEmployee(pkg, employee) {
+  if (!employee) return false;
+  if (String(pkg?.commission_employee_id || "") === String(employee.id || "")) return true;
+  const legacyOwner = String(
+    pkg?.sales_rep || pkg?.sales_rep_email || pkg?.assigned_to || pkg?.registered_by || "",
+  )
+    .trim()
+    .toLowerCase();
+  return Boolean(
+    legacyOwner &&
+    employeeKeys(employee).some(
+      (key) => key === legacyOwner || (key.length > 4 && legacyOwner.includes(key)),
+    ),
+  );
+}
+
+function packagePaymentStatus(pkg) {
+  const stored = String(pkg?.payment_status || "")
+    .toLowerCase()
+    .replace(/[ -]/g, "_");
+  if (["unpaid", "part_paid", "paid", "invoice"].includes(stored)) return stored;
+  const legacy = String(pkg?.status || "").toLowerCase();
+  if (pkg?.paid_at || ["paid", "cleared", "collected", "released"].includes(legacy)) return "paid";
+  return "unpaid";
+}
+
+function packageIsReleased(pkg) {
+  return (
+    Boolean(pkg?.collected_at) ||
+    ["collected", "released"].includes(String(pkg?.status || "").toLowerCase())
+  );
+}
+
+packageValue = function (pkg) {
+  return (
+    Number(
+      pkg?.cost ??
+        pkg?.total_price_kes ??
+        pkg?.billing_amount ??
+        pkg?.price ??
+        pkg?.amount ??
+        pkg?.total ??
+        0,
+    ) || 0
+  );
+};
+isPaidPackage = function (pkg) {
+  return packagePaymentStatus(pkg) === "paid" || packageIsReleased(pkg);
+};
+packageState = function (pkg) {
+  if (packageIsReleased(pkg)) return status("Released");
+  const labels = { unpaid: "Unpaid", part_paid: "Part paid", paid: "Paid", invoice: "Invoice" };
+  return status(labels[packagePaymentStatus(pkg)]);
+};
+
+function commissionDateMatches(value, period, selected) {
+  if (!value) return false;
+  const dateValue = new Date(value);
+  if (Number.isNaN(dateValue.valueOf())) return false;
+  if (period === "year") return dateValue.getFullYear() === Number(selected);
+  return dateValue.toISOString().slice(0, 7) === selected;
+}
+
+function commissionPeriodControls(scope, period, selected) {
+  const year = period === "year";
+  const currentYear = new Date().getFullYear();
+  const value = selected || (year ? String(currentYear) : new Date().toISOString().slice(0, 7));
+  return `<label>Analysis period<select onchange="state.${scope}Period=this.value;render()"><option value="month" ${year ? "" : "selected"}>Monthly</option><option value="year" ${year ? "selected" : ""}>Yearly</option></select></label>${
+    year
+      ? `<label>Year<input type="number" min="2000" max="2100" value="${esc(value)}" onchange="state.${scope}Year=this.value;render()"></label>`
+      : `<label>Month<input type="month" value="${esc(value)}" onchange="state.${scope}Month=this.value;render()"></label>`
+  }`;
+}
+
+function commissionDateForRow(row) {
+  return row?.paid_at || row?.created_at || row?.updated_at || null;
+}
+
+function commissionRowsForEmployee(employee, rows = state.data?.commissions || []) {
+  return rows.filter((row) => rowBelongsToEmployee(row, employee));
+}
+
+function commissionsForDashboardEmployee(employee, period, selected) {
+  return commissionRowsForEmployee(employee).filter((row) =>
+    commissionDateMatches(commissionDateForRow(row), period, selected),
+  );
+}
+
+function packagesForDashboardEmployee(employee, period, selected) {
+  return (state.data?.packages || []).filter(
+    (pkg) =>
+      packageBelongsToEmployee(pkg, employee) &&
+      commissionDateMatches(
+        pkg.registered_at || pkg.imported_at || pkg.created_at,
+        period,
+        selected,
+      ),
+  );
+}
+
+function customerCount(packages) {
+  const customers = new Set();
+  for (const pkg of packages) {
+    const key = String(pkg.customer_id || pkg.phone || pkg.consignee || pkg.id || "")
+      .trim()
+      .toLowerCase();
+    if (key) customers.add(key);
+  }
+  return customers.size;
+}
+
+function dashboardCommissionOverview() {
+  const isAdmin = String(state.role || "").toLowerCase() === "admin";
+  const staff = eligibleCommissionStaff();
+  const period = state.dashboardPeriod || "month";
+  const selected =
+    period === "year"
+      ? String(state.dashboardYear || new Date().getFullYear())
+      : String(state.dashboardMonth || new Date().toISOString().slice(0, 7));
+  const allChoice = isAdmin && (state.dashboardEmployeeId || "all") === "all";
+  let people = isAdmin ? staff : [currentEmployee()].filter(Boolean);
+  if (isAdmin && !allChoice)
+    people = people.filter((employee) => String(employee.id) === String(state.dashboardEmployeeId));
+  const cards = people.map((employee) => {
+    const commissionRows = commissionsForDashboardEmployee(employee, period, selected);
+    const packageRows = packagesForDashboardEmployee(employee, period, selected);
+    const commissionTotal = commissionRows.reduce(
+      (sum, row) => sum + Number(row.amount ?? row.commission_amount ?? 0),
+      0,
+    );
+    const salesTotal = packageRows.reduce((sum, pkg) => sum + packageValue(pkg), 0);
+    return `<article class="panel employee-overview-card"><div class="panel-head"><div><h2>${esc(employee.full_name || employee.name || employee.email || "Staff member")}</h2><p>${esc(roleLabel(employee.role || ""))} · ${esc(period === "year" ? selected : new Date(`${selected}-01T00:00:00`).toLocaleDateString("en", { month: "long", year: "numeric" }))}</p></div></div><div class="employee-overview-metrics"><div><small>Commission</small><b>${money(commissionTotal)}</b></div><div><small>Total sold</small><b>${money(salesTotal)}</b></div><div><small>Customers</small><b>${customerCount(packageRows)}</b></div></div></article>`;
+  });
+  const aggregatePackages = people.flatMap((employee) =>
+    packagesForDashboardEmployee(employee, period, selected),
+  );
+  const aggregateCommissions = people.flatMap((employee) =>
+    commissionsForDashboardEmployee(employee, period, selected),
+  );
+  const totalCommission = aggregateCommissions.reduce(
+    (sum, row) => sum + Number(row.amount ?? row.commission_amount ?? 0),
+    0,
+  );
+  const totalSales = aggregatePackages.reduce((sum, pkg) => sum + packageValue(pkg), 0);
+  const uniqueCustomers = new Set(
+    people.flatMap((employee) =>
+      packagesForDashboardEmployee(employee, period, selected)
+        .map((pkg) =>
+          String(pkg.customer_id || pkg.phone || pkg.consignee || pkg.id || "")
+            .trim()
+            .toLowerCase(),
+        )
+        .filter(Boolean),
+    ),
+  ).size;
+  const employeeOptions = staff
+    .map(
+      (employee) =>
+        `<option value="${esc(employee.id)}" ${String(state.dashboardEmployeeId || "all") === String(employee.id) ? "selected" : ""}>${esc(employee.full_name || employee.email || employee.id)}</option>`,
+    )
+    .join("");
+  return `<section class="role-banner compact"><div><span>${esc(roleLabel(state.role || ""))} · COMMISSION OVERVIEW</span><h2>Commission and sales analysis</h2><p>View your performance ${period === "year" ? "for the selected year" : "for the selected month"}; administrators can select a staff member or compare everyone.</p></div></section><section class="commission-filter-bar">${commissionPeriodControls("dashboard", period, selected)}${isAdmin ? `<label>Staff member<select onchange="state.dashboardEmployeeId=this.value;render()"><option value="all" ${allChoice ? "selected" : ""}>All staff</option>${employeeOptions}</select></label>` : ""}</section><section class="metrics">${metric("Commission", money(totalCommission), period === "year" ? `Year ${selected}` : selected, "blue")}${metric("Total sold", money(totalSales), "Assigned package sales", "green")}${metric("Customers", uniqueCustomers, "Distinct linked customers", "amber")}</section><section class="employee-overview-grid">${cards.join("") || `<section class="panel empty">No commission-eligible staff records are available for this account.</section>`}</section>`;
+}
+
+overview = function () {
+  return dashboardCommissionOverview();
+};
+departmentOverview = function () {
+  return dashboardCommissionOverview();
+};
+
+function packageScrollToolbar() {
+  return `<div class="package-scroll-controls" aria-label="Package list scroll controls"><button type="button" data-scroll-packages="up" aria-label="Scroll packages up" title="Scroll up">↑</button><button type="button" data-scroll-packages="down" aria-label="Scroll packages down" title="Scroll down">↓</button></div>`;
+}
+
+function packageSearchToolbar(title = "Search packages") {
+  return `<div class="toolbar package-search-toolbar"><label class="search"><span>⌕</span><input type="search" placeholder="Search tracking number, customer, or phone" aria-label="Search packages" oninput="filterPackageRows(this)"></label>${title ? `<span class="muted">${esc(title)}</span>` : ""}</div>`;
+}
+
+function filterPackageRows(input) {
+  const workspace = input.closest(".package-workspace") || document;
+  const query = String(input.value || "")
+    .toLocaleLowerCase()
+    .trim();
+  workspace.querySelectorAll(".package-table-wrap tbody tr").forEach((row) => {
+    row.hidden =
+      Boolean(query) &&
+      !String(row.textContent || "")
+        .toLocaleLowerCase()
+        .includes(query);
+  });
+}
+
+function packageDetails(id) {
+  const pkg = (state.data?.packages || []).find((row) => String(row.id) === String(id));
+  if (!pkg) return toast("Package was not found. Refresh and try again.", "error");
+  const owner = (state.data?.employees || []).find(
+    (employee) => String(employee.id) === String(pkg.commission_employee_id),
+  );
+  const modal = packageDialog(
+    `<p class="eyebrow">DEX LOGISTICS · PACKAGE DETAILS</p><h2>${esc(pkg.tracking_number || pkg.id)}</h2><div class="package-detail-grid"><span><small>Customer</small><b>${esc(pkg.consignee || "Unassigned customer")}</b></span><span><small>Phone</small><b>${esc(pkg.phone || "—")}</b></span><span><small>Category</small><b>${esc(pkg.cargo_category || "General")}</b></span><span><small>Payment</small><b>${packageState(pkg)}</b></span><span><small>Assigned staff</small><b>${esc(owner?.full_name || "Not assigned")}</b></span><span><small>Pieces</small><b>${esc(pkg.pcs ?? "—")}</b></span><span><small>Weight / CBM</small><b>${esc(pkg.chargeable_weight ?? pkg.weight ?? "—")} kg${pkg.volume_cbm != null ? ` · ${esc(pkg.volume_cbm)} CBM` : ""}</b></span><span><small>Package value</small><b>${money(packageValue(pkg))}</b></span><span><small>Warehouse location</small><b>${esc(pkg.location || pkg.warehouse_location || "—")}</b></span>${pkg.paid_at ? `<span><small>Paid at</small><b>${date(pkg.paid_at)}</b></span>` : ""}${packageIsReleased(pkg) ? `<span><small>Released at</small><b>${date(pkg.collected_at)}</b></span>` : ""}</div><div class="dialog-actions"><button class="secondary" data-close-package-details>Close</button></div>`,
+  );
+  modal.querySelector("[data-close-package-details]").onclick = () => modal.remove();
+}
+
+function releaseCargo(id) {
+  const pkg = (state.data?.packages || []).find((row) => String(row.id) === String(id));
+  if (!pkg) return toast("Package was not found. Refresh and try again.", "error");
+  if (packagePaymentStatus(pkg) !== "paid")
+    return toast("Cargo can only be released after the package is fully paid.", "error");
+  if (packageIsReleased(pkg)) return toast("This cargo has already been released.");
+  const modal = packageDialog(
+    `<p class="eyebrow">DEX LOGISTICS · CARGO RELEASE</p><h2>Release ${esc(pkg.tracking_number || pkg.id)}?</h2><p>${esc(pkg.consignee || "Customer")} · ${money(packageValue(pkg))} paid</p><p class="muted">This records the physical handover. Payment status remains Paid.</p><div class="dialog-actions"><button class="primary" data-confirm-cargo-release>Confirm cargo release</button><button class="secondary" data-cancel-cargo-release>Cancel</button></div>`,
+  );
+  modal.querySelector("[data-cancel-cargo-release]").onclick = () => modal.remove();
+  modal.querySelector("[data-confirm-cargo-release]").onclick = async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    button.textContent = "Releasing cargo…";
+    try {
+      const result = await adminRequest(
+        `/api/public/packages/${encodeURIComponent(pkg.id)}/release`,
+        { method: "POST", body: JSON.stringify({}) },
+      );
+      if (result?.error) throw new Error(result.error);
+      modal.remove();
+      toast(
+        result?.already_released ? "Cargo was already released." : "Cargo released successfully.",
+      );
+      await refreshData();
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = "Confirm cargo release";
+      toast(`Cargo release failed: ${error.message}`, "error");
+    }
+  };
+}
+
+packageTable = function (rows, title = "Packages") {
+  const role = String(state.role || "").toLowerCase();
+  const canRelease = ["admin", "logistics_manager", "sales_manager"].includes(role);
+  const canAssignSales = [
+    "admin",
+    "sales_manager",
+    "sales_rep",
+    "logistics_manager",
+    "finance_manager",
+  ].includes(role);
+  const canEditLocation = ["admin", "logistics_manager", "sales_manager"].includes(role);
+  const staff = (state.data?.employees || []).filter(
+    (employee) =>
+      employee.is_active !== false &&
+      !["admin", "finance_manager"].includes(String(employee.role || "").toLowerCase()),
+  );
+  return `<section class="panel package-list-panel"><div class="panel-head"><div><h2>${esc(title)}</h2><p>${rows.length} live package${rows.length === 1 ? "" : "s"} · scroll this list independently</p></div>${packageScrollToolbar()}</div><div class="table-wrap package-table-wrap" tabindex="0" aria-label="Scrollable package list"><table><thead><tr><th>Payment status</th><th>Tracking</th><th>Customer</th><th>Category</th><th>Location</th><th>Pieces</th><th>Weight / CBM</th><th>Package value</th><th>Assigned staff</th><th>Actions</th></tr></thead><tbody>${
+    rows
+      .map((pkg) => {
+        const id = String(pkg.id || pkg.tracking_number || "");
+        const owner = staff.find(
+          (employee) => String(employee.id) === String(pkg.commission_employee_id),
+        );
+        const lines = Number(
+          parseManifestData(pkg).group?.line_count ||
+            parseManifestData(pkg).group?.line_items?.length ||
+            0,
+        );
+        const paid = packagePaymentStatus(pkg) === "paid";
+        const released = packageIsReleased(pkg);
+        const location = pkg.location || pkg.warehouse_location || "—";
+        return `<tr><td>${packageState(pkg)}</td><td><b>${esc(pkg.tracking_number || pkg.id)}</b>${lines > 1 ? `<br><small>${lines} cargo lines</small>` : ""}</td><td>${esc(pkg.consignee || "Unassigned customer")}${pkg.phone ? `<br><small>${esc(pkg.phone)}</small>` : ""}</td><td>${status(pkg.cargo_category || "general")}</td><td><span class="package-location">${esc(location)}</span>${canEditLocation ? `<button class="location-edit" onclick="editPackageLocation('${esc(id)}')">Edit</button>` : ""}</td><td>${esc(pkg.pcs ?? "—")}</td><td>${esc(pkg.chargeable_weight ?? pkg.weight ?? "—")} kg${pkg.volume_cbm != null ? `<br><small>${esc(pkg.volume_cbm)} CBM</small>` : ""}</td><td>${packagePrice(pkg)}</td><td>${esc(owner?.full_name || "Unassigned")}</td><td class="package-actions"><button class="row-btn" data-package-details="${esc(id)}">Details</button><button class="row-btn" data-reminder="${esc(id)}">Reminder</button>${canAssignSales ? `<button class="row-btn approve" data-assign-sales="${esc(id)}">Link staff</button>` : ""}${canRelease && paid && !released ? `<button class="row-btn paid" data-release-cargo="${esc(id)}">Release cargo</button>` : ""}<button class="row-btn" data-track="${esc(id)}">Payment state</button></td></tr>`;
+      })
+      .join("") || `<tr><td colspan="10" class="muted">No packages in this category.</td></tr>`
+  }</tbody></table></div></section>`;
+};
+
+function shipments() {
+  const all = livePackageRows();
+  const selected = state.packageCategory || "all";
+  const rows =
+    selected === "all"
+      ? all
+      : ["unpaid", "part_paid", "paid", "invoice"].includes(selected)
+        ? all.filter((pkg) => packagePaymentStatus(pkg) === selected)
+        : selected === "released"
+          ? all.filter(packageIsReleased)
+          : all.filter((pkg) => String(pkg.cargo_category || "general").toLowerCase() === selected);
+  const tabs = [
+    ["all", "All"],
+    ["general", "General"],
+    ["special", "Special"],
+    ["sea", "Sea"],
+    ["unpaid", "Unpaid"],
+    ["part_paid", "Part paid"],
+    ["paid", "Paid"],
+    ["invoice", "Invoice"],
+    ["released", "Released"],
+  ];
+  return `<section class="toolbar package-toolbar"><label class="search"><span>⌕</span><input type="search" placeholder="Search packages, customers, or tracking numbers" oninput="filterPackageRows(this)"></label><div class="category-tabs">${tabs.map(([key, label]) => `<button class="${selected === key ? "active" : ""}" onclick="state.packageCategory='${key}';render()">${label}</button>`).join("")}</div></section><section class="package-workspace">${packageTable(rows, "Live packages")}</section>`;
+}
+
+const navItemsBeforeDesktopImprovements = navItems;
+navItems = function (role) {
+  const items = navItemsBeforeDesktopImprovements(role).filter(
+    ([id]) => !["tracking", "manifests"].includes(id),
+  );
+  if (role !== "admin" && !items.some(([id]) => id === "my_commissions")) {
+    const insertAt = Math.max(
+      0,
+      items.findIndex(([id]) => id === "announcements"),
+    );
+    items.splice(insertAt < 0 ? items.length : insertAt, 0, [
+      "my_commissions",
+      "My commissions",
+      "◈",
+    ]);
+  }
+  return items;
+};
+
+const pageTitleBeforeDesktopImprovements = pageTitle;
+pageTitle = function () {
+  if (state.page === "my_commissions") return "My commissions";
+  if (state.page === "payment_control") return "Payment control";
+  return pageTitleBeforeDesktopImprovements();
+};
+
+const roleContentBeforeDesktopImprovements = roleContent;
+roleContent = function () {
+  if (["tracking", "manifests"].includes(state.page)) state.page = "overview";
+  if (state.page === "overview") return dashboardCommissionOverview();
+  if (state.page === "my_commissions") return commissions();
+  if (state.page === "commissions") return commissions();
+  return roleContentBeforeDesktopImprovements();
+};
+
+const departmentPackagesBeforeDesktopImprovements = departmentPackages;
+departmentPackages = function (title, rows) {
+  return `<section class="role-banner compact"><div><span>${esc(roleLabel(state.role))}</span><h2>${esc(title)}</h2></div><button class="text-btn" data-goto="overview">Back to overview →</button></section><section class="package-workspace">${packageSearchToolbar("Search all visible packages")}${packageTable(rows, title)}</section>`;
+};
+
+releaseQueue = function () {
+  const rows = (state.data?.packages || []).filter(
+    (pkg) => packagePaymentStatus(pkg) === "paid" && !packageIsReleased(pkg),
+  );
+  return departmentPackages("Ready to release", rows);
+};
+
+function payments() {
+  const all = state.data?.notifications || [];
+  const allocations = state.data?.allocations || [];
+  const linkedIds = new Set(
+    allocations.map((allocation) => String(allocation.payment_notification_id)),
+  );
+  const linked = all.filter(
+    (payment) =>
+      linkedIds.has(String(payment.id)) || String(payment.status || "").toUpperCase() === "LINKED",
+  );
+  const pending = all.filter(
+    (payment) =>
+      !linkedIds.has(String(payment.id)) && String(payment.status || "").toUpperCase() !== "LINKED",
+  );
+  const view = state.paymentEvidenceView || "pending";
+  const rows = view === "linked" ? linked : pending;
+  return `<section class="role-banner compact"><div><span>PAYMENT RECONCILIATION</span><h2>Link existing payment evidence</h2><p>Evidence is received through the configured payment source. This workspace is for linking evidence to one or more package tracking numbers.</p></div></section><section class="panel"><div class="panel-head"><div><h2>${view === "linked" ? "Linked payment evidence" : "Payment evidence awaiting link"}</h2><p>${view === "linked" ? "Add another package to an existing payment where balance remains." : "Link evidence to a package; partial payments can be followed by additional evidence."}</p></div><span class="count">${rows.length} records</span></div><div class="category-tabs evidence-tabs"><button class="${view === "pending" ? "active" : ""}" onclick="state.paymentEvidenceView='pending';render()">Awaiting link <span>${pending.length}</span></button><button class="${view === "linked" ? "active" : ""}" onclick="state.paymentEvidenceView='linked';render()">Linked evidence <span>${linked.length}</span></button></div><div class="table-wrap"><table><thead><tr><th>Reference</th><th>Evidence</th><th>Details</th><th>Amount</th><th>Link state</th><th>Action</th></tr></thead><tbody>${rows.map((payment) => `<tr><td><b>${esc(payment.notification_number || payment.id)}</b></td><td>${payment.image_url ? `<button class="evidence-preview" data-evidence-image="${esc(payment.image_url)}"><img data-evidence-thumb="${esc(payment.image_url)}" alt="Payment evidence"><span>View image</span></button>` : `<button class="row-btn" data-evidence-text="${esc(payment.text_content || "No payment message was attached.")}">View text</button>`}</td><td><div class="evidence-note">${esc(payment.text_content || "No note attached")}</div></td><td><b>${money(paymentAmount(payment))}</b></td><td>${status(payment.status || "PENDING")}</td><td><button class="row-btn" data-link-payment="${esc(payment.id)}">${linkedIds.has(String(payment.id)) || String(payment.status || "").toUpperCase() === "LINKED" ? "Link another package" : "Link package(s)"}</button></td></tr>`).join("") || `<tr><td colspan="6" class="empty">${view === "linked" ? "No linked payment evidence yet." : "No payment evidence is awaiting a link."}</td></tr>`}</tbody></table></div></section>`;
+}
+
+paymentControlView = function () {
+  const payments = state.data?.notifications || [];
+  const allocations = state.data?.allocations || [];
+  const packages = livePackageRows();
+  const packageFor = (allocation) =>
+    packages.find(
+      (pkg) =>
+        String(pkg.id) === String(allocation.order_id) ||
+        String(pkg.tracking_number) === String(allocation.tracking_number),
+    );
+  const linkedFor = (payment) =>
+    allocations.filter(
+      (allocation) => String(allocation.payment_notification_id) === String(payment.id),
+    );
+  const linkedCount = payments.filter((payment) => linkedFor(payment).length > 0).length;
+  const pendingCount = payments.length - linkedCount;
+  return `<section class="role-banner compact payment-control-hero"><div><span>ADMIN ONLY · PAYMENT CONTROL</span><h2>Correct, review, and reverse payment links</h2><p>Payment amount corrections, evidence deletion, and allocation reversals are recorded with a reason.</p></div></section><section class="payment-control-metrics"><article><span>Payment records</span><b>${payments.length}</b></article><article><span>Linked evidence</span><b>${linkedCount}</b></article><article><span>Awaiting links</span><b>${pendingCount}</b></article></section><section class="payment-control-list">${
+    payments
+      .map((payment) => {
+        const linked = linkedFor(payment);
+        return `<article class="panel payment-control-card"><header class="payment-control-head"><div><span class="eyebrow">${esc(payment.evidence_type || "PAYMENT EVIDENCE")}</span><h3>${esc(payment.notification_number || payment.id)}</h3><small>${date(payment.uploaded_at || payment.created_at)}</small></div><div class="payment-control-total"><b>${money(paymentAmount(payment))}</b>${status(linked.length ? "LINKED" : payment.status || "PENDING")}</div></header><div class="payment-control-details"><span><small>Sender</small><b>${esc(payment.sender_phone || "—")}</b></span><span><small>Message / note</small><b>${esc(payment.text_content || "No note attached")}</b></span>${payment.image_url ? `<button class="row-btn" data-evidence-image="${esc(payment.image_url)}">View evidence image</button>` : ""}<button class="row-btn" onclick="correctPayment('${esc(payment.id)}')">Correct payment amount / details</button><button class="row-btn" data-link-payment="${esc(payment.id)}">${linked.length ? "Link another tracking number" : "Link tracking number"}</button>${linked.length ? "" : `<button class="row-btn danger" data-delete-payment="${esc(payment.id)}">Delete evidence</button>`}</div>${
+          linked.length
+            ? `<div class="linked-package-section"><div class="linked-package-title"><b>Linked packages</b><span>${linked.length} allocation${linked.length === 1 ? "" : "s"}</span></div>${linked
+                .map((allocation) => {
+                  const pkg = packageFor(allocation);
+                  return `<div class="linked-package-row"><div><b>${esc(pkg?.tracking_number || allocation.tracking_number || allocation.order_id)}</b><small>${esc(pkg?.consignee || "Package")} · ${money(allocation.allocated_amount)}</small></div>${packageState(pkg || { status: "paid" })}<button class="row-btn danger" data-unlink-allocation="${esc(allocation.id)}">Unlink payment</button></div>`;
+                })
+                .join("")}</div>`
+            : `<div class="payment-control-unlinked">No package is currently linked. Link this evidence to a tracking number.</div>`
+        }</article>`;
+      })
+      .join("") || `<section class="panel empty">No payment records are available.</section>`
+  }</section>`;
+};
+
+function paymentBalance(pkg) {
+  const cost = packageValue(pkg);
+  const packageId = String(pkg.id || "");
+  const tracking = String(pkg.tracking_number || "");
+  const allocated = (state.data?.allocations || [])
+    .filter(
+      (allocation) =>
+        String(allocation.order_id) === packageId ||
+        (tracking && String(allocation.tracking_number) === tracking),
+    )
+    .reduce((sum, allocation) => sum + Number(allocation.allocated_amount || 0), 0);
+  return cost > 0 ? Math.max(0, cost - allocated) : null;
+}
+
+paymentLinkDialog = function (id) {
+  const evidence = (state.data?.notifications || []).find(
+    (payment) => String(payment.id) === String(id),
+  );
+  if (!evidence) return toast("Payment evidence was not found. Refresh and try again.", "error");
+  const evidenceTotal = paymentAmount(evidence);
+  const evidenceAlreadyAllocated = (state.data?.allocations || [])
+    .filter((allocation) => String(allocation.payment_notification_id) === String(id))
+    .reduce((sum, allocation) => sum + Number(allocation.allocated_amount || 0), 0);
+  const evidenceRemaining =
+    evidenceTotal > 0 ? Math.max(0, evidenceTotal - evidenceAlreadyAllocated) : null;
+  if (evidenceRemaining === 0)
+    return toast(
+      "This payment has already been fully allocated. Correct its amount in Payment control if the message total was wrong.",
+      "error",
+    );
+  const packages = livePackageRows().filter(
+    (pkg) =>
+      ["unpaid", "part_paid", "invoice"].includes(packagePaymentStatus(pkg)) &&
+      !packageIsReleased(pkg),
+  );
+  const candidates = packages.filter(
+    (pkg) =>
+      !(state.data?.allocations || []).some(
+        (allocation) =>
+          String(allocation.payment_notification_id) === String(id) &&
+          (String(allocation.order_id) === String(pkg.id) ||
+            String(allocation.tracking_number) === String(pkg.tracking_number || "")),
+      ),
+  );
+  if (!candidates.length)
+    return toast("There are no unpaid or part-paid packages available to link.", "error");
+  const rows = candidates
+    .map((pkg) => {
+      const balance = paymentBalance(pkg);
+      const defaultAmount =
+        balance != null
+          ? evidenceRemaining != null
+            ? Math.min(balance, evidenceRemaining)
+            : balance
+          : evidenceRemaining || 0;
+      return `<label class="payment-package-row" data-payment-search-row><input type="checkbox" data-payment-package value="${esc(pkg.id)}"><span class="payment-package-main"><b>${esc(pkg.tracking_number || pkg.id)}</b><small>${esc(pkg.consignee || "Unassigned customer")}${pkg.phone ? ` · ${esc(pkg.phone)}` : ""}</small><small>Balance: ${balance == null ? "Not set" : money(balance)} · ${esc(packagePaymentStatus(pkg).replace("_", " "))}</small></span><span class="payment-package-meta">${status(pkg.cargo_category || "general")}<label class="allocation-amount">This payment<input type="number" min="0.01" step="0.01" max="${balance == null ? "" : balance}" value="${defaultAmount > 0 ? defaultAmount.toFixed(2) : ""}" data-allocation-amount></label></span></label>`;
+    })
+    .join("");
+  const modal = packageDialog(
+    `<p class="eyebrow">DEX LOGISTICS · PAYMENT RECONCILIATION</p><h2>Link payment evidence</h2><p>Choose one or more tracking numbers and the amount from this payment allocated to each. Additional evidence can be linked to a part-paid tracking number later.</p><div class="payment-link-amount"><b>Payment amount: ${evidenceTotal > 0 ? money(evidenceTotal) : "Not detected"}</b><span>${evidenceRemaining == null ? "Enter the amount applied to each package." : `Unallocated from this payment: ${money(evidenceRemaining)}`}</span></div><div class="payment-link-search"><span>⌕</span><input type="search" data-payment-search placeholder="Search customer, tracking number, or phone"></div><div class="payment-link-count"><span data-visible-count>${candidates.length}</span> packages available</div><div class="package-link-list payment-picker">${rows}</div><div class="dialog-actions"><button class="primary" data-confirm-payment-link>Link selected amounts</button><button class="secondary" data-close-payment-link>Cancel</button></div>`,
+  );
+  modal.querySelector("[data-close-payment-link]").onclick = () => modal.remove();
+  modal.querySelector("[data-payment-search]").oninput = (event) => {
+    const query = String(event.target.value || "")
+      .toLocaleLowerCase()
+      .trim();
+    let shown = 0;
+    modal.querySelectorAll("[data-payment-search-row]").forEach((row) => {
+      const match =
+        !query ||
+        String(row.textContent || "")
+          .toLocaleLowerCase()
+          .includes(query);
+      row.style.display = match ? "grid" : "none";
+      if (match) shown++;
+    });
+    modal.querySelector("[data-visible-count]").textContent = String(shown);
+  };
+  modal.querySelector("[data-confirm-payment-link]").onclick = async (event) => {
+    const button = event.currentTarget;
+    const selected = [...modal.querySelectorAll("[data-payment-package]:checked")].map((input) => {
+      const amountInput = input
+        .closest("[data-payment-search-row]")
+        .querySelector("[data-allocation-amount]");
+      return { package_id: input.value, amount: Number(amountInput.value) };
+    });
+    if (!selected.length) return toast("Select at least one tracking number.", "error");
+    if (
+      selected.some((allocation) => !Number.isFinite(allocation.amount) || allocation.amount <= 0)
+    )
+      return toast("Enter a positive payment amount for every selected package.", "error");
+    const allocationTotal = selected.reduce((sum, allocation) => sum + allocation.amount, 0);
+    if (evidenceRemaining != null && allocationTotal > evidenceRemaining + 0.01)
+      return toast(
+        `Selected allocations total ${money(allocationTotal)}, but only ${money(evidenceRemaining)} remains on this payment.`,
+        "error",
+      );
+    for (const allocation of selected) {
+      const pkg = candidates.find((row) => String(row.id) === String(allocation.package_id));
+      const balance = pkg ? paymentBalance(pkg) : null;
+      if (balance != null && allocation.amount > balance + 0.01)
+        return toast(
+          `The allocation for ${pkg.tracking_number || pkg.id} exceeds its remaining balance of ${money(balance)}.`,
+          "error",
+        );
+    }
+    button.disabled = true;
+    button.textContent = "Linking payment…";
+    try {
+      await adminRequest("/api/public/link-payment", {
+        method: "POST",
+        body: JSON.stringify({ payment_notification_id: id, allocations: selected }),
+      });
+      modal.remove();
+      state.paymentEvidenceView = "linked";
+      toast("Payment amounts linked to the selected tracking numbers.");
+      await refreshData();
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = "Link selected amounts";
+      toast(`Payment link failed: ${error.message}`, "error");
+    }
+  };
+};
+
+assignPackageSale = function (id) {
+  const pkg = livePackageRows().find((row) => String(row.id) === String(id));
+  if (!pkg) return toast("Package was not found. Refresh and try again.", "error");
+  const eligible = eligibleCommissionStaff();
+  const actor = currentEmployee();
+  const isRep = String(state.role || "").toLowerCase() === "sales_rep";
+  const options = (
+    isRep && actor
+      ? eligible.filter((employee) => String(employee.id) === String(actor.id))
+      : eligible
+  )
+    .map(
+      (employee) =>
+        `<option value="${esc(employee.id)}" ${String(pkg.commission_employee_id || "") === String(employee.id) ? "selected" : ""}>${esc(employee.full_name || employee.email)} · ${esc(employee.role)}</option>`,
+    )
+    .join("");
+  const modal = packageDialog(
+    `<p class="eyebrow">DEX LOGISTICS · SALES ATTRIBUTION</p><h2>Link customer to staff</h2><p><b>${esc(pkg.tracking_number || pkg.id)}</b> · ${esc(pkg.consignee || "Customer")}</p><form data-sales-form><label>Commission owner<select name="commission_employee_id"><option value="">No staff assigned</option>${options}</select></label><p class="muted">The tracking number appears in the selected staff member’s commission view immediately. Payable commission is created under the existing full-payment rule.</p><p class="form-progress" data-sales-progress aria-live="polite"></p><div class="dialog-actions"><button class="primary" type="submit">Save staff link</button><button class="secondary" type="button" data-sales-cancel>Cancel</button></div></form>`,
+  );
+  modal.querySelector("[data-sales-cancel]").onclick = () => modal.remove();
+  modal.querySelector("[data-sales-form]").onsubmit = async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector('[type="submit"]');
+    const employeeId = new FormData(form).get("commission_employee_id") || null;
+    button.disabled = true;
+    button.textContent = "Saving link…";
+    modal.querySelector("[data-sales-progress]").textContent = "Saving the customer-to-staff link…";
+    try {
+      await adminRequest(`/api/public/packages/${encodeURIComponent(pkg.id)}/operations`, {
+        method: "PUT",
+        body: JSON.stringify({ commission_employee_id: employeeId }),
+      });
+      modal.remove();
+      toast("Customer linked to staff; the commission view is refreshed.");
+      await refreshData();
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = "Save staff link";
+      toast(`Staff link was not saved: ${error.message}`, "error");
+    }
+  };
+};
+
+commissions = function () {
+  const isAdmin = String(state.role || "").toLowerCase() === "admin";
+  const staff = eligibleCommissionStaff();
+  const ownEmployee = currentEmployee();
+  const period = state.commissionPeriod || "month";
+  const selectedPeriod =
+    period === "year"
+      ? String(state.commissionYear || new Date().getFullYear())
+      : String(state.commissionMonth || new Date().toISOString().slice(0, 7));
+  const employeeFilter = isAdmin
+    ? state.commissionEmployeeId || "all"
+    : String(ownEmployee?.id || "self");
+  const statusFilter = state.commissionStatus || "all";
+  const allEligibleRows = (state.data?.commissions || [])
+    .filter((row) => {
+      const employee = staff.find((candidate) => rowBelongsToEmployee(row, candidate));
+      return (
+        !employee ||
+        !["admin", "finance_manager"].includes(String(employee.role || "").toLowerCase())
+      );
+    })
+    .filter((row) => commissionDateMatches(commissionDateForRow(row), period, selectedPeriod));
+  const rows = allEligibleRows.filter((row) => {
+    if (!isAdmin && ownEmployee && !rowBelongsToEmployee(row, ownEmployee)) return false;
+    if (isAdmin && employeeFilter !== "all") {
+      const employee = staff.find((candidate) => String(candidate.id) === employeeFilter);
+      if (!employee || !rowBelongsToEmployee(row, employee)) return false;
+    }
+    return statusFilter === "all" || String(row.status || "").toLowerCase() === statusFilter;
+  });
+  const total = rows.reduce(
+    (sum, row) => sum + Number(row.amount ?? row.commission_amount ?? 0),
+    0,
+  );
+  const paid = rows
+    .filter((row) => String(row.status || "").toLowerCase() === "paid")
+    .reduce((sum, row) => sum + Number(row.amount ?? row.commission_amount ?? 0), 0);
+  const outstanding = total - paid;
+  const overall = allEligibleRows.reduce(
+    (sum, row) => sum + Number(row.amount ?? row.commission_amount ?? 0),
+    0,
+  );
+  const employeeOptions = staff
+    .map(
+      (employee) =>
+        `<option value="${esc(employee.id)}" ${employeeFilter === String(employee.id) ? "selected" : ""}>${esc(employee.full_name || employee.email || employee.id)}</option>`,
+    )
+    .join("");
+  const employeeName = (id) =>
+    staff.find((employee) => employeeKeys(employee).includes(String(id || "").toLowerCase()))
+      ?.full_name ||
+    id ||
+    "Unassigned";
+  const assignedPackages = (state.data?.packages || []).filter((pkg) => {
+    if (["paid"].includes(packagePaymentStatus(pkg)) || packageIsReleased(pkg)) return false;
+    const owner = staff.find((employee) => packageBelongsToEmployee(pkg, employee));
+    if (!owner) return false;
+    if (!isAdmin && ownEmployee && String(owner.id) !== String(ownEmployee.id)) return false;
+    if (isAdmin && employeeFilter !== "all" && String(owner.id) !== employeeFilter) return false;
+    return commissionDateMatches(
+      pkg.registered_at || pkg.imported_at || pkg.created_at,
+      period,
+      selectedPeriod,
+    );
+  });
+  const commissionRows = rows
+    .map(
+      (row) =>
+        `<tr><td><b>${esc(row.reference || row.order_id || row.package_id || row.cargo_package_id || "—")}</b></td><td>${esc(employeeName(row.employee_id))}</td><td>${money(row.gross_profit || 0)}</td><td>${Number(row.rate ?? row.percentage ?? 0)}%</td><td>${money(row.amount ?? row.commission_amount ?? 0)}</td><td>${status(row.status || "pending")}</td><td>${isAdmin && row.status === "pending" ? `<button class="row-btn approve" data-commission="${esc(row.id)}">Approve</button>` : isAdmin && row.status === "approved" ? `<button class="row-btn paid" data-paid="${esc(row.id)}">Mark paid</button>` : "—"}</td></tr>`,
+    )
+    .join("");
+  const pendingAttributionRows = assignedPackages
+    .map((pkg) => {
+      const owner = staff.find((employee) => packageBelongsToEmployee(pkg, employee));
+      return `<tr><td><b>${esc(pkg.tracking_number || pkg.id)}</b></td><td>${esc(owner?.full_name || "—")}</td><td>${money(packageValue(pkg))}</td><td>${status(packagePaymentStatus(pkg).replace("_", " "))}</td><td colspan="3">Awaiting full payment before payable commission is recorded</td></tr>`;
+    })
+    .join("");
+  window.__dexCurrentCommissionRows = rows;
+  return `<section class="role-banner compact"><div><span>${isAdmin ? "ADMIN ONLY" : "STAFF COMMISSION VIEW"} · COMMISSIONS</span><h2>${isAdmin ? "Commission ledger" : "My commissions"}</h2><p>${isAdmin ? "Filter by staff, period, and status; totals update with the selected filters." : "Your commission history and newly attributed packages appear here. Commission becomes payable after full payment."}</p></div></section><section class="commission-filter-bar">${commissionPeriodControls("commission", period, selectedPeriod)}${isAdmin ? `<label>Staff member<select onchange="state.commissionEmployeeId=this.value;render()"><option value="all" ${employeeFilter === "all" ? "selected" : ""}>All staff</option>${employeeOptions}</select></label>` : ""}<label>Commission status<select onchange="state.commissionStatus=this.value;render()"><option value="all" ${statusFilter === "all" ? "" : "selected"}>All statuses</option><option value="pending" ${statusFilter === "pending" ? "selected" : ""}>Pending</option><option value="approved" ${statusFilter === "approved" ? "selected" : ""}>Approved</option><option value="paid" ${statusFilter === "paid" ? "selected" : ""}>Paid</option></select></label><button class="primary" id="export-commission-pdf">Export current view</button></section><section class="metrics commission-metrics">${metric("Filtered commission", money(total), period === "year" ? `Year ${selectedPeriod}` : selectedPeriod, "blue")}${metric("Paid", money(paid), "Selected staff and period", "green")}${metric("Outstanding", money(outstanding), "Pending / approved", "amber")}${isAdmin ? metric("All-staff total", money(overall), "Before staff filter", "red") : ""}</section><section class="panel"><div class="panel-head"><div><h2>${isAdmin && employeeFilter === "all" ? "Commission records by employee" : "Commission records"}</h2><p>${rows.length} record${rows.length === 1 ? "" : "s"} · ${esc(selectedPeriod)}</p></div></div><div class="table-wrap"><table><thead><tr><th>Reference</th><th>Employee</th><th>Gross value</th><th>Rate</th><th>Commission</th><th>Status</th><th>Action</th></tr></thead><tbody>${commissionRows || `<tr><td colspan="7" class="empty">No commission records match this staff member and period.</td></tr>`}</tbody></table></div></section><section class="panel"><div class="panel-head"><div><h2>Attributed packages awaiting full payment</h2><p>Staff links appear immediately here; unpaid/part-paid package sales are not counted as payable commissions yet.</p></div><span class="count">${assignedPackages.length} packages</span></div><div class="table-wrap"><table><thead><tr><th>Tracking</th><th>Staff</th><th>Package value</th><th>Payment status</th><th colspan="3">Commission state</th></tr></thead><tbody>${pendingAttributionRows || `<tr><td colspan="7" class="empty">No attributed packages are waiting for payment.</td></tr>`}</tbody></table></div></section>`;
+};
+
+exportMonthlyCommissions = async function () {
+  const rows = window.__dexCurrentCommissionRows || [];
+  const staff = state.data?.employees || [];
+  const escapeHtml = (value) =>
+    String(value ?? "").replace(
+      /[&<>"']/g,
+      (character) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character],
+    );
+  const label =
+    state.commissionPeriod === "year"
+      ? String(state.commissionYear || new Date().getFullYear())
+      : String(state.commissionMonth || new Date().toISOString().slice(0, 7));
+  const html = `<!doctype html><html><head><meta charset="utf-8"><style>body{font:13px Arial,sans-serif;color:#12202b;padding:24px}h1{margin:0 0 4px;color:#154b75}.sub{color:#587083;margin-bottom:20px}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:8px;border-bottom:1px solid #d7e0e8}th{background:#eaf2f8;font-weight:700}.total{font-weight:bold;text-align:right;margin-top:16px}</style></head><body><h1>DEX Logistics · Commissions</h1><div class="sub">${state.commissionPeriod === "year" ? "Yearly" : "Monthly"} report · ${escapeHtml(label)} · ${rows.length} commission records</div><table><thead><tr><th>Employee</th><th>Package / reference</th><th>Gross value</th><th>Rate</th><th>Commission</th><th>Status</th></tr></thead><tbody>${rows.map((row) => `<tr><td>${escapeHtml(staff.find((employee) => String(employee.id) === String(row.employee_id))?.full_name || row.employee_id)}</td><td>${escapeHtml(row.reference || row.order_id || row.cargo_package_id || "—")}</td><td>${money(row.gross_profit || 0)}</td><td>${Number(row.rate ?? row.percentage ?? 0)}%</td><td>${money(row.amount ?? row.commission_amount ?? 0)}</td><td>${escapeHtml(row.status || "pending")}</td></tr>`).join("") || `<tr><td colspan="6">No commission records for this selection.</td></tr>`}</tbody></table><div class="total">Total commissions: ${money(rows.reduce((sum, row) => sum + Number(row.amount ?? row.commission_amount ?? 0), 0))}</div></body></html>`;
+  try {
+    const result = await window.dexAdmin.savePdf({
+      html,
+      fileName: `DEX-Commissions-${label}.pdf`,
+    });
+    if (!result?.canceled) toast(`Commission report saved: ${result.filePath || label}`);
+  } catch (error) {
+    toast(`Commission export failed: ${error.message}`, "error");
+  }
+};
+
+staff = function () {
+  const rows = state.data?.employees || [];
+  return `<section class="toolbar"><p class="muted">Manage company accounts and roles through the secured admin backend.</p><button class="primary" id="add-staff">+ Add team member</button></section><section class="panel"><div class="table-wrap"><table><thead><tr><th>Employee</th><th>Code</th><th>Role</th><th>Contact</th><th>Commission</th><th>Access</th><th>Actions</th></tr></thead><tbody>${
+    rows
+      .map((employee) => {
+        const id = employeeRecordId(employee);
+        return `<tr><td><b>${esc(employee.full_name)}</b><br><small>${esc(employee.email)}</small></td><td>${esc(employee.employee_code || id)}</td><td>${status(employee.role)}</td><td>${esc(employee.phone || "—")}</td><td>${employee.commission_percentage ?? 0}%</td><td><button class="toggle ${employee.is_active ? "on" : ""}" data-employee="${esc(id)}" data-active="${employee.is_active}"><i></i>${employee.is_active ? "Active" : "Inactive"}</button></td><td><button class="row-btn" onclick="editEmployee('${esc(employee.email || employee.employee_code || id)}')">Edit information</button> <button class="row-btn danger" data-delete-employee="${esc(id)}">Delete</button></td></tr>`;
+      })
+      .join("") || `<tr><td colspan="7" class="empty">No staff records.</td></tr>`
+  }</tbody></table></div></section>`;
+};
+
+editEmployee = async function (id) {
+  const key = String(id || "").trim();
+  let employee = (state.data?.employees || []).find((row) =>
+    [row.id, row.employee_id, row.user_id, row.employee_code, row.email].some(
+      (value) => String(value || "").trim() === key,
+    ),
+  );
+  if (!employee) {
+    try {
+      const response = await adminRequest("/api/public/admin/employees");
+      const rows = Array.isArray(response?.employees) ? response.employees : [];
+      employee = rows.find((row) =>
+        [row.id, row.employee_id, row.user_id, row.employee_code, row.email].some(
+          (value) => String(value || "").trim() === key,
+        ),
+      );
+      if (employee) state.data.employees = rows;
+    } catch (error) {
+      return toast(`Could not reload employee details: ${error.message}`, "error");
+    }
+  }
+  if (!employee)
+    return toast(`Employee record ${key || "(missing identifier)"} was not found.`, "error");
+  const employeeId = employeeRecordId(employee);
+  if (!employeeId)
+    return toast("The backend returned an employee without a row identifier.", "error");
+  const roles = [
+    ["sales_rep", "Sales representative"],
+    ["sales_manager", "Sales manager"],
+    ["logistics_manager", "Logistics manager"],
+    ["finance_manager", "Finance manager"],
+    ["admin", "Administrator"],
+  ];
+  const modal = packageDialog(
+    `<p class="eyebrow">DEX LOGISTICS · STAFF PROFILE</p><h2>Edit team member</h2><form data-edit-employee-form><label>Full name<input name="full_name" required value="${esc(employee.full_name || "")}"></label><label>Email<input name="email" type="email" required value="${esc(employee.email || "")}"></label><label>Phone<input name="phone" value="${esc(employee.phone || "")}"></label><label>New password (optional)<input name="password" type="password" minlength="8" autocomplete="new-password" placeholder="Leave blank to keep current password"><small class="muted">Enter a new password only when changing sign-in access.</small></label><label>Company role<select name="role">${roles.map(([value, label]) => `<option value="${value}" ${employee.role === value ? "selected" : ""}>${label}</option>`).join("")}</select></label><p class="form-progress" data-edit-progress aria-live="polite"></p><div class="dialog-actions"><button class="primary" type="submit">Save changes</button><button class="secondary" type="button" data-edit-cancel>Cancel</button></div></form>`,
+  );
+  modal.querySelector("[data-edit-cancel]").onclick = () => modal.remove();
+  modal.querySelector("[data-edit-employee-form]").onsubmit = async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector('[type="submit"]');
+    const payload = Object.fromEntries(new FormData(form));
+    payload.phone = payload.phone || null;
+    payload.password = String(payload.password || "").trim();
+    if (!payload.password) delete payload.password;
+    if (payload.password && payload.password.length < 8)
+      return toast("A new password must contain at least 8 characters.", "error");
+    button.disabled = true;
+    button.textContent = "Saving changes…";
+    modal.querySelector("[data-edit-progress]").textContent =
+      "Updating the employee record and sign-in profile…";
+    try {
+      await adminRequest("/api/public/admin/employees", {
+        method: "PATCH",
+        body: JSON.stringify({ employee_id: employeeId, ...payload }),
+      });
+      modal.remove();
+      toast("Employee information updated.");
+      await refreshData();
+    } catch (error) {
+      button.disabled = false;
+      button.textContent = "Save changes";
+      toast(`Employee details were not saved: ${error.message}`, "error");
+    }
+  };
+};
+
+if (!window.__dexDesktopImprovementsBound) {
+  window.__dexDesktopImprovementsBound = true;
+  document.addEventListener("click", (event) => {
+    const scrollButton = event.target.closest("[data-scroll-packages]");
+    if (scrollButton) {
+      const list = scrollButton
+        .closest(".package-list-panel")
+        ?.querySelector(".package-table-wrap");
+      list?.scrollBy({
+        top:
+          scrollButton.dataset.scrollPackages === "up"
+            ? -Math.max(350, list.clientHeight * 0.75)
+            : Math.max(350, list.clientHeight * 0.75),
+        behavior: "smooth",
+      });
+      return;
+    }
+    const detailsButton = event.target.closest("[data-package-details]");
+    if (detailsButton) return packageDetails(detailsButton.dataset.packageDetails);
+    const salesButton = event.target.closest("[data-assign-sales]");
+    if (salesButton) return assignPackageSale(salesButton.dataset.assignSales);
+    const releaseButton = event.target.closest("[data-release-cargo]");
+    if (releaseButton) return releaseCargo(releaseButton.dataset.releaseCargo);
+  });
+}
+
+/* Small final safeguards for role labels and existing package-row actions. */
+const packageTableBeforeSafeLocationAction = packageTable;
+packageTable = function (rows, title) {
+  return packageTableBeforeSafeLocationAction(rows, title).replace(
+    /onclick="editPackageLocation\('([^']*)'\)"/g,
+    'data-edit-package-location="$1"',
+  );
+};
+
+const navItemsBeforeCommissionLabelCleanup = navItems;
+navItems = function (role) {
+  const items = navItemsBeforeCommissionLabelCleanup(role).filter(
+    ([id]) => role === "admin" || id !== "commissions",
+  );
+  return items.map(([id, label, icon]) =>
+    id === "my_commissions" ? [id, "My commissions", icon] : [id, label, icon],
+  );
+};
+
+openShipment = function (id) {
+  const pkg = (state.data?.packages || []).find((row) => String(row.id) === String(id));
+  if (!pkg) return toast("Package was not found. Refresh and try again.", "error");
+  const modal = packageDialog(
+    `<p class="eyebrow">DEX LOGISTICS · PAYMENT STATUS</p><h2>${esc(pkg.tracking_number || pkg.id)}</h2><p>Current status: ${packageState(pkg)}</p><p class="muted">Payment status updates when payment evidence is linked or a finance invoice is created. Cargo release is a separate action available only after full payment.</p><div class="dialog-actions"><button class="secondary" data-close-payment-state>Close</button></div>`,
+  );
+  modal.querySelector("[data-close-payment-state]").onclick = () => modal.remove();
+};
+
+if (!window.__dexDesktopImprovementsBound) {
+  window.__dexDesktopImprovementsBound = true;
+  document.addEventListener("click", (event) => {
+    const locationButton = event.target.closest("[data-edit-package-location]");
+    if (locationButton) editPackageLocation(locationButton.dataset.editPackageLocation);
+  });
+}
+
+void departmentPackagesBeforeDesktopImprovements;
+if (!window.__dexDesktopLocationActionBound) {
+  window.__dexDesktopLocationActionBound = true;
+  document.addEventListener("click", (event) => {
+    const locationButton = event.target.closest("[data-edit-package-location]");
+    if (locationButton) editPackageLocation(locationButton.dataset.editPackageLocation);
+  });
+}
+
+currentEmployee = function () {
+  const userId = String(state.session?.user?.id || "");
+  const employee =
+    state.employee ||
+    (state.data?.employees || []).find((row) => String(row.user_id || "") === userId);
+  if (employee) return employee;
+  return userId
+    ? {
+        id: userId,
+        user_id: userId,
+        email: state.session?.user?.email || "",
+        full_name: state.profile?.full_name || state.profile?.name || "My account",
+        role: state.role,
+        is_active: true,
+        _synthetic: true,
+      }
+    : null;
+};
+
+eligibleCommissionStaff = function () {
+  const rows = (state.data?.employees || []).filter(
+    (employee) =>
+      employee.is_active !== false &&
+      !["admin", "finance_manager"].includes(String(employee.role || "").toLowerCase()),
+  );
+  const own = currentEmployee();
+  if (
+    own &&
+    !own._synthetic &&
+    !["admin", "finance_manager"].includes(String(own.role || "").toLowerCase()) &&
+    !rows.some((employee) => String(employee.id) === String(own.id))
+  )
+    rows.push(own);
+  return rows;
+};
+
+function loadCommissionReport(scope) {
+  if (String(state.role || "").toLowerCase() !== "admin") return;
+  const period = state[`${scope}Period`] || "month";
+  const selected =
+    period === "year"
+      ? String(state[`${scope}Year`] || new Date().getFullYear())
+      : String(state[`${scope}Month`] || new Date().toISOString().slice(0, 7));
+  const key = `${scope}:${period}:${selected}`;
+  if (state.commissionReportLoaded === key || state.commissionReportRequest === key) return;
+  state.commissionReportRequest = key;
+  const query =
+    period === "year"
+      ? `year=${encodeURIComponent(selected)}`
+      : `month=${encodeURIComponent(selected)}`;
+  adminRequest(`/api/public/admin/commissions-report?${query}`)
+    .then((report) => {
+      if (state.commissionReportRequest !== key) return;
+      state.data.commissions = Array.isArray(report?.commissions) ? report.commissions : [];
+      state.commissionReportLoaded = key;
+      render();
+    })
+    .catch((error) => {
+      if (state.commissionReportRequest === key) {
+        state.commissionReportLoaded = key;
+        console.warn("Could not load the full commission report", error);
+      }
+    });
+}
+
+commissionPeriodControls = function (scope, period, selected) {
+  const isYear = period === "year";
+  const value =
+    selected || (isYear ? String(new Date().getFullYear()) : new Date().toISOString().slice(0, 7));
+  const loadCall =
+    scope === "commission" || scope === "dashboard" ? `loadCommissionReport('${scope}')` : "";
+  return `<label>Analysis period<select onchange="state.${scope}Period=this.value;render();${loadCall}"><option value="month" ${isYear ? "" : "selected"}>Monthly</option><option value="year" ${isYear ? "selected" : ""}>Yearly</option></select></label>${
+    isYear
+      ? `<label>Year<input type="number" min="2000" max="2100" value="${esc(value)}" onchange="state.${scope}Year=this.value;render();${loadCall}"></label>`
+      : `<label>Month<input type="month" value="${esc(value)}" onchange="state.${scope}Month=this.value;render();${loadCall}"></label>`
+  }`;
+};
+
+const renderBeforeCommissionReportLoader = render;
+render = function () {
+  renderBeforeCommissionReportLoader();
+  if (String(state.role || "").toLowerCase() === "admin") {
+    loadCommissionReport(state.page === "commissions" ? "commission" : "dashboard");
+  }
+};
+
+const refreshDataBeforeCommissionReportRefresh = refreshData;
+refreshData = async function () {
+  state.commissionReportLoaded = null;
+  state.commissionReportRequest = null;
+  await refreshDataBeforeCommissionReportRefresh();
+};

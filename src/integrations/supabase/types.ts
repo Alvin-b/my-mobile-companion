@@ -106,6 +106,7 @@ export type Database = {
           package_photo_captured_by: string | null
           package_photo_url: string | null
           paid_at: string | null
+          payment_status: "unpaid" | "part_paid" | "paid" | "invoice"
           payment_method: string | null
           payment_mode: string | null
           payment_ref: string | null
@@ -163,6 +164,7 @@ export type Database = {
           package_photo_captured_by?: string | null
           package_photo_url?: string | null
           paid_at?: string | null
+          payment_status?: "unpaid" | "part_paid" | "paid" | "invoice"
           payment_method?: string | null
           payment_mode?: string | null
           payment_ref?: string | null
@@ -220,6 +222,7 @@ export type Database = {
           package_photo_captured_by?: string | null
           package_photo_url?: string | null
           paid_at?: string | null
+          payment_status?: "unpaid" | "part_paid" | "paid" | "invoice"
           payment_method?: string | null
           payment_mode?: string | null
           payment_ref?: string | null
@@ -1820,6 +1823,14 @@ export type Database = {
         }
         Returns: Json
       }
+      link_payment_allocations: {
+        Args: {
+          _allocations: Json
+          _linked_by?: string | null
+          _payment_notification_id: string
+        }
+        Returns: Json
+      }
       apply_mpesa_payment: {
         Args: {
           _amount: number
@@ -1936,6 +1947,14 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      release_cargo_package: {
+        Args: {
+          _actor?: string | null
+          _actor_employee_id: string
+          _package_id: string
+        }
+        Returns: Json
       }
       transition_package_status: {
         Args: {

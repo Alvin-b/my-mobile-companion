@@ -1,24 +1,22 @@
-# DEX Admin desktop UI on the companion backend
+# DEX Admin desktop console enhancements
 
 ## Implementation approach
 
-Use the created DEX Admin desktop renderer as the sole user-facing UI at `/`. Keep the companion project's Supabase project configuration and server/API handlers; the desktop renderer receives the Vite-injected Supabase URL and publishable key and sends protected `/api` requests to the current application origin. Browser session persistence uses local storage; Supabase authorization and server-side checks remain authoritative.
+Keep the existing desktop renderer as the sole UI for this work. Mobile-client UI/build/update requests are deferred as requested; retain backend routes and data contracts that may still be used by the mobile app. Make desktop package, payment, staff, and commission workflows use the existing authenticated server routes and Supabase data model rather than introducing a second frontend.
 
-Remove the legacy mobile sign-in, dashboard, scan, package, customer, notification, commission, and React desktop page routes from the client route graph. Preserve `src/routes/api/**`, Supabase integrations, server functions, schemas, and database configuration. Unknown old UI paths return the app's normal not-found page. The desktop renderer owns navigation between its overview, packages, payments, staff, commissions, announcements, and audit views.
+Represent payment state separately from cargo release using four canonical values: `unpaid`, `part_paid`, `paid`, and `invoice`. Derive paid/part-paid totals from payment allocations, support separate evidence records against the same tracking number, and keep a package releasable only once its balance is fully paid. Physical release is recorded through the existing release endpoint and `collected_at`; do not write `released` into the constrained two-state cargo `status` column.
+
+Keep payment amount corrections audited, retain payment unlink/delete audit history, enforce payment deletion as administrator-only in both the API and database policies, and make staff profile edits expose the backend's existing optional password change. Ensure sales attribution is visible from each staff member's package list and commission view while protecting accrued commissions from premature payout. Remove company-revenue cards from dashboards, hide desktop tracking/manifest UI and route/freight presentation, and add search/scroll controls to shared package views.
 
 ## Project structure
 
-- `src/routes/index.tsx`: full-screen DEX desktop UI mount and browser bridge setup.
-- `src/legacy/desktop-renderer.ts`: the created DEX desktop renderer and its in-app operational views.
-- `public/desktop-console.css` and `public/assets/dex-logo.png`: matching DEX desktop styling and branding.
-- `src/routes/api/**`: retained server-side backend routes used by the console.
-- `src/integrations/supabase/**` and `supabase/**`: retained Supabase client, types, and backend integration.
+- `src/legacy/desktop-renderer.ts`: desktop console navigation, overview, package, payment, staff, and commission screens.
+- `public/desktop-console.css`: desktop workspace, scrollable package lists, and responsive styles.
+- `src/routes/api/public/**`: authenticated package/payment operations, commission reporting, and finance invoice integration.
+- `src/lib/admin-api.server.ts` and `src/lib/storage-sign.server.ts`: shared active-user/admin authorization helpers.
+- `supabase/migrations/**`: payment-state, payment-deletion policy, allocation, and release invariants.
+- `src/integrations/supabase/types.ts`: generated database type contract kept in sync with new fields.
 
 ## Design direction
 
-- **Movement:** logistics operations control-room interface.
-- **Principles:** dense but scannable information; live operational status; actions close to records; preserve explicit role checks and auditable changes.
-- **Color:** dark navy work surfaces, electric blue navigation and primary actions, semantic amber/red/green statuses.
-- **Layout:** desktop sidebar with a broad operational workspace, adapting to narrower viewports.
-- **Signature elements:** DEX brand mark, compact uppercase labels, mono identifiers, semantic status pills.
-- **Interaction:** preserve the desktop renderer's sign-in flow, navigation, mutation confirmations, pending states, and server error messaging.
+Preserve the existing DEX logistics control-room styling: dark navy work surfaces, electric-blue primary actions, compact operational tables, semantic payment/status badges, and sticky headers for dense desktop package workflows. Make package scrolling and filters easy to discover without changing the mobile app or replacing the established visual system.

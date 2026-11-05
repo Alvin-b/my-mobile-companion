@@ -122,3 +122,55 @@
 .package-thumb img{width:100%;height:100%;object-fit:cover}
 .package-thumb span{position:absolute;inset:auto 0 0;background:#06121bcc;font-size:9px;padding:3px}
 .empty-thumb{display:grid;place-items:center;font-size:9px}
+
+
+/* Shared desktop operations controls for every role. */
+.package-table-wrap {
+  min-height: min(68vh, 780px) !important;
+  max-height: min(82vh, 980px) !important;
+  scrollbar-width: auto;
+  scrollbar-color: #39b9a6 #071824;
+}
+.package-table-wrap::-webkit-scrollbar { width: 22px; height: 22px; }
+.package-table-wrap::-webkit-scrollbar-button { display: block; height: 20px; background: #14384d; border: 1px solid #2c6b83; }
+.package-table-wrap::-webkit-scrollbar-thumb { min-height: 48px; background: linear-gradient(180deg, #39b9a6, #3488ad); border: 4px solid #071824; border-radius: 99px; }
+.package-table-wrap table { min-width: 1220px; }
+.package-table-wrap th, .package-table-wrap td { padding-top: 13px; padding-bottom: 13px; }
+.app-shell.page-shipments .package-table-wrap { height: calc(100vh - 245px) !important; min-height: 420px; max-height: none !important; }
+.package-scroll-controls { display: flex; align-items: center; gap: 8px; }
+.package-scroll-controls button { min-width: 46px; min-height: 42px; border: 1px solid #3a8099; border-radius: 10px; background: linear-gradient(135deg, #12364a, #0e2635); color: #b8f5e7; font: 800 20px/1 Manrope, sans-serif; cursor: pointer; box-shadow: 0 4px 12px #0004; }
+.package-scroll-controls button:hover { color: #071722; background: linear-gradient(135deg, #49d4a5, #64d9f2); }
+.package-workspace { min-width: 0; }
+.package-search-toolbar { margin-bottom: 12px; padding: 10px 12px; border: 1px solid #23465b; border-radius: 12px; background: #0b1d2a; }
+.package-search-toolbar .search { display: flex; align-items: center; gap: 10px; min-width: min(440px, 100%); }
+.package-search-toolbar input { width: 100%; min-width: 0; }
+.package-actions { min-width: 300px; white-space: nowrap; }
+.package-actions .row-btn { margin: 2px; }
+.employee-overview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin-top: 14px; }
+.employee-overview-card { margin: 0; }
+.employee-overview-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+.employee-overview-metrics > div { display: grid; gap: 7px; min-width: 0; padding: 12px; border: 1px solid #214258; border-radius: 10px; background: #091924; }
+.employee-overview-metrics small { color: #8eaabd; font-size: 10px; text-transform: uppercase; letter-spacing: .07em; }
+.employee-overview-metrics b { color: #dff4ff; font: 700 15px 'DM Mono', monospace; overflow-wrap: anywhere; }
+.commission-filter-bar { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; margin: 12px 0 16px; padding: 13px; border: 1px solid #23465b; border-radius: 12px; background: #0a1b27; }
+.commission-filter-bar label { min-width: 150px; flex: 1; }
+.commission-filter-bar input, .commission-filter-bar select { margin-top: 6px; }
+.payment-link-amount { display: grid; gap: 5px; padding: 13px 15px; border: 1px solid #2c6177; border-radius: 10px; background: #0d2a39; color: #d8f2ff; }
+.payment-link-amount span { color: #94b4c5; font-size: 12px; }
+.allocation-amount { display: grid; gap: 5px; min-width: 120px; color: #aac8d8; font-size: 10px; }
+.allocation-amount input { width: 130px; max-width: 100%; padding: 8px; border: 1px solid #36576b; border-radius: 8px; background: #071722; color: #e8f6ff; }
+.package-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 18px 0; }
+.package-detail-grid > span { display: grid; gap: 5px; padding: 11px; border: 1px solid #25465a; border-radius: 9px; background: #091924; }
+.package-detail-grid small { color: #8eaabd; font-size: 10px; text-transform: uppercase; }
+.package-detail-grid b { overflow-wrap: anywhere; }
+@media (max-width: 900px) {
+  .package-scroll-controls button { min-width: 48px; min-height: 44px; }
+  .app-shell.page-shipments .package-table-wrap { height: calc(100vh - 290px) !important; min-height: 360px; }
+  .commission-filter-bar { align-items: stretch; }
+  .employee-overview-metrics { grid-template-columns: 1fr; }
+}
+@media (max-width: 650px) {
+  .package-detail-grid { grid-template-columns: 1fr; }
+  .package-scroll-controls { margin-left: auto; }
+  .package-table-wrap { min-height: 55vh !important; }
+}

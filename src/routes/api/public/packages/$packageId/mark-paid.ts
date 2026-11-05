@@ -11,7 +11,12 @@ export const Route = createFileRoute("/api/public/packages/$packageId/mark-paid"
         const user = await verifyStaffJwt(request);
         if (!user) return new Response("Unauthorized", { status: 401 });
 
-        let body: { payment_method?: string; payment_reference?: string; note?: string; commission_employee_id?: string };
+        let body: {
+          payment_method?: string;
+          payment_reference?: string;
+          note?: string;
+          commission_employee_id?: string;
+        };
         try {
           body = await request.json();
         } catch {
@@ -25,14 +30,21 @@ export const Route = createFileRoute("/api/public/packages/$packageId/mark-paid"
           .eq("user_id", user.id)
           .maybeSingle();
         const role = String(employee?.role ?? "").toLowerCase();
-        if (!employee?.is_active || !["admin", "logistics_manager", "sales_manager"].includes(role)) {
-          return Response.json({ error: "Your account does not have permission to release packages." }, { status: 403 });
+        if (
+          !employee?.is_active ||
+          !["admin", "logistics_manager", "sales_manager"].includes(role)
+        ) {
+          return Response.json(
+            { error: "Your account does not have permission to release packages." },
+            { status: 403 },
+          );
         }
 
         const packageId = String(params.packageId ?? "").trim();
         if (!packageId) return Response.json({ error: "Package ID is required" }, { status: 400 });
         const paymentMethod = String(body.payment_method ?? "").trim();
-        if (!paymentMethod) return Response.json({ error: "Choose a payment method" }, { status: 400 });
+        if (!paymentMethod)
+          return Response.json({ error: "Choose a payment method" }, { status: 400 });
 
         const { data: pkg, error: packageError } = await supabaseAdmin
           .from("cargo_packages")
@@ -49,9 +61,16 @@ export const Route = createFileRoute("/api/public/packages/$packageId/mark-paid"
             .select("id,role,is_active")
             .eq("id", commissionEmployeeId)
             .maybeSingle();
-          if (commissionEmployeeError) return Response.json({ error: commissionEmployeeError.message }, { status: 500 });
-          if (!commissionEmployee?.is_active || ["admin", "finance_manager"].includes(String(commissionEmployee.role).toLowerCase())) {
-            return Response.json({ error: "Choose an active commission-eligible employee." }, { status: 400 });
+          if (commissionEmployeeError)
+            return Response.json({ error: commissionEmployeeError.message }, { status: 500 });
+          if (
+            !commissionEmployee?.is_active ||
+            ["admin", "finance_manager"].includes(String(commissionEmployee.role).toLowerCase())
+          ) {
+            return Response.json(
+              { error: "Choose an active commission-eligible employee." },
+              { status: 400 },
+            );
           }
           // Set the owner before the allocation is inserted: the SQL payment
           // trigger then creates the commission against the selected employee.
@@ -59,12 +78,18 @@ export const Route = createFileRoute("/api/public/packages/$packageId/mark-paid"
             .from("cargo_packages")
             .update({ commission_employee_id: commissionEmployee.id })
             .eq("id", pkg.id);
-          if (assignmentError) return Response.json({ error: assignmentError.message }, { status: 400 });
+          if (assignmentError)
+            return Response.json({ error: assignmentError.message }, { status: 400 });
         }
 
-        const alreadyPaid = ["paid", "cleared", "released", "collected"].includes(String(pkg.status ?? "").toLowerCase());
+        const alreadyPaid = ["paid", "cleared", "released", "collected"].includes(
+          String(pkg.status ?? "").toLowerCase(),
+        );
         if (alreadyPaid) {
-          return Response.json({ ok: true, already_paid: true, package: pkg }, { headers: { "cache-control": "no-store" } });
+          return Response.json(
+            { ok: true, already_paid: true, package: pkg },
+            { headers: { "cache-control": "no-store" } },
+          );
         }
 
         const reference = String(body.payment_reference ?? "").trim() || `MANUAL-${Date.now()}`;
@@ -99,17 +124,18 @@ export const Route = createFileRoute("/api/public/packages/$packageId/mark-paid"
           linked_by: user.email ?? user.id,
           linked_at: now,
         });
-        if (allocationError) return Response.json({ error: allocationError.message }, { status: 400 });
+        if (allocationError)
+          return Response.json({ error: allocationError.message }, { status: 400 });
+        // The allocation trigger owns payment_status/status/paid_at.  Only
+        // attach the manual collection metadata here; unknown-cost packages
+        // must remain safely unpaid/part-paid instead of being forced paid.
         const { data: updated, error: updateError } = await supabaseAdmin
           .from("cargo_packages")
-          .update({
-            status: "paid",
-            paid_at: now,
-            payment_method: paymentMethod,
-            payment_ref: reference,
-          })
+          .update({ payment_method: paymentMethod, payment_ref: reference })
           .eq("id", pkg.id)
-          .select("id,tracking_number,status,cost,paid_at,payment_ref,payment_method")
+          .select(
+            "id,tracking_number,status,payment_status,cost,paid_at,payment_ref,payment_method",
+          )
           .single();
         if (updateError) return Response.json({ error: updateError.message }, { status: 400 });
 
@@ -126,7 +152,10 @@ export const Route = createFileRoute("/api/public/packages/$packageId/mark-paid"
           });
         }
 
-        return Response.json({ ok: true, payment_notification_id: paymentId, package: updated }, { headers: { "cache-control": "no-store" } });
+        return Response.json(
+          { ok: true, payment_notification_id: paymentId, package: updated },
+          { headers: { "cache-control": "no-store" } },
+        );
       },
     },
   },

@@ -1,13 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { verifyStaffJwt } from "@/lib/storage-sign.server";
 
-// Company-wide money position for the admin dashboard.
-// Revenue = value of every cargo package that has been paid for (either via
-// M-Pesa STK or by an admin linking uploaded payment evidence to it).
-//
-// Auth: Supabase JWT of an active staff member.
-// GET /api/public/revenue-summary
-
+// Company-wide money position for administrator and finance-manager dashboards.
 export const Route = createFileRoute("/api/public/revenue-summary")({
   server: {
     handlers: {
@@ -16,10 +10,25 @@ export const Route = createFileRoute("/api/public/revenue-summary")({
         if (!user) return new Response("Unauthorized", { status: 401 });
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { data: actor, error: actorError } = await supabaseAdmin
+          .from("employees")
+          .select("role,is_active")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (actorError) return new Response(actorError.message, { status: 500 });
+        if (
+          !actor?.is_active ||
+          !["admin", "finance_manager"].includes(String(actor.role).toLowerCase())
+        ) {
+          return Response.json(
+            { error: "Administrator or finance manager access is required" },
+            { status: 403 },
+          );
+        }
 
         const { data: packages, error } = await supabaseAdmin
           .from("cargo_packages")
-          .select("id, status, cost, paid_at, registered_at, collected_at");
+          .select("id, status, payment_status, cost, paid_at, registered_at, collected_at");
         if (error) return new Response(error.message, { status: 500 });
 
         const { data: commissions, error: commissionError } = await supabaseAdmin
@@ -28,26 +37,35 @@ export const Route = createFileRoute("/api/public/revenue-summary")({
         if (commissionError) return new Response(commissionError.message, { status: 500 });
 
         const now = new Date();
-        const startOfDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).getTime();
-        const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).getTime();
+        const startOfDay = new Date(
+          Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+        ).getTime();
+        const startOfMonth = new Date(
+          Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+        ).getTime();
 
         const rows = packages ?? [];
-        const paid = rows.filter((r) => Boolean(r.paid_at));
-        const value = (r: { cost: number | null }) => Number(r.cost ?? 0);
-        const sum = (list: typeof rows) => list.reduce((total, r) => total + value(r), 0);
-        const paidAt = (r: { paid_at: string | null }) => (r.paid_at ? new Date(r.paid_at).getTime() : 0);
+        const paid = rows.filter((row) => row.payment_status === "paid" || Boolean(row.paid_at));
+        const value = (row: { cost: number | null }) => Number(row.cost ?? 0);
+        const sum = (list: typeof rows) => list.reduce((total, row) => total + value(row), 0);
+        const paidAt = (row: { paid_at: string | null }) =>
+          row.paid_at ? new Date(row.paid_at).getTime() : 0;
 
         const grossRevenue = sum(paid);
-        const isReleased = (r: (typeof rows)[number]) =>
-          Boolean(r.collected_at) || ["collected", "cleared", "released"].includes(r.status);
+        const isReleased = (row: (typeof rows)[number]) => Boolean(row.collected_at);
         const released = rows.filter(isReleased);
-        const pending = rows.filter((r) => !isReleased(r));
-        const outstanding = sum(rows.filter((r) => !r.paid_at));
+        const pending = rows.filter((row) => !isReleased(row));
+        const outstanding = sum(
+          rows.filter((row) => row.payment_status !== "paid" && !row.paid_at),
+        );
         const commissionRows = commissions ?? [];
-        const commissionTotal = commissionRows.reduce((t, c) => t + Number(c.amount ?? 0), 0);
+        const commissionTotal = commissionRows.reduce(
+          (total, commission) => total + Number(commission.amount ?? 0),
+          0,
+        );
         const commissionPaid = commissionRows
-          .filter((c) => c.status === "paid")
-          .reduce((t, c) => t + Number(c.amount ?? 0), 0);
+          .filter((commission) => commission.status === "paid")
+          .reduce((total, commission) => total + Number(commission.amount ?? 0), 0);
 
         return Response.json(
           {
@@ -55,8 +73,8 @@ export const Route = createFileRoute("/api/public/revenue-summary")({
             generated_at: new Date().toISOString(),
             revenue: {
               total: grossRevenue,
-              today: sum(paid.filter((r) => paidAt(r) >= startOfDay)),
-              this_month: sum(paid.filter((r) => paidAt(r) >= startOfMonth)),
+              today: sum(paid.filter((row) => paidAt(row) >= startOfDay)),
+              this_month: sum(paid.filter((row) => paidAt(row) >= startOfMonth)),
             },
             gross_income: {
               total: sum(released),

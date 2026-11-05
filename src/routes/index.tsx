@@ -1,5 +1,128 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect } from "react";
+
+type Connection = { url: string; key: string };
+type DesktopBridge = {
+  __DEX_CONFIG__: Connection;
+  __DEX_ADMIN_BACKEND__: string;
+  __DEX_RENDERER_SCRIPT_STARTED__?: boolean;
+  dexAdmin: {
+    getConnection: () => Promise<Partial<Connection>>;
+    saveConnection: (value: unknown) => Promise<boolean>;
+    getSession: () => Promise<unknown | null>;
+    saveSession: (value: unknown) => Promise<boolean>;
+    clearSession: () => Promise<boolean>;
+    reloadHosted: () => Promise<boolean>;
+    openExternal: (url: string) => Promise<boolean>;
+    savePdf: (options?: {
+      html?: string;
+      fileName?: string;
+    }) => Promise<{ canceled: boolean; filePath?: string }>;
+  };
+};
 
 export const Route = createFileRoute("/")({
-  component: () => <main className="min-h-screen" aria-label="New interface canvas" />,
+  head: () => ({
+    meta: [
+      { title: "DEX Admin Console" },
+      { name: "description", content: "DEXCARGO desktop operations console." },
+    ],
+  }),
+  component: DesktopConsole,
 });
+
+function readStoredValue<T>(key: string, fallback: T): T {
+  try {
+    const value = window.localStorage.getItem(key);
+    return value ? (JSON.parse(value) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function DesktopConsole() {
+  useEffect(() => {
+    const connection = {
+      url: import.meta.env.VITE_SUPABASE_URL || "https://bxbpuqzrbvkfrmwohqwd.supabase.co",
+      key:
+        import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+        "sb_publishable_2aAwawQ3-zBwZTu3lE6n6Q__-g2fWsN",
+    };
+    const bridge = window as unknown as DesktopBridge;
+    bridge.__DEX_CONFIG__ = connection;
+    bridge.__DEX_ADMIN_BACKEND__ = window.location.origin;
+
+    const connectionKey = "dex-console.connection";
+    const sessionKey = "dex-console.session";
+    bridge.dexAdmin = {
+      getConnection: async () => ({
+        ...connection,
+        ...readStoredValue(connectionKey, {}),
+      }),
+      saveConnection: async (value: unknown) => {
+        window.localStorage.setItem(connectionKey, JSON.stringify(value));
+        return true;
+      },
+      getSession: async () => readStoredValue<unknown | null>(sessionKey, null),
+      saveSession: async (value: unknown) => {
+        window.localStorage.setItem(sessionKey, JSON.stringify(value));
+        return true;
+      },
+      clearSession: async () => {
+        window.localStorage.removeItem(sessionKey);
+        return true;
+      },
+      reloadHosted: async () => {
+        window.location.reload();
+        return true;
+      },
+      openExternal: async (rawUrl: string) => {
+        try {
+          const url = new URL(rawUrl);
+          if (url.protocol !== "https:") return false;
+          window.open(url.toString(), "_blank", "noopener,noreferrer");
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      savePdf: async ({ html, fileName }: { html?: string; fileName?: string } = {}) => {
+        const printWindow = window.open("", "_blank");
+        if (!printWindow) return { canceled: true };
+        printWindow.addEventListener("load", () => printWindow.print(), { once: true });
+        printWindow.document.open();
+        printWindow.document.write(String(html || ""));
+        printWindow.document.close();
+        printWindow.document.title = fileName || "DEX-Commissions.pdf";
+        return { canceled: false, filePath: fileName || "DEX-Commissions.pdf" };
+      },
+    };
+
+    const styleId = "dex-console-styles";
+    if (!document.getElementById(styleId)) {
+      const link = document.createElement("link");
+      link.id = styleId;
+      link.rel = "stylesheet";
+      link.href = "/desktop-console.css";
+      document.head.appendChild(link);
+    }
+
+    const scriptId = "dex-console-renderer";
+    if (!document.getElementById(scriptId) && !bridge.__DEX_RENDERER_SCRIPT_STARTED__) {
+      bridge.__DEX_RENDERER_SCRIPT_STARTED__ = true;
+      const script = document.createElement("script");
+      script.id = scriptId;
+      script.src = "/desktop-renderer.js";
+      script.onerror = () => {
+        const mount = document.getElementById("app");
+        if (mount) {
+          mount.innerHTML =
+            '<div class="empty">The desktop console could not load. Refresh and try again.</div>';
+        }
+      };
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  return <div id="app" />;
+}

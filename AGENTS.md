@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Both employee PATCH endpoints use the shared action parser so profile edits cannot be mistaken for access toggles.
+- Keep `/dashboard` as a redirect to the desktop console at `/` so existing app links reach the current interface.

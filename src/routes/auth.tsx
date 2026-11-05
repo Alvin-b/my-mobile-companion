@@ -15,9 +15,12 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/dashboard" });
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (data.session) navigate({ to: "/dashboard" });
+      })
+      .catch(() => undefined);
   }, [navigate]);
 
   async function submit(e: React.FormEvent) {
@@ -25,11 +28,24 @@ function AuthPage() {
     setErr(null);
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const response = await fetch("/api/public/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error ?? "Authentication failed. Try again.");
+      const { error } = await supabase.auth.setSession(result.session);
       if (error) throw error;
       navigate({ to: "/dashboard" });
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
+      setErr(
+        e instanceof TypeError
+          ? "The authentication service could not be reached. Check your internet connection and try again."
+          : e instanceof Error
+            ? e.message
+            : String(e),
+      );
     } finally {
       setLoading(false);
     }
@@ -54,16 +70,39 @@ function AuthPage() {
             Staff accounts are created by an administrator. Contact your manager if you need access.
           </div>
           <Field label="Email">
-            <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} placeholder="you@dexcargo.com" />
+            <input
+              required
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={inputCls}
+              placeholder="you@dexcargo.com"
+            />
           </Field>
           <Field label="Password">
-            <input required type="password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} placeholder="••••••••" />
+            <input
+              required
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={inputCls}
+              placeholder="••••••••"
+            />
           </Field>
-          {err && <div className="text-xs text-[--red] bg-[--red]/10 border border-[--red]/30 rounded-md p-2">{err}</div>}
-          <button disabled={loading} className="mt-1 py-3 rounded-lg bg-[--blue] hover:bg-[--blue]/90 text-white text-sm font-semibold transition disabled:opacity-50">
+          {err && (
+            <div className="text-xs text-[--red] bg-[--red]/10 border border-[--red]/30 rounded-md p-2">
+              {err}
+            </div>
+          )}
+          <button
+            disabled={loading}
+            className="mt-1 py-3 rounded-lg bg-[--blue] hover:bg-[--blue]/90 text-white text-sm font-semibold transition disabled:opacity-50"
+          >
             {loading ? "Please wait…" : "Authenticate session"}
           </button>
-          <p className="text-[10px] text-[--t3] text-center mt-1 font-semibold font-mono tracking-widest">SYS GATEWAY v2.4.0-NBO</p>
+          <p className="text-[10px] text-[--t3] text-center mt-1 font-semibold font-mono tracking-widest">
+            SYS GATEWAY v2.4.0-NBO
+          </p>
         </form>
       </div>
     </div>
@@ -76,7 +115,9 @@ const inputCls =
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-[--t3] mb-1.5">{label}</div>
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-[--t3] mb-1.5">
+        {label}
+      </div>
       {children}
     </label>
   );

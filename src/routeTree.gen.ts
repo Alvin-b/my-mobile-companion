@@ -45,6 +45,7 @@ import { Route as ApiPublicAdminCommissionsReportRouteImport } from './routes/ap
 import { Route as ApiPublicAdminDeleteUserRouteImport } from './routes/api/public/admin/delete-user'
 import { Route as ApiPublicAdminEmployeesRouteImport } from './routes/api/public/admin/employees'
 import { Route as ApiPublicAdminPaymentControlRouteImport } from './routes/api/public/admin/payment-control'
+import { Route as ApiPublicAuthLoginRouteImport } from './routes/api/public/auth/login'
 import { Route as ApiPublicFinanceEtimsSettingsRouteImport } from './routes/api/public/finance/etims-settings'
 import { Route as ApiPublicFinanceExpensesRouteImport } from './routes/api/public/finance/expenses'
 import { Route as ApiPublicFinanceInvoicesRouteImport } from './routes/api/public/finance/invoices'
@@ -239,6 +240,11 @@ const ApiPublicAdminPaymentControlRoute =
     path: '/api/public/admin/payment-control',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicAuthLoginRoute = ApiPublicAuthLoginRouteImport.update({
+  id: '/api/public/auth/login',
+  path: '/api/public/auth/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicFinanceEtimsSettingsRoute =
   ApiPublicFinanceEtimsSettingsRouteImport.update({
     id: '/api/public/finance/etims-settings',
@@ -331,6 +337,7 @@ export interface FileRoutesByFullPath {
   '/api/public/admin/delete-user': typeof ApiPublicAdminDeleteUserRoute
   '/api/public/admin/employees': typeof ApiPublicAdminEmployeesRoute
   '/api/public/admin/payment-control': typeof ApiPublicAdminPaymentControlRoute
+  '/api/public/auth/login': typeof ApiPublicAuthLoginRoute
   '/api/public/finance/etims-settings': typeof ApiPublicFinanceEtimsSettingsRoute
   '/api/public/finance/expenses': typeof ApiPublicFinanceExpensesRoute
   '/api/public/finance/invoices': typeof ApiPublicFinanceInvoicesRoute
@@ -377,6 +384,7 @@ export interface FileRoutesByTo {
   '/api/public/admin/delete-user': typeof ApiPublicAdminDeleteUserRoute
   '/api/public/admin/employees': typeof ApiPublicAdminEmployeesRoute
   '/api/public/admin/payment-control': typeof ApiPublicAdminPaymentControlRoute
+  '/api/public/auth/login': typeof ApiPublicAuthLoginRoute
   '/api/public/finance/etims-settings': typeof ApiPublicFinanceEtimsSettingsRoute
   '/api/public/finance/expenses': typeof ApiPublicFinanceExpensesRoute
   '/api/public/finance/invoices': typeof ApiPublicFinanceInvoicesRoute
@@ -425,6 +433,7 @@ export interface FileRoutesById {
   '/api/public/admin/delete-user': typeof ApiPublicAdminDeleteUserRoute
   '/api/public/admin/employees': typeof ApiPublicAdminEmployeesRoute
   '/api/public/admin/payment-control': typeof ApiPublicAdminPaymentControlRoute
+  '/api/public/auth/login': typeof ApiPublicAuthLoginRoute
   '/api/public/finance/etims-settings': typeof ApiPublicFinanceEtimsSettingsRoute
   '/api/public/finance/expenses': typeof ApiPublicFinanceExpensesRoute
   '/api/public/finance/invoices': typeof ApiPublicFinanceInvoicesRoute
@@ -474,6 +483,7 @@ export interface FileRouteTypes {
     | '/api/public/admin/delete-user'
     | '/api/public/admin/employees'
     | '/api/public/admin/payment-control'
+    | '/api/public/auth/login'
     | '/api/public/finance/etims-settings'
     | '/api/public/finance/expenses'
     | '/api/public/finance/invoices'
@@ -520,6 +530,7 @@ export interface FileRouteTypes {
     | '/api/public/admin/delete-user'
     | '/api/public/admin/employees'
     | '/api/public/admin/payment-control'
+    | '/api/public/auth/login'
     | '/api/public/finance/etims-settings'
     | '/api/public/finance/expenses'
     | '/api/public/finance/invoices'
@@ -567,6 +578,7 @@ export interface FileRouteTypes {
     | '/api/public/admin/delete-user'
     | '/api/public/admin/employees'
     | '/api/public/admin/payment-control'
+    | '/api/public/auth/login'
     | '/api/public/finance/etims-settings'
     | '/api/public/finance/expenses'
     | '/api/public/finance/invoices'
@@ -607,6 +619,7 @@ export interface RootRouteChildren {
   ApiPublicAdminDeleteUserRoute: typeof ApiPublicAdminDeleteUserRoute
   ApiPublicAdminEmployeesRoute: typeof ApiPublicAdminEmployeesRoute
   ApiPublicAdminPaymentControlRoute: typeof ApiPublicAdminPaymentControlRoute
+  ApiPublicAuthLoginRoute: typeof ApiPublicAuthLoginRoute
   ApiPublicFinanceEtimsSettingsRoute: typeof ApiPublicFinanceEtimsSettingsRoute
   ApiPublicFinanceExpensesRoute: typeof ApiPublicFinanceExpensesRoute
   ApiPublicFinanceInvoicesRoute: typeof ApiPublicFinanceInvoicesRoute
@@ -872,6 +885,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAdminPaymentControlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/auth/login': {
+      id: '/api/public/auth/login'
+      path: '/api/public/auth/login'
+      fullPath: '/api/public/auth/login'
+      preLoaderRoute: typeof ApiPublicAuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/finance/etims-settings': {
       id: '/api/public/finance/etims-settings'
       path: '/api/public/finance/etims-settings'
@@ -1002,6 +1022,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAdminDeleteUserRoute: ApiPublicAdminDeleteUserRoute,
   ApiPublicAdminEmployeesRoute: ApiPublicAdminEmployeesRoute,
   ApiPublicAdminPaymentControlRoute: ApiPublicAdminPaymentControlRoute,
+  ApiPublicAuthLoginRoute: ApiPublicAuthLoginRoute,
   ApiPublicFinanceEtimsSettingsRoute: ApiPublicFinanceEtimsSettingsRoute,
   ApiPublicFinanceExpensesRoute: ApiPublicFinanceExpensesRoute,
   ApiPublicFinanceInvoicesRoute: ApiPublicFinanceInvoicesRoute,

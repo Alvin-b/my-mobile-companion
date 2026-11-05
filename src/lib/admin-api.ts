@@ -31,6 +31,7 @@ export const updateEmployeeInput = z.object({
   email: z.string().trim().email("Enter a valid employee email address."),
   phone: z.string().trim().max(30).nullable().default(null),
   role: z.enum(appRoles),
+  password: z.string().min(8, "Password must be at least 8 characters.").optional().or(z.literal("")),
 });
 
 // Profile edits may include is_active from a full employee response. Select

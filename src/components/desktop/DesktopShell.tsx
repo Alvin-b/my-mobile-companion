@@ -7,6 +7,7 @@ import { ROLE_LABELS } from "@/lib/format";
 const adminNav = [
   { to: "/desktop", label: "Overview", exact: true },
   { to: "/desktop/packages", label: "Packages" },
+  { to: "/desktop/payment-control", label: "Payment control" },
   { to: "/desktop/finance", label: "Finance" },
   { to: "/desktop/employees", label: "Employees" },
   { to: "/desktop/operations", label: "Operations" },

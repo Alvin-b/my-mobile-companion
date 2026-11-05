@@ -6,7 +6,7 @@ import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recha
 import { Kpi, PageHead, Panel } from "@/components/desktop/DesktopShell";
 import { useEmployee } from "@/hooks/use-employee";
 import { ROLE_LABELS } from "@/lib/format";
-import { createEmployee, deleteEmployee, listEmployees, setEmployeeActive } from "@/lib/admin.functions";
+import { createEmployee, deleteEmployee, listEmployees, setEmployeeActive, updateEmployee } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/desktop/employees")({
   head: () => ({
@@ -33,7 +33,9 @@ function DesktopEmployees() {
   const createFn = useServerFn(createEmployee);
   const toggleFn = useServerFn(setEmployeeActive);
   const deleteFn = useServerFn(deleteEmployee);
+  const updateFn = useServerFn(updateEmployee);
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<any | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [form, setForm] = useState({
     full_name: "",
@@ -78,6 +80,19 @@ function DesktopEmployees() {
     mutationFn: (id: string) => deleteFn({ data: { employee_id: id } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-employees"] }),
     onError: (e: any) => setErr(e?.message ?? "Failed to delete employee"),
+  });
+
+  const updateMut = useMutation({
+    mutationFn: () => updateFn({ data: {
+      employee_id: editing.id,
+      full_name: editing.full_name.trim(),
+      email: editing.email.trim().toLowerCase(),
+      phone: editing.phone?.trim() || null,
+      role: editing.role,
+      password: editing.password || "",
+    } }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-employees"] }); setEditing(null); setErr(null); },
+    onError: (e: any) => setErr(e?.message ?? "Failed to update employee"),
   });
 
   const roleMix = Object.entries(
@@ -136,6 +151,7 @@ function DesktopEmployees() {
                       </span>
                     </td>
                     <td className="text-right whitespace-nowrap">
+                      <button onClick={() => { setErr(null); setEditing({ ...e, password: "" }); }} className="text-[10px] font-bold uppercase tracking-wider text-[--blue] hover:text-[--t1] mr-3">Edit</button>
                       {e.id !== employee?.id && e.role !== "admin" && (
                         <button onClick={() => toggleMut.mutate({ id: e.id, active: !e.is_active })} className="text-[10px] font-bold uppercase tracking-wider text-[--t2] hover:text-[--t1] mr-3">
                           {e.is_active ? "Disable" : "Enable"}
@@ -216,6 +232,22 @@ function DesktopEmployees() {
             >
               {createMut.isPending ? "Creating…" : "Create employee"}
             </button>
+          </div>
+        </div>
+      )}
+      {editing && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-[520px] bg-[--s2] border border-[--b1] rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-4"><div><div className="text-[10px] font-bold uppercase tracking-wider text-[--orange]">Employee account</div><div className="font-display text-lg font-extrabold">Edit details</div></div><button onClick={() => setEditing(null)} className="text-[--t3] text-xl">×</button></div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Full name"><input className={ipt} value={editing.full_name ?? ""} onChange={(e) => setEditing({ ...editing, full_name: e.target.value })} /></Field>
+              <Field label="Email"><input type="email" className={ipt} value={editing.email ?? ""} onChange={(e) => setEditing({ ...editing, email: e.target.value })} /></Field>
+              <Field label="Phone"><input className={ipt} value={editing.phone ?? ""} onChange={(e) => setEditing({ ...editing, phone: e.target.value })} /></Field>
+              <Field label="New password (optional)"><input type="password" className={ipt} placeholder="Leave blank to keep" value={editing.password ?? ""} onChange={(e) => setEditing({ ...editing, password: e.target.value })} /></Field>
+              <Field label="Role"><select className={ipt} value={editing.role} onChange={(e) => setEditing({ ...editing, role: e.target.value })}><option value="sales_rep">Sales Representative (SR)</option><option value="logistics_manager">Logistics Manager (LM)</option><option value="sales_manager">Sales Manager (SM)</option><option value="finance_manager">Finance Manager (FIN)</option><option value="admin">Administrator (ADM)</option></select></Field>
+            </div>
+            {err && <div className="mt-3 text-[11px] text-red-400 bg-red-500/10 border border-red-500/30 rounded-md p-2">{err}</div>}
+            <button disabled={updateMut.isPending || !editing.full_name || !editing.email || (editing.password && editing.password.length < 8)} onClick={() => updateMut.mutate()} className="mt-5 w-full py-3 rounded-lg bg-[--blue] text-white text-[12px] font-bold uppercase tracking-wider disabled:opacity-50">{updateMut.isPending ? "Saving…" : "Save employee details"}</button>
           </div>
         </div>
       )}

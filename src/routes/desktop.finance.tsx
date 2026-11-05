@@ -16,7 +16,7 @@ import {
   YAxis,
 } from "recharts";
 import { Kpi, PageHead, Panel } from "@/components/desktop/DesktopShell";
-import { dayKey, lastNDays, shortDay, useCargo, useCommissions, usePayments } from "@/hooks/use-admin-metrics";
+import { dayKey, lastNDays, shortDay, useCargo, useCommissions, usePayments, useStaff } from "@/hooks/use-admin-metrics";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtKES, fmtRelative } from "@/lib/format";
 import { useEmployee } from "@/hooks/use-employee";
@@ -46,9 +46,11 @@ function Finance() {
   const cargo = useCargo();
   const commissions = useCommissions();
   const payments = usePayments();
+  const staff = useStaff();
   const qc = useQueryClient();
 
   const comms = commissions.data ?? [];
+  const people = staff.data ?? [];
   const pays = payments.data ?? [];
   const rows = cargo.data ?? [];
   const finance = useQuery({
@@ -72,9 +74,11 @@ function Finance() {
   const financeRevenue = rows.filter((r) => Boolean(r.paid_at)).reduce((sum, r) => sum + Number(r.cost ?? 0), 0);
   const etims = finance.data?.settings?.etims_status ?? "not_connected";
   const [panel, setPanel] = useState<"invoice" | "expense" | null>(null);
+  const [commissionEmployeeId, setCommissionEmployeeId] = useState("all");
   const [notice, setNotice] = useState<string | null>(null);
   const [invoice, setInvoice] = useState({ package_id: "", customer_name: "", due_date: "", notes: "", payment_method: "mpesa" });
   const [expense, setExpense] = useState({ supplier_name: "", category: "", amount: "", expense_date: new Date().toISOString().slice(0, 10), description: "", receipt_url: "" });
+  const filteredComms = commissionEmployeeId === "all" ? comms : comms.filter((c) => c.employee_id === commissionEmployeeId);
   const clearablePackages = rows.filter((r) => Boolean(r.paid_at) && !["collected", "released"].includes(r.status));
   const settingsRow: any = finance.data?.settings ?? null;
   const [etimsForm, setEtimsForm] = useState({ legal_name: "", kra_pin: "", branch_name: "", invoice_prefix: "DEX", etims_business_id: "", etims_provider: "deitax", etims_mode: "not_configured", vat_registered: false });
@@ -174,7 +178,7 @@ function Finance() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["desktop", "commissions"] }),
   });
 
-  const totals = comms.reduce(
+  const totals = filteredComms.reduce(
     (acc, c) => {
       const a = Number(c.amount ?? 0);
       acc.all += a;
@@ -185,7 +189,7 @@ function Finance() {
   );
 
   const statusMix = (["pending", "approved", "paid"] as const)
-    .map((s) => ({ name: s, value: comms.filter((c) => c.status === s).length }))
+    .map((s) => ({ name: s, value: filteredComms.filter((c) => c.status === s).length }))
     .filter((s) => s.value > 0);
 
   const methodMix = Object.entries(
@@ -200,7 +204,7 @@ function Finance() {
   const daily = days.map((d) => ({
     day: shortDay(d),
     settled: rows.filter((r) => dayKey(r.paid_at) === d).reduce((s, r) => s + Number(r.cost ?? 0), 0),
-    commission: comms.filter((c) => dayKey(c.created_at) === d).reduce((s, c) => s + Number(c.amount ?? 0), 0),
+    commission: filteredComms.filter((c) => dayKey(c.created_at) === d).reduce((s, c) => s + Number(c.amount ?? 0), 0),
   }));
 
   return (
@@ -315,7 +319,8 @@ function Finance() {
           </ResponsiveContainer>
         </Panel>
 
-        <Panel title="Commission ledger" subtitle="Approve or settle entries" className="col-span-2">
+        <Panel title="Commission ledger" subtitle="Approve or settle entries · filter one employee or everyone" className="col-span-2">
+          <div className="mb-3 flex items-center gap-2"><span className="text-[10px] uppercase tracking-wider text-[--t3]">Show commissions for</span><select value={commissionEmployeeId} onChange={(e) => setCommissionEmployeeId(e.target.value)} className="bg-[--s1] border border-[--b1] rounded-lg px-2 py-1.5 text-[11px]"><option value="all">Everyone</option>{people.filter((p) => p.role !== "admin" && p.role !== "finance_manager").map((p) => <option key={p.id} value={p.id}>{p.full_name} · {p.employee_code}</option>)}</select></div>
           <div className="max-h-[260px] overflow-y-auto">
             <table className="w-full text-[12px]">
               <thead className="text-[10px] uppercase tracking-wider text-[--t3]">
@@ -328,7 +333,7 @@ function Finance() {
                 </tr>
               </thead>
               <tbody>
-                {comms.slice(0, 40).map((c) => (
+                {filteredComms.slice(0, 40).map((c) => (
                   <tr key={c.id} className="border-t border-[--b1]">
                     <td className="py-2 pr-2">
                       <div className="font-semibold">{c.employees?.full_name ?? "—"}</div>
@@ -351,7 +356,7 @@ function Finance() {
                     </td>
                   </tr>
                 ))}
-                {comms.length === 0 && (
+                {filteredComms.length === 0 && (
                   <tr>
                     <td colSpan={5} className="py-6 text-center text-[--t3] text-[11px]">No commission entries yet.</td>
                   </tr>

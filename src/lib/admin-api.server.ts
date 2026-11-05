@@ -7,6 +7,7 @@ import {
   createEmployeeInput,
   setEmployeeActiveInput,
   deleteEmployeeInput,
+  updateEmployeeInput,
 } from "@/lib/admin-api";
 
 function bearerToken(request: Request): string {
@@ -146,7 +147,7 @@ export async function setManagedEmployeeActive(input: z.infer<typeof setEmployee
   if (error) throw new ApiError(500, error.message);
 }
 
-export async function updateManagedEmployee(input: { employee_id: string; full_name: string; email: string; phone: string | null; role: AppRole }, actorEmployeeId: string) {
+export async function updateManagedEmployee(input: z.infer<typeof updateEmployeeInput>, actorEmployeeId: string) {
   const { data: initialTarget, error: initialTargetError } = await supabaseAdmin.from("employees")
     .select("id,user_id,role,email").eq("id", input.employee_id).maybeSingle();
   if (initialTargetError) throw new ApiError(400, `Unable to load the employee record: ${initialTargetError.message}`);
@@ -185,7 +186,9 @@ export async function updateManagedEmployee(input: { employee_id: string; full_n
   }
 
   if (target.user_id) {
-    const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(target.user_id, { email, email_confirm: true, user_metadata: { full_name: input.full_name } });
+    const authPatch: Record<string, unknown> = { email, email_confirm: true, user_metadata: { full_name: input.full_name } };
+    if (input.password) authPatch.password = input.password;
+    const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(target.user_id, authPatch);
     if (authError) throw new ApiError(400, `Unable to update the sign-in account: ${authError.message}`);
   }
   if (target.user_id) {

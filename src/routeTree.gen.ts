@@ -27,6 +27,7 @@ import { Route as DesktopFinanceRouteImport } from './routes/desktop.finance'
 import { Route as DesktopManifestsRouteImport } from './routes/desktop.manifests'
 import { Route as DesktopOperationsRouteImport } from './routes/desktop.operations'
 import { Route as DesktopPackagesRouteImport } from './routes/desktop.packages'
+import { Route as DesktopPaymentControlRouteImport } from './routes/desktop.payment-control'
 import { Route as PackagesIdRouteImport } from './routes/packages.$id'
 import { Route as ApiAdminDeleteUserRouteImport } from './routes/api/admin/delete-user'
 import { Route as ApiAdminEmployeesRouteImport } from './routes/api/admin/employees'
@@ -52,6 +53,7 @@ import { Route as ApiPublicFinanceWorkspaceRouteImport } from './routes/api/publ
 import { Route as ApiPublicPackagesPackageIdLocationRouteImport } from './routes/api/public/packages/$packageId/location'
 import { Route as ApiPublicPackagesPackageIdMarkPaidRouteImport } from './routes/api/public/packages/$packageId/mark-paid'
 import { Route as ApiPublicPackagesPackageIdOperationsRouteImport } from './routes/api/public/packages/$packageId/operations'
+import { Route as ApiPublicPackagesPackageIdReleaseRouteImport } from './routes/api/public/packages/$packageId/release'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -141,6 +143,11 @@ const DesktopOperationsRoute = DesktopOperationsRouteImport.update({
 const DesktopPackagesRoute = DesktopPackagesRouteImport.update({
   id: '/packages',
   path: '/packages',
+  getParentRoute: () => DesktopRoute,
+} as any)
+const DesktopPaymentControlRoute = DesktopPaymentControlRouteImport.update({
+  id: '/payment-control',
+  path: '/payment-control',
   getParentRoute: () => DesktopRoute,
 } as any)
 const PackagesIdRoute = PackagesIdRouteImport.update({
@@ -280,6 +287,12 @@ const ApiPublicPackagesPackageIdOperationsRoute =
     path: '/api/public/packages/$packageId/operations',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicPackagesPackageIdReleaseRoute =
+  ApiPublicPackagesPackageIdReleaseRouteImport.update({
+    id: '/api/public/packages/$packageId/release',
+    path: '/api/public/packages/$packageId/release',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -299,6 +312,7 @@ export interface FileRoutesByFullPath {
   '/desktop/manifests': typeof DesktopManifestsRoute
   '/desktop/operations': typeof DesktopOperationsRoute
   '/desktop/packages': typeof DesktopPackagesRoute
+  '/desktop/payment-control': typeof DesktopPaymentControlRoute
   '/packages/$id': typeof PackagesIdRoute
   '/desktop/': typeof DesktopIndexRoute
   '/api/admin/delete-user': typeof ApiAdminDeleteUserRoute
@@ -325,6 +339,7 @@ export interface FileRoutesByFullPath {
   '/api/public/packages/$packageId/location': typeof ApiPublicPackagesPackageIdLocationRoute
   '/api/public/packages/$packageId/mark-paid': typeof ApiPublicPackagesPackageIdMarkPaidRoute
   '/api/public/packages/$packageId/operations': typeof ApiPublicPackagesPackageIdOperationsRoute
+  '/api/public/packages/$packageId/release': typeof ApiPublicPackagesPackageIdReleaseRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -343,6 +358,7 @@ export interface FileRoutesByTo {
   '/desktop/manifests': typeof DesktopManifestsRoute
   '/desktop/operations': typeof DesktopOperationsRoute
   '/desktop/packages': typeof DesktopPackagesRoute
+  '/desktop/payment-control': typeof DesktopPaymentControlRoute
   '/packages/$id': typeof PackagesIdRoute
   '/desktop': typeof DesktopIndexRoute
   '/api/admin/delete-user': typeof ApiAdminDeleteUserRoute
@@ -369,6 +385,7 @@ export interface FileRoutesByTo {
   '/api/public/packages/$packageId/location': typeof ApiPublicPackagesPackageIdLocationRoute
   '/api/public/packages/$packageId/mark-paid': typeof ApiPublicPackagesPackageIdMarkPaidRoute
   '/api/public/packages/$packageId/operations': typeof ApiPublicPackagesPackageIdOperationsRoute
+  '/api/public/packages/$packageId/release': typeof ApiPublicPackagesPackageIdReleaseRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -389,6 +406,7 @@ export interface FileRoutesById {
   '/desktop/manifests': typeof DesktopManifestsRoute
   '/desktop/operations': typeof DesktopOperationsRoute
   '/desktop/packages': typeof DesktopPackagesRoute
+  '/desktop/payment-control': typeof DesktopPaymentControlRoute
   '/packages/$id': typeof PackagesIdRoute
   '/desktop/': typeof DesktopIndexRoute
   '/api/admin/delete-user': typeof ApiAdminDeleteUserRoute
@@ -415,6 +433,7 @@ export interface FileRoutesById {
   '/api/public/packages/$packageId/location': typeof ApiPublicPackagesPackageIdLocationRoute
   '/api/public/packages/$packageId/mark-paid': typeof ApiPublicPackagesPackageIdMarkPaidRoute
   '/api/public/packages/$packageId/operations': typeof ApiPublicPackagesPackageIdOperationsRoute
+  '/api/public/packages/$packageId/release': typeof ApiPublicPackagesPackageIdReleaseRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -436,6 +455,7 @@ export interface FileRouteTypes {
     | '/desktop/manifests'
     | '/desktop/operations'
     | '/desktop/packages'
+    | '/desktop/payment-control'
     | '/packages/$id'
     | '/desktop/'
     | '/api/admin/delete-user'
@@ -462,6 +482,7 @@ export interface FileRouteTypes {
     | '/api/public/packages/$packageId/location'
     | '/api/public/packages/$packageId/mark-paid'
     | '/api/public/packages/$packageId/operations'
+    | '/api/public/packages/$packageId/release'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -480,6 +501,7 @@ export interface FileRouteTypes {
     | '/desktop/manifests'
     | '/desktop/operations'
     | '/desktop/packages'
+    | '/desktop/payment-control'
     | '/packages/$id'
     | '/desktop'
     | '/api/admin/delete-user'
@@ -506,6 +528,7 @@ export interface FileRouteTypes {
     | '/api/public/packages/$packageId/location'
     | '/api/public/packages/$packageId/mark-paid'
     | '/api/public/packages/$packageId/operations'
+    | '/api/public/packages/$packageId/release'
   id:
     | '__root__'
     | '/'
@@ -525,6 +548,7 @@ export interface FileRouteTypes {
     | '/desktop/manifests'
     | '/desktop/operations'
     | '/desktop/packages'
+    | '/desktop/payment-control'
     | '/packages/$id'
     | '/desktop/'
     | '/api/admin/delete-user'
@@ -551,6 +575,7 @@ export interface FileRouteTypes {
     | '/api/public/packages/$packageId/location'
     | '/api/public/packages/$packageId/mark-paid'
     | '/api/public/packages/$packageId/operations'
+    | '/api/public/packages/$packageId/release'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -590,6 +615,7 @@ export interface RootRouteChildren {
   ApiPublicPackagesPackageIdLocationRoute: typeof ApiPublicPackagesPackageIdLocationRoute
   ApiPublicPackagesPackageIdMarkPaidRoute: typeof ApiPublicPackagesPackageIdMarkPaidRoute
   ApiPublicPackagesPackageIdOperationsRoute: typeof ApiPublicPackagesPackageIdOperationsRoute
+  ApiPublicPackagesPackageIdReleaseRoute: typeof ApiPublicPackagesPackageIdReleaseRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -718,6 +744,13 @@ declare module '@tanstack/react-router' {
       path: '/packages'
       fullPath: '/desktop/packages'
       preLoaderRoute: typeof DesktopPackagesRouteImport
+      parentRoute: typeof DesktopRoute
+    }
+    '/desktop/payment-control': {
+      id: '/desktop/payment-control'
+      path: '/payment-control'
+      fullPath: '/desktop/payment-control'
+      preLoaderRoute: typeof DesktopPaymentControlRouteImport
       parentRoute: typeof DesktopRoute
     }
     '/packages/$id': {
@@ -895,6 +928,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPackagesPackageIdOperationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/packages/$packageId/release': {
+      id: '/api/public/packages/$packageId/release'
+      path: '/api/public/packages/$packageId/release'
+      fullPath: '/api/public/packages/$packageId/release'
+      preLoaderRoute: typeof ApiPublicPackagesPackageIdReleaseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -904,6 +944,7 @@ interface DesktopRouteChildren {
   DesktopManifestsRoute: typeof DesktopManifestsRoute
   DesktopOperationsRoute: typeof DesktopOperationsRoute
   DesktopPackagesRoute: typeof DesktopPackagesRoute
+  DesktopPaymentControlRoute: typeof DesktopPaymentControlRoute
   DesktopIndexRoute: typeof DesktopIndexRoute
 }
 
@@ -913,6 +954,7 @@ const DesktopRouteChildren: DesktopRouteChildren = {
   DesktopManifestsRoute: DesktopManifestsRoute,
   DesktopOperationsRoute: DesktopOperationsRoute,
   DesktopPackagesRoute: DesktopPackagesRoute,
+  DesktopPaymentControlRoute: DesktopPaymentControlRoute,
   DesktopIndexRoute: DesktopIndexRoute,
 }
 
@@ -971,6 +1013,8 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicPackagesPackageIdMarkPaidRoute,
   ApiPublicPackagesPackageIdOperationsRoute:
     ApiPublicPackagesPackageIdOperationsRoute,
+  ApiPublicPackagesPackageIdReleaseRoute:
+    ApiPublicPackagesPackageIdReleaseRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

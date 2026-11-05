@@ -68,22 +68,7 @@ function Overview() {
 
   // Company money position: everything a linked payment (evidence or M-Pesa)
   // has cleared, versus what is still owed and what is due to staff.
-  const outstanding = rows.filter((r) => !r.paid_at).reduce((s, r) => s + Number(r.cost ?? 0), 0);
-  const commissionAccrued = comms.reduce((s, c) => s + Number(c.amount ?? 0), 0);
-  const netRetained = revenue - commissionAccrued;
   const paidCount = rows.filter((r) => r.paid_at).length;
-
-  // Released = the package has physically left us (collected / cleared).
-  // Gross income is what those released packages earned the company.
-  const isReleased = (r: (typeof rows)[number]) => Boolean(r.collected_at) || ["collected", "cleared", "released"].includes(r.status);
-  const releasedRows = rows.filter(isReleased);
-  const pendingRows = rows.filter((r) => !isReleased(r));
-  const grossIncome = releasedRows.reduce((s, r) => s + Number(r.cost ?? 0), 0);
-  const pendingValue = pendingRows.reduce((s, r) => s + Number(r.cost ?? 0), 0);
-  const monthStart = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).getTime();
-  const revenueThisMonth = rows
-    .filter((r) => r.paid_at && new Date(r.paid_at).getTime() >= monthStart)
-    .reduce((s, r) => s + Number(r.cost ?? 0), 0);
 
   const days = lastNDays(14);
   const trend = days.map((d) => {
@@ -129,32 +114,11 @@ function Overview() {
 
       <div className="grid grid-cols-4 gap-4">
         <Kpi label="Total cargo" value={String(rows.length)} hint={`${inTransit} still in the pipeline`} />
-        <Kpi label="Collected revenue" value={fmtKES(revenue)} hint="Paid cargo only" tint="green" />
+        <Kpi label="Paid packages" value={String(paidCount)} hint="Payment state cleared" tint="green" />
         <Kpi label="Commission pending" value={fmtKES(pendingCommission)} hint={`${comms.filter((c) => c.status === "pending").length} entries awaiting approval`} tint="orange" />
         <Kpi label="Active staff" value={String(people.filter((p) => p.is_active).length)} hint={`${people.length} total accounts`} tint="teal" />
       </div>
 
-      <div className="mt-4">
-        <Panel title="Company gross income" subtitle="Earned from released packages, plus what is still pending release">
-          <div className="grid grid-cols-4 gap-4">
-            <Kpi label="Gross income" value={fmtKES(grossIncome)} hint={`${releasedRows.length} packages released`} tint="green" />
-            <Kpi label="Pending release" value={fmtKES(pendingValue)} hint={`${pendingRows.length} registered, not yet released`} tint="orange" />
-            <Kpi label="Released packages" value={String(releasedRows.length)} hint="Collected or cleared" tint="teal" />
-            <Kpi label="Pending packages" value={String(pendingRows.length)} hint="Still in the warehouse pipeline" />
-          </div>
-        </Panel>
-      </div>
-
-      <div className="mt-4">
-        <Panel title="Company total" subtitle="All cleared cargo value, net of staff commission">
-          <div className="grid grid-cols-4 gap-4">
-            <Kpi label="Total money in" value={fmtKES(revenue)} hint={`${paidCount} packages cleared`} tint="green" />
-            <Kpi label="This month" value={fmtKES(revenueThisMonth)} hint="Cleared since the 1st" />
-            <Kpi label="Still unpaid" value={fmtKES(outstanding)} hint={`${rows.length - paidCount} packages awaiting payment`} tint="orange" />
-            <Kpi label="Net after commission" value={fmtKES(netRetained)} hint={`${fmtKES(commissionAccrued)} accrued to staff`} tint="teal" />
-          </div>
-        </Panel>
-      </div>
 
       <div className="grid grid-cols-3 gap-4 mt-4">
         <Panel title="Revenue trend" subtitle="Last 14 days · paid cargo" className="col-span-2">

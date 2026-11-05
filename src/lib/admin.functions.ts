@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { createEmployeeInput, setEmployeeActiveInput } from "@/lib/admin-api";
+import { createEmployeeInput, setEmployeeActiveInput, updateEmployeeInput } from "@/lib/admin-api";
 
 async function requireServerFnAdmin(context: { supabase: any; userId: string }) {
   const { data: isAdmin, error } = await context.supabase.rpc("has_role", {
@@ -45,6 +45,16 @@ export const setEmployeeActive = createServerFn({ method: "POST" })
     const actor = await requireServerFnAdmin(context);
     const { setManagedEmployeeActive } = await import("@/lib/admin-api.server");
     await setManagedEmployeeActive(data, actor.id);
+    return { ok: true };
+  });
+
+export const updateEmployee = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => updateEmployeeInput.parse(input))
+  .handler(async ({ data, context }) => {
+    const actor = await requireServerFnAdmin(context);
+    const { updateManagedEmployee } = await import("@/lib/admin-api.server");
+    await updateManagedEmployee(data, actor.id);
     return { ok: true };
   });
 

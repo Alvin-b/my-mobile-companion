@@ -227,7 +227,7 @@ function navItems(role){const admin=[['overview','Overview','◫'],['shipments',
 function pageTitle(){const labels={overview:'Overview',manifests:'Manifest import',my_packages:'My packages',reminders:'Client reminders',my_commissions:'My commissions',sales_packages:'Sales packages',team_performance:'Team performance',warehouse_packages:'Warehouse packages',release_queue:'Release queue',finance_invoices:'Invoices & billing',finance_receivables:'Receivables',finance_expenses:'Expenses',finance_payables:'Payables',finance_profitability:'Package profitability',finance_tax:'KRA & tax',finance_reports:'Reports',shipments:'Packages',payments:'Payments',staff:'Staff',commissions:'Commissions',announcements:'Announcements',audit:'Audit log'};return labels[state.page]||'DEX Admin'}
 function manifestView(){const rows=state.data.packages||[],groups=[['general','General cargo · air'],['special','Special cargo · air'],['sea','Sea cargo']];return `<section class="role-banner compact"><div><span>EXCEL BULK REGISTRATION</span><h2>Import cargo manifest</h2><p>Upload General Cargo, Special Cargo, or Sea Cargo Excel files. Review extracted rows before they become shared package records.</p></div></section><section class="grid two"><article class="panel compose"><div class="panel-head"><div><h2>1. Preview Excel manifest</h2><p>Only .xlsx files. Nothing is saved until confirmation.</p></div></div><form id="manifest-form"><label>Cargo category<select name="category"><option value="general">General cargo · Air</option><option value="special">Special cargo · Air</option><option value="sea">Sea cargo</option></select></label><label>Manifest Excel file<input name="file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required></label><button class="primary wide">Read and preview manifest</button></form></article><article class="panel"><div class="panel-head"><div><h2>Current package categories</h2><p>Imported records appear immediately across dashboard package views.</p></div></div><div class="flow">${groups.map(([key,label])=>{const r=rows.filter(p=>String(p.cargo_category||'general').toLowerCase()===key);return `<div><b>${r.length}</b><span>${esc(label)}</span><i style="width:${Math.max(8,r.length/Math.max(1,rows.length)*100)}%"></i></div>`}).join('')}</div><p class="muted" style="margin-top:18px">The importer extracts tracking number, client, pieces, weight, CBM where present, package charge and item description, then saves each valid row as a package.</p></article></section><div id="manifest-preview"></div>`}
 async function previewManifest(form,commit=false){const data=new FormData(form);data.set('commit',String(commit));const response=await fetch(`${ADMIN_BACKEND}/api/public/import-manifest`,{method:'POST',headers:{Authorization:`Bearer ${state.session.access_token}`},body:data});const json=await response.json().catch(()=>({error:'The manifest service returned an unreadable response.'}));if(!response.ok)throw new Error(json.error||'Manifest import failed.');return json}
-function renderManifestPreview(preview,form){const target=$('#manifest-preview');if(!target)return;const rows=preview.ready||[];target.innerHTML=`<section class="metrics" style="margin-top:18px">${metric('Rows found',preview.total_rows,'Excel rows read','blue')}${metric('Ready to register',preview.ready_rows,'Valid new packages','green')}${metric('Already registered',preview.duplicate_rows,'Skipped duplicates','amber')}${metric('Needs attention',preview.invalid_rows,'Not imported','red')}</section><section class="grid two"><article class="panel"><div class="panel-head"><div><h2>2. Review extracted packages</h2><p>Only valid, non-duplicate package rows are registered.</p></div></div><div class="table-wrap"><table><thead><tr><th>Tracking</th><th>Client</th><th>Pieces</th><th>Weight</th><th>CBM</th><th>Charge</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(r.tracking_number)}</b></td><td>${esc(r.consignee)}</td><td>${esc(r.pcs)}</td><td>${esc(r.weight)}</td><td>${esc(r.volume_cbm)}</td><td>${r.cost==null?'—':money(r.cost)}</td></tr>`).join('')||'<tr><td colspan="6" class="muted">No new valid package rows to register.</td></tr>'}</tbody></table></div></article><article class="panel attention"><div class="panel-head"><div><h2>3. Confirm bulk registration</h2><p>Packages are saved into the shared cargo_packages backend table and shown on all dashboards.</p></div></div><button class="primary wide" id="manifest-commit" ${preview.ready_rows?'':'disabled'}>Register ${preview.ready_rows||0} package(s)</button><p class="muted" style="margin-top:14px">Existing tracking IDs are safely skipped. The selected cargo category is stored with every imported package.</p></article></section>`;$('#manifest-commit')?.addEventListener('click',async()=>{try{const result=await previewManifest(form,true);toast(`${result.imported_rows||0} packages were registered and are now available on dashboards.`);await refreshData()}catch(e){toast(`Manifest was not registered: ${e.message}`,'error')}})}
+function renderManifestPreview(preview,form){const target=$('#manifest-preview');if(!target)return;const rows=preview.ready||[];target.innerHTML=`<section class="metrics" style="margin-top:18px">${metric('Rows found',preview.total_rows,'Excel rows read','blue')}${metric('Ready to register',preview.ready_rows,'Valid new packages','green')}${metric('Already registered',preview.duplicate_rows,'Skipped duplicates','amber')}${metric('Needs attention',preview.invalid_rows,'Not imported','red')}</section><section class="grid two"><article class="panel"><div class="panel-head"><div><h2>2. Review extracted packages</h2><p>Only valid, non-duplicate package rows are registered.</p></div></div><div class="table-wrap"><table><thead><tr><th>Tracking</th><th>Client</th><th>Pieces</th><th>Weight</th><th>CBM</th><th>Charge</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(r.tracking_number)}</b></td><td>${esc(r.consignee)}</td><td>${esc(r.pcs)}</td><td>${esc(r.weight)}</td><td>${esc(r.volume_cbm)}</td><td>${r.cost==null?'—':money(r.cost)}</td></tr>`).join('')||'<tr><td colspan="6" class="muted">No new valid package rows to register.</td></tr>'}</tbody></table></div></article><article class="panel attention"><div class="panel-head"><div><h2>3. Confirm bulk registration</h2><p>Packages are saved into the shared cargo_packages backend table and shown on all dashboards.</p></div></div><button class="primary wide" id="manifest-commit" ${preview.ready_rows?'':'disabled'}>Register ${preview.ready_rows||0} package(s)</button><p class="muted" style="margin-top:14px">Existing tracking IDs are safely skipped. The selected cargo category is stored with every imported package.</p></article></section>`;$('#manifest-commit')?.addEventListener('click',async()=>{try{const result=await previewManifest(form,true);toast(result.warning?`${result.imported_rows||0} packages were registered. ${result.warning}`:`${result.imported_rows||0} packages were registered and are now available on dashboards.`,result.warning?'error':undefined);await refreshData()}catch(e){toast(`Manifest was not registered: ${e.message}`,'error')}})}
 function shipments(){const rows=state.data.packages||[],groups=[['general','General cargo · Air'],['special','Special cargo · Air'],['sea','Sea cargo']];return `<section class="toolbar"><div class="search"><span>⌕</span><input id="shipment-search" placeholder="Search package, client or phone"></div><button class="primary" data-goto="manifests">⇧ Import manifest</button></section>${groups.map(([key,title])=>packageTable(rows.filter(p=>String(p.cargo_category||'general').toLowerCase()===key),title)).join('')}`}
 function roleContent(){const role=state.role;if(role==='admin'){const views={overview,shipments,manifests:manifestView,payments,staff,commissions,announcements,audit};return (views[state.page]||overview)()}if(state.page==='overview')return departmentOverview();if(role==='sales_rep'){if(state.page==='my_packages')return departmentPackages('My assigned packages',myPackages());if(state.page==='reminders')return remindersView();if(state.page==='my_commissions')return commissions()}if(role==='sales_manager'){if(state.page==='manifests')return manifestView();if(state.page==='sales_packages')return departmentPackages('Sales packages',state.data.packages||[]);if(state.page==='team_performance')return performanceView();if(state.page==='commissions')return commissions()}if(role==='logistics_manager'){if(state.page==='warehouse_packages')return departmentPackages('Warehouse packages',state.data.packages||[]);if(state.page==='payments')return payments();if(state.page==='release_queue')return releaseQueue()}if(role==='finance_manager'){if(state.page==='payments')return payments();return financeView(state.page)}return departmentOverview()}
 function bind(){document.querySelectorAll('[data-page],[data-goto]').forEach(b=>b.addEventListener('click',()=>{state.page=b.dataset.page||b.dataset.goto;render()}));$('#refresh')?.addEventListener('click',refreshData);$('#signout')?.addEventListener('click',async()=>{await window.dexAdmin.clearSession();state.session=null;state.data={};renderLogin()});$('#add-staff')?.addEventListener('click',createEmployee);$('#payment-upload')?.addEventListener('submit',e=>{e.preventDefault();uploadPayment(e.target)});$('#evidence-type')?.addEventListener('change',e=>{const image=e.target.value==='IMAGE';$('#image-field').style.display=image?'':'none';$('#note-field').style.display=image?'':'none';$('#text-field').style.display=image?'none':''});$('#manifest-form')?.addEventListener('submit',async e=>{e.preventDefault();const button=e.target.querySelector('button');try{button.disabled=true;button.textContent='Reading manifest…';renderManifestPreview(await previewManifest(e.target,false),e.target)}catch(err){toast(`Manifest preview failed: ${err.message}`,'error')}finally{button.disabled=false;button.textContent='Read and preview manifest'}});document.querySelectorAll('[data-evidence-image]').forEach(b=>b.addEventListener('click',()=>viewEvidenceImage(b.dataset.evidenceImage)));document.querySelectorAll('[data-evidence-thumb]').forEach(loadEvidenceThumbnail);document.querySelectorAll('[data-evidence-text]').forEach(b=>b.addEventListener('click',()=>viewEvidenceText(b.dataset.evidenceText)));document.querySelectorAll('[data-link-payment]').forEach(b=>b.addEventListener('click',()=>linkPayment(b.dataset.linkPayment)));document.querySelectorAll('[data-employee]').forEach(b=>b.addEventListener('click',()=>setEmployee(b.dataset.employee,b.dataset.active!=='true')));document.querySelectorAll('[data-commission]').forEach(b=>b.addEventListener('click',()=>commission(b.dataset.commission,'approve_commission')));document.querySelectorAll('[data-paid]').forEach(b=>b.addEventListener('click',()=>commission(b.dataset.paid,'mark_commission_paid')));document.querySelectorAll('[data-track]').forEach(b=>b.addEventListener('click',()=>openShipment(b.dataset.track)));document.querySelectorAll('[data-reminder]').forEach(b=>b.addEventListener('click',()=>copyReminder(b.dataset.reminder)));document.querySelectorAll('[data-photo]').forEach(b=>{loadPackagePhoto(b);b.addEventListener('click',()=>viewPhoto(b.dataset.photo))});$('#broadcast-form')?.addEventListener('submit',sendBroadcast);$('#export-audit')?.addEventListener('click',exportAudit);document.querySelector('[data-finance-new-invoice]')?.addEventListener('click',newInvoice);document.querySelector('[data-finance-new-expense]')?.addEventListener('click',newExpense);document.querySelector('[data-finance-export]')?.addEventListener('click',exportFinance);document.querySelectorAll('[data-finance-invoice]').forEach(b=>b.addEventListener('click',()=>financeInvoiceAction(b.dataset.financeInvoice,b.dataset.financeAction)));document.querySelectorAll('[data-finance-expense]').forEach(b=>b.addEventListener('click',()=>financeExpenseAction(b.dataset.financeExpense,b.dataset.financeExpenseAction)));document.querySelectorAll('[data-finance-etims]').forEach(b=>b.addEventListener('click',()=>submitEtims(b.dataset.financeEtims)))}
@@ -278,7 +278,7 @@ function manifestLabel(label){const labels={'序号':'Manifest row','入仓日�
 function viewManifestDetails(id){const pkg=livePackageRows().find(x=>String(x.id)===String(id));if(!pkg)return toast('Package was not found. Refresh and try again.','error');const data=parseManifestData(pkg),columns=data.columns||{},metadata=data.metadata||{},bill=seaBilling(pkg),items=data.line_items||[];const section=(title,obj)=>Object.keys(obj).length?`<h3 style="margin:20px 0 8px">${esc(title)}</h3><div class="table-wrap"><table><tbody>${Object.entries(obj).map(([k,v])=>`<tr><th>${esc(manifestLabel(k))}</th><td>${esc(v??'—')}</td></tr>`).join('')}</tbody></table></div>`:'';const lines=items.length?`<h3 style="margin:20px 0 8px">Included warehouse receipt lines (${items.length})</h3><div class="table-wrap"><table><thead><tr><th>Receipt number</th><th>Pieces</th><th>Weight</th><th>CBM</th><th>Item</th></tr></thead><tbody>${items.map(item=>`<tr><td><b>${esc(item.warehouse_receipt_number)}</b></td><td>${esc(item.pcs??'—')}</td><td>${esc(item.weight??'—')}</td><td>${esc(item.volume_cbm??'—')}</td><td>${esc(item.description??'—')}</td></tr>`).join('')}</tbody></table></div>`:'';packageDialog(`<p class="eyebrow">DEX LOGISTICS · MANIFEST RECORD</p><h2>${esc(pkg.tracking_number||pkg.id)}</h2><p>${esc(pkg.consignee||'Unassigned client')} · ${esc(String(pkg.cargo_category||'general').toUpperCase())}</p>${bill.amount!=null?`<p><b>Calculated charge:</b> ${esc(manifestMoney(bill.amount,bill.currency))}${bill.raw?` · ${esc(bill.raw)}`:''}</p>`:''}${lines}${section('Manifest values',columns)}${section('Workbook details',metadata)}`)}
 function packageTable(rows,title='Packages'){const canTrack=String(state.role||'').toLowerCase()!=='finance_manager';return `<section class="panel"><div class="panel-head"><div><h2>${esc(title)}</h2><p>${rows.length} live package${rows.length===1?'':'s'}</p></div></div><div class="table-wrap"><table><thead><tr><th>Tracking</th><th>Client</th><th>Category</th><th>Route / freight</th><th>Pieces</th><th>Weight / CBM</th><th>Manifest price</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows.map(x=>{const group=parseManifestData(x).group||{},lines=Number(group.line_count||0);return `<tr><td><b>${esc(x.tracking_number||x.id)}</b>${lines>1?`<br><small>${lines} cargo lines</small>`:''}</td><td>${esc(x.consignee)}${x.phone?`<br><small>${esc(x.phone)}</small>`:''}</td><td>${status(x.cargo_category||'general')}</td><td>${esc(x.origin||'—')} → ${esc(x.dest||'—')}<br><small>${esc(x.mode||'—')}${x.container_position?` · ${esc(x.container_position)}`:''}</small></td><td>${esc(x.pcs??'—')}</td><td>${esc(x.chargeable_weight??x.weight??'—')}${x.volume_cbm!=null?` kg<br><small>${esc(x.volume_cbm)} CBM</small>`:' kg'}</td><td>${packagePrice(x)}${x.payment_mode?`<br><small>${esc(x.payment_mode)}</small>`:''}</td><td>${status(x.status)}</td><td>${canTrack?`<button class="row-btn" data-external-track="${esc(x.id||x.tracking_number)}">Track</button> `:''}<button class="row-btn" onclick="viewManifestDetails('${String(x.id).replaceAll("'","\\'")}')">${lines>1?'View cargo':'Details'}</button> <button class="row-btn" data-reminder="${esc(x.id)}">Copy reminder</button> <button class="row-btn" data-track="${esc(x.id)}">Update</button></td></tr>`}).join('')||'<tr><td colspan="9" class="muted">No packages in this category.</td></tr>'}</tbody></table></div></section>`}
 function shipments(){const all=livePackageRows(),selected=state.packageCategory||'all',rows=selected==='cleared'?all.filter(x=>['cleared','collected','released'].includes(String(x.status||'').toLowerCase())):selected==='all'?all:all.filter(x=>String(x.cargo_category||'general').toLowerCase()===selected),tabs=[['all','All packages'],['general','General'],['special','Special'],['sea','Sea'],['cleared','Cleared packages']];return `<section class="toolbar"><div class="search"><span>⌕</span><input id="shipment-search" placeholder="Search all packages, clients or tracking numbers" oninput="const q=this.value.toLowerCase().trim();document.querySelectorAll('.table-wrap tbody tr').forEach(row=>row.hidden=!!q&&!row.textContent.toLowerCase().includes(q))"></div><div class="category-tabs">${tabs.map(([key,label])=>`<button class="${selected===key?'active':''}" onclick="state.packageCategory='${key}';render()">${label}</button>`).join('')}</div><button class="primary" data-goto="manifests">⇧ Import manifest</button></section>${packageTable(rows,'Live packages')}`}
-function renderManifestPreview(preview,form){const target=$('#manifest-preview');if(!target)return;const rows=preview.ready||[];target.innerHTML=`<section class="metrics" style="margin-top:18px">${metric('Rows found',preview.total_rows,'Excel rows read','blue')}${metric('Ready to register',preview.ready_rows,'Valid new packages','green')}${metric('Already registered',preview.duplicate_rows,'Skipped duplicates','amber')}${metric('Needs attention',preview.invalid_rows,'Not imported','red')}</section><section class="grid two"><article class="panel"><div class="panel-head"><div><h2>2. Review extracted packages</h2><p>All workbook columns will be retained; key commercial values are shown below.</p></div></div><div class="table-wrap"><table><thead><tr><th>Tracking</th><th>Client</th><th>PCS</th><th>Weight / CBM</th><th>Unit USD</th><th>RMB</th><th>USD</th><th>Calculated charge</th></tr></thead><tbody>${rows.map(r=>{const bill=seaBilling(r);return `<tr><td><b>${esc(r.tracking_number)}</b></td><td>${esc(r.consignee)}</td><td>${esc(r.pcs??'—')}</td><td>${esc(r.weight??'—')}${r.volume_cbm!=null?` / ${esc(r.volume_cbm)} CBM`:''}</td><td>${r.unit_price_usd==null?'—':manifestMoney(r.unit_price_usd,'USD')}</td><td>${r.total_price_rmb==null?'—':manifestMoney(r.total_price_rmb,'RMB')}</td><td>${r.total_price_usd==null?'—':manifestMoney(r.total_price_usd,'USD')}</td><td>${r.total_price_kes!=null?manifestMoney(r.total_price_kes,'KES'):bill.amount!=null?manifestMoney(bill.amount,bill.currency):'—'}${bill.raw?`<br><small>${esc(bill.raw)}</small>`:''}</td></tr>`}).join('')||'<tr><td colspan="8" class="muted">No new valid package rows to register.</td></tr>'}</tbody></table></div></article><article class="panel attention"><div class="panel-head"><div><h2>3. Confirm bulk registration</h2><p>Packages are saved in the shared backend and visible on all dashboards.</p></div></div><button class="primary wide" id="manifest-commit" ${preview.ready_rows?'':'disabled'}>Register ${preview.ready_rows||0} package(s)</button><p class="muted" style="margin-top:14px">Existing tracking IDs are safely skipped. KES amounts feed package value; RMB and USD remain exact source amounts.</p></article></section>`;$('#manifest-commit')?.addEventListener('click',async()=>{try{const result=await previewManifest(form,true);toast(`${result.imported_rows||0} packages were registered and are now available on dashboards.`);await refreshData()}catch(e){toast(`Manifest was not registered: ${e.message}`,'error')}})}
+function renderManifestPreview(preview,form){const target=$('#manifest-preview');if(!target)return;const rows=preview.ready||[];target.innerHTML=`<section class="metrics" style="margin-top:18px">${metric('Rows found',preview.total_rows,'Excel rows read','blue')}${metric('Ready to register',preview.ready_rows,'Valid new packages','green')}${metric('Already registered',preview.duplicate_rows,'Skipped duplicates','amber')}${metric('Needs attention',preview.invalid_rows,'Not imported','red')}</section><section class="grid two"><article class="panel"><div class="panel-head"><div><h2>2. Review extracted packages</h2><p>All workbook columns will be retained; key commercial values are shown below.</p></div></div><div class="table-wrap"><table><thead><tr><th>Tracking</th><th>Client</th><th>PCS</th><th>Weight / CBM</th><th>Unit USD</th><th>RMB</th><th>USD</th><th>Calculated charge</th></tr></thead><tbody>${rows.map(r=>{const bill=seaBilling(r);return `<tr><td><b>${esc(r.tracking_number)}</b></td><td>${esc(r.consignee)}</td><td>${esc(r.pcs??'—')}</td><td>${esc(r.weight??'—')}${r.volume_cbm!=null?` / ${esc(r.volume_cbm)} CBM`:''}</td><td>${r.unit_price_usd==null?'—':manifestMoney(r.unit_price_usd,'USD')}</td><td>${r.total_price_rmb==null?'—':manifestMoney(r.total_price_rmb,'RMB')}</td><td>${r.total_price_usd==null?'—':manifestMoney(r.total_price_usd,'USD')}</td><td>${r.total_price_kes!=null?manifestMoney(r.total_price_kes,'KES'):bill.amount!=null?manifestMoney(bill.amount,bill.currency):'—'}${bill.raw?`<br><small>${esc(bill.raw)}</small>`:''}</td></tr>`}).join('')||'<tr><td colspan="8" class="muted">No new valid package rows to register.</td></tr>'}</tbody></table></div></article><article class="panel attention"><div class="panel-head"><div><h2>3. Confirm bulk registration</h2><p>Packages are saved in the shared backend and visible on all dashboards.</p></div></div><button class="primary wide" id="manifest-commit" ${preview.ready_rows?'':'disabled'}>Register ${preview.ready_rows||0} package(s)</button><p class="muted" style="margin-top:14px">Existing tracking IDs are safely skipped. KES amounts feed package value; RMB and USD remain exact source amounts.</p></article></section>`;$('#manifest-commit')?.addEventListener('click',async()=>{try{const result=await previewManifest(form,true);toast(result.warning?`${result.imported_rows||0} packages were registered. ${result.warning}`:`${result.imported_rows||0} packages were registered and are now available on dashboards.`,result.warning?'error':undefined);await refreshData()}catch(e){toast(`Manifest was not registered: ${e.message}`,'error')}})}
 
 // Manifest preview uses FormData, so it cannot use the JSON adminRequest helper.
 // Refresh the staff token once when a long-running session expires instead of
@@ -1148,7 +1148,7 @@ function shipments() {
     ["invoice", "Invoice"],
     ["released", "Released"],
   ];
-  return `<section class="toolbar package-toolbar"><label class="search"><span>⌕</span><input type="search" placeholder="Search packages, customers, or tracking numbers" oninput="filterPackageRows(this)"></label><div class="category-tabs">${tabs.map(([key, label]) => `<button class="${selected === key ? "active" : ""}" onclick="state.packageCategory='${key}';render()">${label}</button>`).join("")}</div></section><section class="package-workspace">${packageTable(rows, "Live packages")}</section>`;
+  return `<section class="toolbar package-toolbar"><label class="search"><span>⌕</span><input type="search" placeholder="Search packages, customers, or tracking numbers" oninput="filterPackageRows(this)"></label><div class="category-tabs">${tabs.map(([key, label]) => `<button class="${selected === key ? "active" : ""}" onclick="state.packageCategory='${key}';render()">${label}</button>`).join("")}</div><button class="primary" data-goto="manifests">⇧ Import manifest</button></section><section class="package-workspace">${packageTable(rows, "Live packages")}</section>`;
 }
 
 const navItemsBeforeDesktopImprovements = navItems;
@@ -1156,6 +1156,14 @@ navItems = function (role) {
   const items = navItemsBeforeDesktopImprovements(role).filter(
     ([id]) => !["tracking", "manifests"].includes(id),
   );
+  const packageIndex = items.findIndex(([id]) =>
+    ["shipments", "my_packages", "sales_packages", "warehouse_packages"].includes(id),
+  );
+  items.splice(packageIndex >= 0 ? packageIndex + 1 : items.length, 0, [
+    "manifests",
+    "Import manifest",
+    "⇧",
+  ]);
   if (role !== "admin" && !items.some(([id]) => id === "my_commissions")) {
     const insertAt = Math.max(
       0,
@@ -1172,6 +1180,7 @@ navItems = function (role) {
 
 const pageTitleBeforeDesktopImprovements = pageTitle;
 pageTitle = function () {
+  if (state.page === "manifests") return "Import manifest";
   if (state.page === "my_commissions") return "My commissions";
   if (state.page === "payment_control") return "Payment control";
   return pageTitleBeforeDesktopImprovements();
@@ -1179,7 +1188,8 @@ pageTitle = function () {
 
 const roleContentBeforeDesktopImprovements = roleContent;
 roleContent = function () {
-  if (["tracking", "manifests"].includes(state.page)) state.page = "overview";
+  if (state.page === "manifests") return manifestView();
+  if (state.page === "tracking") state.page = "overview";
   if (state.page === "overview") return dashboardCommissionOverview();
   if (state.page === "my_commissions") return commissions();
   if (state.page === "commissions") return commissions();
@@ -1769,3 +1779,408 @@ refreshData = async function () {
   state.commissionReportRequest = null;
   await refreshDataBeforeCommissionReportRefresh();
 };
+
+
+/* Electron offline desktop bridge ------------------------------------------
+   The web build continues to use fetch unchanged. The installed Electron shell
+   routes authenticated JSON requests through its narrow main-process bridge. */
+async function dexDesktopFetch(url, options = {}) {
+  if (!window.dexAdmin?.isElectron || !window.dexAdmin?.apiRequest) {
+    return fetch(url, options);
+  }
+  try {
+    const headers = Object.fromEntries(new Headers(options.headers || {}).entries());
+    const body = typeof options.body === "string" ? options.body : undefined;
+    const result = await window.dexAdmin.apiRequest({
+      url: String(url),
+      method: options.method || "GET",
+      headers,
+      body,
+      userId: state.session?.user?.id || null,
+    });
+    const responseHeaders = new Headers(result.headers || {});
+    if (result.fromCache) responseHeaders.set("x-dex-cache", "offline");
+    if (result.queued) responseHeaders.set("x-dex-queued", "true");
+    const statusCode = Number(result.status || 200);
+    return new Response(statusCode === 204 || statusCode === 304 ? null : String(result.body || ""), {
+      status: statusCode,
+      headers: responseHeaders,
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error?.message || "Desktop request failed." }), {
+      status: 503,
+      headers: { "content-type": "application/json" },
+    });
+  }
+}
+
+request = async function (path, options = {}, retried = false) {
+  const url = `${state.connection.url.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+  const headers = {
+    apikey: state.connection.key,
+    Authorization: `Bearer ${state.session.access_token}`,
+    ...(options.body ? { "Content-Type": "application/json" } : {}),
+    ...(options.headers || {}),
+  };
+  const response = await dexDesktopFetch(url, { ...options, headers });
+  if (response.status === 401 && !retried && state.session?.refresh_token) {
+    try {
+      const refreshed = await fetch(`${state.connection.url.replace(/\/$/, "")}/auth/v1/token?grant_type=refresh_token`, {
+        method: "POST",
+        headers: { apikey: state.connection.key, "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: state.session.refresh_token }),
+      });
+      if (refreshed.ok) {
+        state.session = await refreshed.json();
+        await window.dexAdmin.saveSession(state.session);
+        if (window.dexAdmin?.isElectron) {
+          void window.dexAdmin.startRealtime({
+            url: state.connection.url,
+            key: state.connection.key,
+            accessToken: state.session.access_token,
+          });
+        }
+        return request(path, options, true);
+      }
+    } catch {
+      // Preserve the cached/offline path and report the original request below.
+    }
+  }
+  if (!response.ok) {
+    const body = await response.text();
+    let message = body || `Request failed (${response.status})`;
+    try { message = JSON.parse(body).error || message; } catch {}
+    throw new Error(message);
+  }
+  const text = await response.text();
+  return text ? JSON.parse(text) : null;
+};
+
+adminRequest = async function (path, options = {}, retried = false) {
+  const headers = {
+    Authorization: `Bearer ${state.session.access_token}`,
+    ...(options.body ? { "Content-Type": "application/json" } : {}),
+    ...(options.headers || {}),
+  };
+  const response = await dexDesktopFetch(`${ADMIN_BACKEND}${path}`, { ...options, headers });
+  if (response.status === 401 && !retried && state.session?.refresh_token) {
+    try {
+      const refreshed = await fetch(`${state.connection.url.replace(/\/$/, "")}/auth/v1/token?grant_type=refresh_token`, {
+        method: "POST",
+        headers: { apikey: state.connection.key, "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: state.session.refresh_token }),
+      });
+      if (refreshed.ok) {
+        state.session = await refreshed.json();
+        await window.dexAdmin.saveSession(state.session);
+        if (window.dexAdmin?.isElectron) {
+          void window.dexAdmin.startRealtime({
+            url: state.connection.url,
+            key: state.connection.key,
+            accessToken: state.session.access_token,
+          });
+        }
+        return adminRequest(path, options, true);
+      }
+    } catch {
+      // Cached GETs and queued eligible writes remain available while offline.
+    }
+  }
+  if (!response.ok) {
+    const text = await response.text();
+    let message = text || `Admin request failed (${response.status})`;
+    try { message = JSON.parse(text).error || message; } catch {}
+    throw new Error(message);
+  }
+  const text = await response.text();
+  const result = text ? JSON.parse(text) : null;
+  if (response.headers.get("x-dex-queued") === "true") {
+    toast("Saved on this device. It will sync when the connection returns.");
+  }
+  return result;
+};
+
+const dexOriginalHydrateIdentity = hydrateIdentity;
+hydrateIdentity = async function () {
+  await dexOriginalHydrateIdentity();
+  if (window.dexAdmin?.isElectron && state.session?.user?.id) {
+    void window.dexAdmin.startRealtime({
+      url: state.connection.url,
+      key: state.connection.key,
+      accessToken: state.session.access_token,
+    });
+  }
+};
+
+async function dexRenderSyncStatus() {
+  if (!window.dexAdmin?.isElectron || !state.session?.user?.id) return;
+  const host = document.querySelector(".top-actions");
+  if (!host) return;
+  let button = document.getElementById("dex-sync-indicator");
+  if (!button) {
+    button = document.createElement("button");
+    button.id = "dex-sync-indicator";
+    button.type = "button";
+    button.className = "secondary";
+    button.title = "Offline edits and synchronization status";
+    host.prepend(button);
+    button.addEventListener("click", async () => {
+      const userId = state.session?.user?.id;
+      if (!userId) return;
+      const before = await window.dexAdmin.syncStatus(userId);
+      if (!before.online) {
+        toast("Offline. Eligible package edits are saved locally until the connection returns.", "error");
+        return;
+      }
+      try {
+        const outcome = await window.dexAdmin.syncOutbox(userId, state.session.access_token);
+        if (outcome.conflict) {
+          toast(`${outcome.conflict} queued edit(s) need review because the server record changed.`, "error");
+        } else if (outcome.syncedThisRun) {
+          toast(`${outcome.syncedThisRun} offline edit(s) synced.`);
+          await refreshData();
+        }
+        await dexRenderSyncStatus();
+      } catch (error) {
+        toast(`Sync did not finish: ${error.message}`, "error");
+      }
+    });
+  }
+  try {
+    const statusInfo = await window.dexAdmin.syncStatus(state.session.user.id);
+    const pending = Number(statusInfo.queued || 0) + Number(statusInfo.syncing || 0);
+    const conflicts = Number(statusInfo.conflict || 0);
+    button.textContent = !statusInfo.online
+      ? `OFFLINE · ${pending} queued`
+      : conflicts
+        ? `SYNC REVIEW · ${conflicts}`
+        : pending
+          ? `SYNC · ${pending} pending`
+          : "SYNCED";
+    button.dataset.syncState = conflicts ? "conflict" : statusInfo.online ? "online" : "offline";
+    button.disabled = statusInfo.online && pending === 0 && conflicts === 0;
+    button.title = conflicts
+      ? "Some queued edits conflict with newer server data. Refresh the package and resolve manually."
+      : statusInfo.online
+        ? "Click to retry eligible queued edits."
+        : "Offline: eligible package location and staff assignment edits will sync when connected.";
+  } catch {
+    button.textContent = "SYNC STATUS";
+  }
+}
+
+const dexPreviousRenderForSync = render;
+render = function () {
+  dexPreviousRenderForSync();
+  void dexRenderSyncStatus();
+};
+
+const dexPreviousRefreshForSync = refreshData;
+let dexRefreshInProgress = false;
+refreshData = async function () {
+  if (dexRefreshInProgress) return;
+  dexRefreshInProgress = true;
+  try {
+    await dexPreviousRefreshForSync();
+    if (window.dexAdmin?.isElectron && state.session?.user?.id) {
+      try {
+        const result = await window.dexAdmin.syncOutbox(state.session.user.id, state.session.access_token);
+        if (Number(result.syncedThisRun || 0) > 0) await dexPreviousRefreshForSync();
+      } catch (error) {
+        console.warn("Offline edit sync is waiting", error);
+      }
+      await dexRenderSyncStatus();
+    }
+  } finally {
+    dexRefreshInProgress = false;
+  }
+};
+
+if (window.dexAdmin?.isElectron) {
+  window.dexAdmin.onRemoteChange?.(() => {
+    clearTimeout(window.__dexRemoteRefreshTimer);
+    window.__dexRemoteRefreshTimer = setTimeout(() => {
+      if (state.session) void refreshData();
+    }, 350);
+  });
+  window.dexAdmin.onNetworkChange?.((online) => {
+    if (online && state.session) void refreshData();
+    else void dexRenderSyncStatus();
+  });
+  window.dexAdmin.onSyncStatus?.(() => void dexRenderSyncStatus());
+  window.addEventListener("online", () => { if (state.session) void refreshData(); });
+  window.addEventListener("offline", () => void dexRenderSyncStatus());
+  window.setInterval(() => {
+    if (navigator.onLine && state.session && !dexRefreshInProgress) void refreshData();
+  }, 30000);
+}
+
+
+/* Shared auth refresh: serialize token rotation across tabs and refresh the latest stored session. */
+let dexAuthRefreshPromise: Promise<boolean> | null = null;
+function dexRefreshAuthSessionAcrossTabs() {
+  if (dexAuthRefreshPromise) return dexAuthRefreshPromise;
+  const performRefresh = async () => {
+    const current = state.session || {};
+    const userId = current.user?.id;
+    const readStored = async (): Promise<DexRefreshSession | null> => {
+      try { return (await dexRefreshBridge()?.getSession?.()) ?? null; }
+      catch (error) { console.debug("Unable to read the shared session cache", error); return null; }
+    };
+    const matchesUser = (candidate: DexRefreshSession | null | undefined) => Boolean(candidate?.access_token) && (!userId || candidate.user?.id === userId);
+    let latest = await readStored();
+    if (matchesUser(latest) && (latest.access_token !== current.access_token || latest.refresh_token !== current.refresh_token)) {
+      state.session = latest;
+      return true;
+    }
+    const source = matchesUser(latest) ? latest : current;
+    if (!source?.refresh_token || !state.connection?.url || !state.connection?.key) return false;
+    const base = String(state.connection.url).replace(/\/+$/, "");
+    const response = await fetch(`${base}/auth/v1/token?grant_type=refresh_token`, {
+      method: "POST",
+      headers: { apikey: state.connection.key, "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: source.refresh_token }),
+    }).catch(() => null);
+    if (!response?.ok) {
+      latest = await readStored();
+      if (matchesUser(latest) && (latest.access_token !== source.access_token || latest.refresh_token !== source.refresh_token)) {
+        state.session = latest;
+        return true;
+      }
+      return false;
+    }
+    const fresh = (await response.json()) as DexRefreshSession;
+    if (!fresh?.access_token || !fresh?.refresh_token || (userId && fresh.user?.id && fresh.user.id !== userId)) return false;
+    state.session = fresh;
+    const bridge = dexRefreshBridge();
+    try { await bridge?.saveSession?.(fresh); } catch (error) { console.warn("Could not persist refreshed DEX session", error); }
+    if (bridge?.isElectron && bridge.startRealtime && fresh.access_token) {
+      void bridge.startRealtime({ url: state.connection.url, key: state.connection.key, accessToken: fresh.access_token });
+    }
+    return true;
+  };
+  const lockManager = (navigator as unknown as { locks?: DexLockManager }).locks;
+  const work = () => lockManager?.request
+    ? lockManager.request("dex-console-auth-refresh", performRefresh)
+    : performRefresh();
+  dexAuthRefreshPromise = Promise.resolve().then(work).then(Boolean).catch((error) => {
+    console.warn("DEX session refresh failed", error?.message || error);
+    return false;
+  }).finally(() => { dexAuthRefreshPromise = null; });
+  return dexAuthRefreshPromise;
+}
+
+request = async function (path, options = {}, retried = false) {
+  const base = String(state.connection.url || "").replace(/\/+$/, "");
+  const url = `${base}/${String(path).replace(/^\/+/, "")}`;
+  const headers = new Headers(options.headers || {});
+  headers.set("apikey", state.connection.key);
+  headers.set("Authorization", `Bearer ${state.session?.access_token || ""}`);
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
+  if (options.body && !isFormData && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  const transport = (window as unknown as { dexDesktopFetch?: DexRequestTransport }).dexDesktopFetch ?? fetch;
+  const response = await transport(url, { ...options, headers });
+  if (response.status === 401 && !retried && await dexRefreshAuthSessionAcrossTabs()) return request(path, options, true);
+  if (!response.ok) {
+    const text = await response.text();
+    let message = text || `Request failed (${response.status})`;
+    try { const body = JSON.parse(text); message = body.error || body.message || message; } catch (error) { message = text || (error instanceof Error ? error.message : message); }
+    throw new Error(readableError(message));
+  }
+  const text = await response.text();
+  return text ? JSON.parse(text) : null;
+};
+
+adminRequest = async function (path, options = {}, retried = false) {
+  const base = String(ADMIN_BACKEND || "").replace(/\/+$/, "");
+  const route = String(path).startsWith("/") ? String(path) : `/${path}`;
+  const headers = new Headers(options.headers || {});
+  headers.set("Authorization", `Bearer ${state.session?.access_token || ""}`);
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
+  if (options.body && !isFormData && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  const transport = (window as unknown as { dexDesktopFetch?: DexRequestTransport }).dexDesktopFetch ?? fetch;
+  const response = await transport(`${base}${route}`, { ...options, headers });
+  if (response.status === 401 && !retried && await dexRefreshAuthSessionAcrossTabs()) return adminRequest(path, options, true);
+  if (!response.ok) {
+    const text = await response.text();
+    let message = text || `Admin request failed (${response.status})`;
+    try { const body = JSON.parse(text); message = body.error || body.message || message; } catch (error) { message = text || (error instanceof Error ? error.message : message); }
+    throw new Error(readableError(message));
+  }
+  const text = await response.text();
+  const result = text ? JSON.parse(text) : null;
+  if (response.headers.get("x-dex-queued") === "true") toast("Saved on this device. It will sync when the connection returns.");
+  return result;
+};
+
+previewManifest = async function (form, commit = false, retried = false) {
+  if (!state.session?.access_token) throw new Error("Please sign in again before importing a manifest.");
+  const data = new FormData(form);
+  data.set("commit", String(commit));
+  const response = await fetch(`${String(ADMIN_BACKEND).replace(/\/+$/, "")}/api/public/import-manifest`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${state.session.access_token}` },
+    body: data,
+  });
+  if (response.status === 401 && !retried && await dexRefreshAuthSessionAcrossTabs()) return previewManifest(form, commit, true);
+  const text = await response.text();
+  let result: ManifestApiResult = {};
+  try { result = (text ? JSON.parse(text) : {}) as ManifestApiResult; } catch (error) { result = { error: "The manifest service returned an unreadable response." }; }
+  if (!response.ok) throw new Error(readableError(result.error || `Manifest import failed (${response.status}).`));
+  return result;
+};
+
+const dexStaffDashboardBeforeAdminSnapshot = dashboardCommissionOverview;
+function dexAdminOperationsOverview() {
+  const packages = state.data?.packages || [];
+  const summary = state.data?.revenue || {};
+  const packageSummary = summary.packages || {};
+  const revenueSummary = summary.revenue || {};
+  const now = new Date();
+  const monthKey = now.toISOString().slice(0, 7);
+  const amount = (pkg) => typeof packageValue === "function" ? Number(packageValue(pkg) || 0) : Number(pkg?.cost ?? pkg?.total_price_kes ?? 0);
+  const paid = (pkg) => typeof packagePaymentStatus === "function"
+    ? packagePaymentStatus(pkg) === "paid" || (typeof packageIsReleased === "function" && packageIsReleased(pkg))
+    : ["paid", "cleared", "collected", "released"].includes(String(pkg?.payment_status || pkg?.status || "").toLowerCase());
+  const inMonth = (value) => {
+    if (!value) return false;
+    const date = new Date(value);
+    return !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 7) === monthKey;
+  };
+  const registeredThisMonth = Number(packageSummary.registered_this_month ?? packages.filter((pkg) => inMonth(pkg.registered_at || pkg.imported_at || pkg.created_at)).length);
+  const paidPackages = packages.filter(paid);
+  const monthPaidPackages = paidPackages.filter((pkg) => inMonth(pkg.paid_at || pkg.cleared_at || pkg.collected_at || pkg.registered_at || pkg.created_at));
+  const paidCount = Number(packageSummary.paid ?? paidPackages.length);
+  const pendingCount = Number(packageSummary.pending_payment_count ?? packageSummary.unpaid ?? packages.filter((pkg) => !paid(pkg)).length);
+  const thisMonthPaidCount = Number(packageSummary.paid_this_month ?? monthPaidPackages.length);
+  const totalRevenue = Number(revenueSummary.total ?? summary.gross_income?.total ?? paidPackages.reduce((sum, pkg) => sum + amount(pkg), 0));
+  const monthRevenue = Number(revenueSummary.this_month ?? monthPaidPackages.reduce((sum, pkg) => sum + amount(pkg), 0));
+  const pendingValue = Number(packageSummary.outstanding_value ?? packages.filter((pkg) => !paid(pkg)).reduce((sum, pkg) => {
+    const balance = typeof paymentBalance === "function" ? paymentBalance(pkg) : null;
+    return sum + Math.max(0, Number(balance ?? amount(pkg)));
+  }, 0));
+  const max = Math.max(1, registeredThisMonth, pendingCount, paidCount);
+  const flow = [["this month registered", registeredThisMonth], ["still unpaid / part paid", pendingCount], ["paid / released", paidCount]];
+  const latest = [...packages].sort((a, b) => new Date(b.registered_at || b.imported_at || b.created_at || 0).valueOf() - new Date(a.registered_at || a.imported_at || a.created_at || 0).valueOf()).slice(0, 6);
+  const latestView = typeof packageTable === "function" ? packageTable(latest, "Latest packages") : shipmentTable(latest);
+  return `<section class="role-banner compact"><div><span>DEX ADMIN · ${esc(now.toLocaleString("en-KE", { month: "long", year: "numeric" }).toUpperCase())}</span><h2>Monthly operations snapshot</h2><p>Live package, payment and revenue figures from the shared backend.</p></div></section><section class="metrics">${metric("This month: packages", registeredThisMonth, "Registered this calendar month", "blue")}${metric("This month: cleared", thisMonthPaidCount, `${money(monthRevenue)} recognised revenue`, "green")}${metric("Pending payments", pendingCount, `${money(pendingValue)} outstanding balance`, "red")}${metric("Total company revenue", money(totalRevenue), "Paid package value", "amber")}</section><section class="grid two"><article class="panel"><div class="panel-head"><div><h2>Monthly package flow</h2><p>Current package status from the backend.</p></div></div><div class="flow">${flow.map(([label, count]) => `<div><b>${count}</b><span>${label}</span><i style="width:${Math.max(8, Number(count) / max * 100)}%"></i></div>`).join("")}</div></article><article class="panel treasury"><div class="panel-head"><div><h2>Monthly money flow</h2><p>Paid package value is revenue; remaining balances are pending.</p></div></div><div class="treasury-grid"><div><small>This-month revenue</small><b>${money(monthRevenue)}</b></div><div><small>Total revenue</small><b>${money(totalRevenue)}</b></div><div><small>Pending value</small><b>${money(pendingValue)}</b></div><div><small>Paid packages</small><b>${paidCount}</b></div></div></article></section>${latestView}`;
+}
+dashboardCommissionOverview = function () {
+  if (String(state.role || "").toLowerCase() === "admin") return dexAdminOperationsOverview();
+  return dexStaffDashboardBeforeAdminSnapshot();
+};
+
+
+type DexRefreshSession = { access_token?: string; refresh_token?: string; user?: { id?: string }; [key: string]: unknown };
+type DexRefreshBridge = {
+  getSession?: () => Promise<DexRefreshSession | null | undefined> | DexRefreshSession | null | undefined;
+  saveSession?: (session: DexRefreshSession) => Promise<void> | void;
+  startRealtime?: (input: { url: string; key: string; accessToken: string }) => Promise<void> | void;
+  isElectron?: boolean;
+};
+type DexLockManager = { request<T>(name: string, callback: () => Promise<T>): Promise<T> };
+type DexRequestTransport = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+type ManifestApiResult = { error?: string; warning?: string; [key: string]: unknown };
+function dexRefreshBridge(): DexRefreshBridge | undefined {
+  return (window as unknown as { dexAdmin?: DexRefreshBridge }).dexAdmin;
+}

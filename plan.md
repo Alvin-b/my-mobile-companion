@@ -20,3 +20,11 @@ Keep payment amount corrections audited, retain payment unlink/delete audit hist
 ## Design direction
 
 Preserve the existing DEX logistics control-room styling: dark navy work surfaces, electric-blue primary actions, compact operational tables, semantic payment/status badges, and sticky headers for dense desktop package workflows. Make package scrolling and filters easy to discover without changing the mobile app or replacing the established visual system.
+
+## Windows offline desktop shell
+
+Add a separate Electron Windows installer which loads the existing desktop renderer and assets locally; do not replace the current web or Capacitor mobile entry points. Use SQLite in the Electron main process (Android Room is not a Windows library), with user-partitioned cached snapshots and an encrypted outbox using Electron `safeStorage`. Keep Supabase credentials and JWT handling out of the renderer process and never bundle service-role keys.
+
+On sign-in, cache only datasets returned under that account's existing Supabase RLS permissions. When offline, restore the saved account and cached rows, allow record edits to enter a visible, ordered outbox, and distinguish locally queued changes from server-confirmed data. On reconnection, revalidate the current user, replay supported mutations with duplicate protection, preserve conflicts for review, and refresh the cache. Use Supabase Realtime events for connected refreshes with an online refresh fallback. File uploads and operations with irreversible external side effects must remain online-only unless an idempotent server contract is implemented. The deployed application API origin is a runtime configuration requirement because the packaged app cannot contain the service-role backend.
+
+Package the UI via a small `electron/` main/preload/renderer shell, enable context isolation and sandboxing, expose only narrow typed IPC, and persist the local store in the OS user-data directory. Add SQLite schema/versioning, Windows NSIS packaging, and repeatable build/test scripts; keep the legacy browser path and mobile build unchanged.

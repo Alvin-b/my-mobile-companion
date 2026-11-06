@@ -165,8 +165,13 @@ function parseSheet(file: ArrayBuffer, category: Category): Parsed[] {
 }
 
 export const Route = createFileRoute("/api/public/import-manifest")({ server: { handlers: { POST: async ({ request }) => {
+  const missingServerConfig = [!process.env.SUPABASE_URL && "SUPABASE_URL", !process.env.SUPABASE_PUBLISHABLE_KEY && "SUPABASE_PUBLISHABLE_KEY", !process.env.SUPABASE_SERVICE_ROLE_KEY && "SUPABASE_SERVICE_ROLE_KEY"].filter(Boolean);
+  if (missingServerConfig.length) {
+    console.error(`[manifest] Server configuration missing: ${missingServerConfig.join(", ")}`);
+    return Response.json({ error: "Manifest import is unavailable on this preview server because server-side Supabase configuration is missing. Use the deployed DEX app or configure this server." }, { status: 503 });
+  }
   const user = await verifyStaffJwt(request);
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) return Response.json({ error: "Your DEX sign-in has expired or is invalid. Sign in again before importing a manifest." }, { status: 401 });
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: employee } = await supabaseAdmin.from("employees").select("role,is_active").eq("user_id", user.id).maybeSingle();
   if (!employee?.is_active) return Response.json({ error: "An active DEX employee account is required" }, { status: 403 });
@@ -174,7 +179,7 @@ export const Route = createFileRoute("/api/public/import-manifest")({ server: { 
   if (!["general", "special", "sea"].includes(category)) return Response.json({ error: "Choose General, Special, or Sea cargo." }, { status: 400 });
   if (!(upload instanceof File) || !upload.name.toLowerCase().endsWith(".xlsx")) return Response.json({ error: "Upload an Excel .xlsx manifest." }, { status: 400 });
   if (upload.size > 10 * 1024 * 1024) return Response.json({ error: "Manifest must be 10 MB or smaller." }, { status: 400 });
-  let parsed: Parsed[]; try { parsed = parseSheet(await upload.arrayBuffer(), category); } catch (e: any) { return Response.json({ error: e?.message ?? "Manifest could not be read" }, { status: 400 }); }
+  let parsed: Parsed[]; try { parsed = parseSheet(await upload.arrayBuffer(), category); } catch (error: unknown) { return Response.json({ error: error instanceof Error ? error.message : "Manifest could not be read" }, { status: 400 }); }
   const keys = [...new Set(parsed.map((p) => p.id))];
   const { data: existing } = await supabaseAdmin.from("cargo_packages").select("id,tracking_number").in("id", keys);
   const exists = new Set((existing ?? []).map((p) => p.id)); const duplicateInFile = new Set<string>(); const seen = new Set<string>();
@@ -227,6 +232,10 @@ export const Route = createFileRoute("/api/public/import-manifest")({ server: { 
   }));
   const { error: insertError } = payload.length ? await supabaseAdmin.from("cargo_packages").insert(payload) : { error: null };
   if (insertError) return Response.json({ error: insertError.message, ...preview }, { status: 400 });
-  await supabaseAdmin.from("manifest_imports").insert({ id: manifestId, category, source_file_name: upload.name, total_rows: parsed.length, imported_rows: payload.length, duplicate_rows: duplicates.length, invalid_rows: invalid.length, imported_by: user.id, notes: { header_format: category === "sea" ? "sea_chinese" : "air" } });
+  const { error: manifestLogError } = await supabaseAdmin.from("manifest_imports").insert({ id: manifestId, category, source_file_name: upload.name, total_rows: parsed.length, imported_rows: payload.length, duplicate_rows: duplicates.length, invalid_rows: invalid.length, imported_by: user.id, notes: { header_format: category === "sea" ? "sea_chinese" : "air" } });
+  if (manifestLogError) {
+    console.error("[import-manifest] packages inserted but manifest log insert failed", manifestLogError);
+    return Response.json({ ok: true, manifest_id: manifestId, imported_rows: payload.length, warning: "Packages were registered, but the import log was not saved. Do not upload this file again.", ...preview });
+  }
   return Response.json({ ok: true, manifest_id: manifestId, imported_rows: payload.length, ...preview });
 } } } });

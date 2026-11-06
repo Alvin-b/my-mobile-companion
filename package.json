@@ -3,11 +3,16 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "node scripts/build-desktop-renderer.mjs && vite dev",
     "build": "node scripts/build-desktop-renderer.mjs && vite build",
     "build:dev": "node scripts/build-desktop-renderer.mjs && vite build --mode development",
     "preview": "vite preview",
+    "desktop:dev": "node scripts/build-desktop-renderer.mjs && electron .",
+    "desktop:dir": "node scripts/build-desktop-renderer.mjs && electron-builder --dir",
+    "desktop:win": "node scripts/build-desktop-renderer.mjs && electron-builder --win nsis --x64",
+    "test:desktop": "node --test electron/*.test.cjs",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
@@ -66,6 +71,7 @@
     "react-resizable-panels": "^4.6.5",
     "recharts": "^2.15.4",
     "sonner": "^2.0.7",
+    "sql.js": "^1.15.2",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.2.1",
     "tw-animate-css": "^1.3.4",
@@ -80,6 +86,8 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.2.0",
+    "electron": "^45.2.3",
+    "electron-builder": "^26.18.0",
     "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.6",
@@ -91,5 +99,36 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^8.0.16"
+  },
+  "build": {
+    "appId": "com.dexcargo.desktop",
+    "productName": "DEXCARGO Desktop",
+    "asar": true,
+    "directories": { "output": "release" },
+    "files": [
+      "electron/**/*",
+      "public/desktop-shell.html",
+      "public/desktop-console.css",
+      "public/desktop-renderer.js",
+      "public/favicon.ico",
+      "public/assets/dex-logo.png"
+    ],
+    "extraResources": [
+      { "from": "node_modules/sql.js/dist/sql-wasm.wasm", "to": "sql-wasm.wasm" }
+    ],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "public/favicon.ico",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "DEXCARGO Desktop"
+    },
+    "artifactName": "DEXCARGO-Desktop-Setup-${version}.${ext}"
   }
 }

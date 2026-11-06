@@ -1,5 +1,6 @@
 {
   "name": "tanstack_start_ts",
+  "version": "1.1.8",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -11,7 +12,7 @@
     "preview": "vite preview",
     "desktop:dev": "node scripts/build-desktop-renderer.mjs && electron .",
     "desktop:dir": "node scripts/build-desktop-renderer.mjs && electron-builder --dir",
-    "desktop:win": "node scripts/build-desktop-renderer.mjs && electron-builder --win nsis --x64",
+    "desktop:win": "node scripts/build-desktop-renderer.mjs && electron-builder --win nsis --x64 --publish never",
     "test:desktop": "node --test electron/*.test.cjs",
     "lint": "eslint .",
     "format": "prettier --write ."
@@ -60,6 +61,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
+    "electron-updater": "^6.8.11",
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.575.0",
@@ -104,7 +106,17 @@
     "appId": "com.dexcargo.desktop",
     "productName": "DEXCARGO Desktop",
     "asar": true,
-    "directories": { "output": "release" },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Alvin-b",
+        "repo": "my-mobile-companion",
+        "releaseType": "release"
+      }
+    ],
+    "directories": {
+      "output": "release"
+    },
     "files": [
       "electron/**/*",
       "public/desktop-shell.html",
@@ -114,10 +126,20 @@
       "public/assets/dex-logo.png"
     ],
     "extraResources": [
-      { "from": "node_modules/sql.js/dist/sql-wasm.wasm", "to": "sql-wasm.wasm" }
+      {
+        "from": "node_modules/sql.js/dist/sql-wasm.wasm",
+        "to": "sql-wasm.wasm"
+      }
     ],
     "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "icon": "public/favicon.ico",
       "signAndEditExecutable": false
     },

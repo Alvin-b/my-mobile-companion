@@ -1,4 +1,5 @@
-const { app, BrowserWindow, dialog, ipcMain, net, safeStorage, shell } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, Menu, net, safeStorage, shell } = require("electron");
+const { autoUpdater } = require("electron-updater");
 const fs = require("node:fs");
 const path = require("node:path");
 const { createHash } = require("node:crypto");
@@ -13,6 +14,8 @@ let store;
 let realtimeClient;
 let realtimeChannel;
 let allowedApiBase = process.env.DEX_API_BASE_URL || DEFAULT_API_BASE;
+let manualUpdateCheck = false;
+let updateCheckInFlight = false;
 
 function safeUrl(value) {
   try {
@@ -396,6 +399,82 @@ async function createWindow() {
   mainWindow.on("closed", () => { mainWindow = null; });
 }
 
+function showUpdateMessage(options) {
+  const parent = mainWindow && !mainWindow.isDestroyed() ? mainWindow : null;
+  return parent ? dialog.showMessageBox(parent, options) : dialog.showMessageBox(options);
+}
+
+async function checkForDesktopUpdates(manual = false) {
+  if (!app.isPackaged) {
+    if (manual) await showUpdateMessage({ type: "info", title: PRODUCT_NAME, message: "Updates are available in the installed app." });
+    return;
+  }
+  if (updateCheckInFlight) return;
+  updateCheckInFlight = true;
+  manualUpdateCheck = manual;
+  try {
+    await autoUpdater.checkForUpdates();
+  } catch (error) {
+    updateCheckInFlight = false;
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[desktop-updater] Update check failed:", message);
+    if (manual) await showUpdateMessage({ type: "error", title: PRODUCT_NAME, message: `Could not check for updates. ${message}` });
+  }
+}
+
+function configureDesktopUpdates() {
+  if (!app.isPackaged) return;
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.allowPrerelease = false;
+  autoUpdater.on("checking-for-update", () => console.info("[desktop-updater] Checking for updates."));
+  autoUpdater.on("update-available", (info) => {
+    updateCheckInFlight = false;
+    console.info(`[desktop-updater] Downloading version ${info.version}.`);
+    if (manualUpdateCheck) void showUpdateMessage({ type: "info", title: PRODUCT_NAME, message: `Version ${info.version} is available and will download in the background.` });
+  });
+  autoUpdater.on("update-not-available", (info) => {
+    updateCheckInFlight = false;
+    if (manualUpdateCheck) void showUpdateMessage({ type: "info", title: PRODUCT_NAME, message: `You are up to date (version ${info.version}).` });
+  });
+  autoUpdater.on("download-progress", (progress) => {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setProgressBar(Math.max(0, Math.min(1, progress.percent / 100)));
+  });
+  autoUpdater.on("update-downloaded", async (info) => {
+    updateCheckInFlight = false;
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setProgressBar(-1);
+    const result = await showUpdateMessage({
+      type: "info",
+      title: PRODUCT_NAME,
+      message: `Version ${info.version} is ready to install. Restart the app to finish updating.`,
+      buttons: ["Restart now", "Later"],
+      defaultId: 0,
+      cancelId: 1,
+    });
+    if (result.response === 0) autoUpdater.quitAndInstall(false, true);
+  });
+  autoUpdater.on("error", (error) => {
+    updateCheckInFlight = false;
+    console.error("[desktop-updater] Update failed:", error);
+    if (manualUpdateCheck) void showUpdateMessage({ type: "error", title: PRODUCT_NAME, message: `The update could not be completed. ${error.message || error}` });
+  });
+
+  const menu = Menu.buildFromTemplate([
+    {
+      label: "DEXCARGO",
+      submenu: [
+        { label: "Check for updates…", click: () => void checkForDesktopUpdates(true) },
+        { type: "separator" },
+        { role: "quit" },
+      ],
+    },
+  ]);
+  Menu.setApplicationMenu(menu);
+  void checkForDesktopUpdates();
+  const updateTimer = setInterval(() => void checkForDesktopUpdates(), 6 * 60 * 60 * 1000);
+  updateTimer.unref();
+}
+
 app.whenReady().then(async () => {
   const initSqlJs = require("sql.js");
   const wasmPath = app.isPackaged
@@ -409,6 +488,7 @@ app.whenReady().then(async () => {
   }).open();
   registerIpc();
   await createWindow();
+  configureDesktopUpdates();
   app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) void createWindow(); });
 }).catch((error) => {
   dialog.showErrorBox(PRODUCT_NAME, error.message || "Secure local storage could not be started.");

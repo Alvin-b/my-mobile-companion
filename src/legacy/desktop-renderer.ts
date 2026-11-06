@@ -636,10 +636,41 @@ function toast(message, kind='ok'){
   setTimeout(close,isError?7200:4200);
 }
 
-function packageTable(rows,title='Packages'){
-  const canRelease=['admin','logistics_manager','sales_manager'].includes(String(state.role||'').toLowerCase());
-  const canEditLocation=['admin','logistics_manager','sales_manager'].includes(String(state.role||'').toLowerCase());
-  return `<section class="panel package-list-panel"><div class="panel-head"><div><h2>${esc(title)}</h2><p>${rows.length} live package${rows.length===1?'':'s'} · scroll the list independently</p></div></div><div class="table-wrap package-table-wrap" tabindex="0" aria-label="Scrollable package list"><table><thead><tr><th>Tracking</th><th>Client</th><th>Category</th><th>Route / freight</th><th>Location</th><th>Pieces</th><th>Weight / CBM</th><th>Manifest price</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows.map(x=>{const group=parseManifestData(x).group||{},lines=Number(group.line_count||group.line_items?.length||0),paid=isPaidPackage(x),location=x.location||x.warehouse_location||'—';return `<tr><td><b>${esc(x.tracking_number||x.id)}</b>${lines>1?`<br><small>${lines} cargo lines</small>`:''}</td><td>${esc(x.consignee)}${x.phone?`<br><small>${esc(x.phone)}</small>`:''}</td><td>${status(x.cargo_category||'general')}</td><td>${esc(x.origin||'—')} → ${esc(x.dest||'—')}<br><small>${esc(x.mode||'—')}${x.container_position?` · ${esc(x.container_position)}`:''}</small></td><td><span class="package-location">${esc(location)}</span>${canEditLocation?`<button class="location-edit" onclick="editPackageLocation('${String(x.id).replaceAll("'","\\'")}')">Edit</button>`:''}</td><td>${esc(x.pcs??'—')}</td><td>${esc(x.chargeable_weight??x.weight??'—')}${x.volume_cbm!=null?` kg<br><small>${esc(x.volume_cbm)} CBM</small>`:' kg'}</td><td>${packagePrice(x)}${x.payment_mode?`<br><small>${esc(x.payment_mode)}</small>`:''}</td><td>${packageState(x)}</td><td class="package-actions"><button class="row-btn" onclick="viewManifestDetails('${String(x.id).replaceAll("'","\\'")}')">${lines>1?'View cargo':'Details'}</button><button class="row-btn" data-reminder="${esc(x.id)}">Copy reminder</button>${canRelease&&!paid?`<button class="row-btn approve" onclick="releasePackage('${String(x.id).replaceAll("'","\\'")}')">Release</button>`:''}<button class="row-btn" data-track="${esc(x.id)}">Update</button></td></tr>`}).join('')||'<tr><td colspan="10" class="muted">No packages in this category.</td></tr>'}</tbody></table></div></section>`;
+function packageTable(rows, title = "Packages") {
+  const role = String(state.role || "").toLowerCase();
+  const canRelease = ["admin", "logistics_manager", "sales_manager"].includes(role);
+  const canAssignSales = ["admin", "sales_manager", "sales_rep", "logistics_manager", "finance_manager"].includes(role);
+  const canEditLocation = ["admin", "logistics_manager", "sales_manager"].includes(role);
+  const staff = (state.data?.employees || []).filter(
+    (employee) => employee.is_active !== false && !["admin", "finance_manager"].includes(String(employee.role || "").toLowerCase()),
+  );
+  const query = String(state.packageSearchTerm || "").toLocaleLowerCase().trim();
+  const filteredRows = rows.filter((pkg) => {
+    if (!query) return true;
+    const owner = staff.find((employee) => String(employee.id) === String(pkg.commission_employee_id));
+    return [pkg.tracking_number, pkg.id, pkg.consignee, pkg.phone, pkg.cargo_category, pkg.location,
+      pkg.warehouse_location, pkg.status, pkg.payment_status, packagePaymentStatus(pkg), owner?.full_name]
+      .join(" ").toLocaleLowerCase().includes(query);
+  });
+  const pageSize = Math.max(4, Math.min(8, Math.floor((window.innerHeight - 430) / 58)));
+  const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+  const currentPage = Math.min(Math.max(0, Number(state.packagePage) || 0), pageCount - 1);
+  state.packagePage = currentPage;
+  const pageRows = filteredRows.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
+  const first = filteredRows.length ? currentPage * pageSize + 1 : 0;
+  const last = Math.min((currentPage + 1) * pageSize, filteredRows.length);
+  return `<section class="panel package-list-panel"><div class="panel-head"><div><h2>${esc(title)}</h2><p>${filteredRows.length} package${filteredRows.length === 1 ? "" : "s"}${query ? " matching search" : ""} · 8 per page</p></div></div><div class="table-wrap package-table-wrap" aria-label="Package list"><table><thead><tr><th>Tracking</th><th>Customer</th><th>Cargo</th><th>Location</th><th>Payment</th><th>Assigned staff</th><th>Actions</th></tr></thead><tbody>${
+    pageRows.map((pkg) => {
+      const id = String(pkg.id || pkg.tracking_number || "");
+      const owner = staff.find((employee) => String(employee.id) === String(pkg.commission_employee_id));
+      const lines = Number(parseManifestData(pkg).group?.line_count || parseManifestData(pkg).group?.line_items?.length || 0);
+      const paid = packagePaymentStatus(pkg) === "paid";
+      const released = packageIsReleased(pkg);
+      const location = pkg.location || pkg.warehouse_location || "—";
+      const weight = pkg.chargeable_weight ?? pkg.weight ?? "—";
+      return `<tr><td class="package-tracking"><b>${esc(pkg.tracking_number || pkg.id)}</b><small>${esc(pkg.cargo_category || "General")}${lines > 1 ? ` · ${lines} cargo lines` : ""}</small></td><td class="package-customer"><b>${esc(pkg.consignee || "Unassigned customer")}</b>${pkg.phone ? `<small>${esc(pkg.phone)}</small>` : ""}</td><td class="package-cargo"><b>${esc(pkg.pcs ?? "—")} pcs</b><small>${esc(weight)} kg${pkg.volume_cbm != null ? ` · ${esc(pkg.volume_cbm)} CBM` : ""}</small></td><td class="package-location-cell"><span class="package-location">${esc(location)}</span>${canEditLocation ? `<button class="location-edit" onclick="editPackageLocation('${esc(id)}')">Edit location</button>` : ""}</td><td class="package-payment-cell"><b>${packagePrice(pkg)}</b><div>${packageState(pkg)}</div></td><td class="package-assignee">${esc(owner?.full_name || "Unassigned")}</td><td class="package-actions"><button class="row-btn" data-package-details="${esc(id)}">Details</button><button class="row-btn" data-reminder="${esc(id)}">Reminder</button>${canAssignSales ? `<button class="row-btn approve" data-assign-sales="${esc(id)}">Link staff</button>` : ""}${canRelease && paid && !released ? `<button class="row-btn paid" data-release-cargo="${esc(id)}">Release</button>` : ""}<button class="row-btn" data-track="${esc(id)}">Payment</button></td></tr>`;
+    }).join("") || `<tr><td colspan="7" class="muted package-empty">${query ? "No packages match this search." : "No packages in this category."}</td></tr>`
+  }</tbody></table></div><div class="package-pagination"><span>Showing ${first}–${last} of ${filteredRows.length}</span><div><button class="secondary" type="button" data-package-page="${currentPage - 1}" ${currentPage === 0 ? "disabled" : ""}>Previous</button><span>Page ${currentPage + 1} of ${pageCount}</span><button class="secondary" type="button" data-package-page="${currentPage + 1}" ${currentPage >= pageCount - 1 ? "disabled" : ""}>Next</button></div></div></section>`;
 }
 
 // Runtime finalisation: legacy declarations above cannot override these final
@@ -1027,21 +1058,20 @@ function packageScrollToolbar() {
 }
 
 function packageSearchToolbar(title = "Search packages") {
-  return `<div class="toolbar package-search-toolbar"><label class="search"><span>⌕</span><input type="search" placeholder="Search tracking number, customer, or phone" aria-label="Search packages" oninput="filterPackageRows(this)"></label>${title ? `<span class="muted">${esc(title)}</span>` : ""}</div>`;
+  return `<div class="toolbar package-search-toolbar"><label class="search"><span>⌕</span><input type="search" placeholder="Search tracking number, customer, or phone" aria-label="Search packages" value="${esc(state.packageSearchTerm || "")}" oninput="filterPackageRows(this)"></label>${title ? `<span class="muted">${esc(title)}</span>` : ""}</div>`;
 }
 
 function filterPackageRows(input) {
-  const workspace = input.closest(".package-workspace") || document;
-  const query = String(input.value || "")
-    .toLocaleLowerCase()
-    .trim();
-  workspace.querySelectorAll(".package-table-wrap tbody tr").forEach((row) => {
-    row.hidden =
-      Boolean(query) &&
-      !String(row.textContent || "")
-        .toLocaleLowerCase()
-        .includes(query);
-  });
+  const selector = input.closest(".package-toolbar") ? ".package-toolbar input" : ".package-search-toolbar input";
+  const cursor = input.selectionStart;
+  state.packageSearchTerm = String(input.value || "");
+  state.packagePage = 0;
+  render();
+  const replacement = document.querySelector(selector);
+  if (replacement) {
+    replacement.focus();
+    try { replacement.setSelectionRange(cursor, cursor); } catch {}
+  }
 }
 
 function packageDetails(id) {
@@ -1148,7 +1178,7 @@ function shipments() {
     ["invoice", "Invoice"],
     ["released", "Released"],
   ];
-  return `<section class="toolbar package-toolbar"><label class="search"><span>⌕</span><input type="search" placeholder="Search packages, customers, or tracking numbers" oninput="filterPackageRows(this)"></label><div class="category-tabs">${tabs.map(([key, label]) => `<button class="${selected === key ? "active" : ""}" onclick="state.packageCategory='${key}';render()">${label}</button>`).join("")}</div><button class="primary" data-goto="manifests">⇧ Import manifest</button></section><section class="package-workspace">${packageTable(rows, "Live packages")}</section>`;
+  return `<section class="toolbar package-toolbar"><label class="search"><span>⌕</span><input type="search" placeholder="Search packages, customers, or tracking numbers" value="${esc(state.packageSearchTerm || "")}" oninput="filterPackageRows(this)"></label><div class="category-tabs">${tabs.map(([key, label]) => `<button class="${selected === key ? "active" : ""}" onclick="state.packageCategory='${key}';state.packagePage=0;render()">${label}</button>`).join("")}</div><button class="primary" data-goto="manifests">⇧ Import manifest</button></section><section class="package-workspace">${packageTable(rows, "Live packages")}</section>`;
 }
 
 const navItemsBeforeDesktopImprovements = navItems;
@@ -1619,6 +1649,12 @@ editEmployee = async function (id) {
 if (!window.__dexDesktopImprovementsBound) {
   window.__dexDesktopImprovementsBound = true;
   document.addEventListener("click", (event) => {
+    const pageButton = event.target.closest("[data-package-page]");
+    if (pageButton) {
+      state.packagePage = Number(pageButton.dataset.packagePage) || 0;
+      render();
+      return;
+    }
     const scrollButton = event.target.closest("[data-scroll-packages]");
     if (scrollButton) {
       const list = scrollButton

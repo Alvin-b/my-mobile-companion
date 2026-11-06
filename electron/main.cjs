@@ -382,6 +382,8 @@ function registerIpc() {
     return true;
   });
   ipcMain.handle("dex:app:reload", (event) => { assertAppSender(event); mainWindow?.reload(); return true; });
+  ipcMain.handle("dex:app:check-updates", (event) => { assertAppSender(event); void checkForDesktopUpdates(true); return true; });
+  ipcMain.handle("dex:app:exit", (event) => { assertAppSender(event); app.quit(); return true; });
   ipcMain.handle("dex:report:pdf", savePdf);
 }
 
@@ -393,6 +395,8 @@ async function createWindow() {
     minHeight: 700,
     icon: path.join(app.getAppPath(), "public", "assets", "dexcargo.ico"),
     title: PRODUCT_NAME,
+    titleBarStyle: "hidden",
+    titleBarOverlay: { color: "#07131d", symbolColor: "#dce8f2", height: 36 },
     backgroundColor: "#07131d",
     show: false,
     webPreferences: {
@@ -451,7 +455,32 @@ async function createWindow() {
 
 function showUpdateMessage(options) {
   const parent = mainWindow && !mainWindow.isDestroyed() ? mainWindow : null;
-  return parent ? dialog.showMessageBox(parent, options) : dialog.showMessageBox(options);
+  const buttons = Array.isArray(options.buttons) ? options.buttons : ["OK"];
+  const escape = (value) => String(value || "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
+  const popup = new BrowserWindow({
+    width: 430, height: buttons.length > 1 ? 250 : 220,
+    parent: parent || undefined, modal: Boolean(parent), show: false,
+    frame: false, resizable: false, minimizable: false, maximizable: false,
+    backgroundColor: "#07131d",
+    webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false },
+  });
+  const actions = buttons.map((label, index) => `<button class="${index === 0 ? "primary" : "secondary"}" onclick="location.hash='action:${index}'">${escape(label)}</button>`).join("");
+  const html = `<!doctype html><html><head><meta charset="utf-8"><style>*{box-sizing:border-box}body{margin:0;background:#07131d;color:#edf4fb;font:14px 'Segoe UI',Arial,sans-serif;border:1px solid #20394b;height:100vh;display:flex;flex-direction:column}header{height:48px;display:flex;align-items:center;padding:0 18px;border-bottom:1px solid #1d3444;color:#a9bed0;font-size:12px;font-weight:700;letter-spacing:.12em}.mark{color:#ff9e2c;margin-right:8px}main{padding:23px 22px 16px;flex:1}h1{font-size:19px;margin:0 0 9px;color:#fff}p{line-height:1.5;margin:0;color:#b5c5d3}.actions{display:flex;justify-content:flex-end;gap:9px;padding:0 18px 16px}button{border:0;border-radius:6px;padding:9px 15px;font-weight:700;cursor:pointer}.primary{background:#ff9e2c;color:#111d28}.secondary{background:#1b3040;color:#edf4fb}</style></head><body><header><span class="mark">◆</span>DEXCARGO</header><main><h1>${escape(options.title || "Desktop updates")}</h1><p>${escape(options.message)}</p></main><div class="actions">${actions}</div></body></html>`;
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (response = buttons.length > 1 ? 1 : 0) => {
+      if (settled) return;
+      settled = true;
+      if (!popup.isDestroyed()) popup.close();
+      resolve({ response });
+    };
+    popup.webContents.on("did-navigate-in-page", (_event, url) => {
+      const match = url.match(/#action:(\d+)$/);
+      if (match) finish(Number(match[1]));
+    });
+    popup.on("closed", () => { if (!settled) { settled = true; resolve({ response: buttons.length > 1 ? 1 : 0 }); } });
+    void popup.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`).then(() => popup.show()).catch(() => finish());
+  });
 }
 
 async function checkForDesktopUpdates(manual = false) {
@@ -468,7 +497,14 @@ async function checkForDesktopUpdates(manual = false) {
     updateCheckInFlight = false;
     const message = error instanceof Error ? error.message : String(error);
     console.error("[desktop-updater] Update check failed:", message);
-    if (manual) await showUpdateMessage({ type: "error", title: PRODUCT_NAME, message: `Could not check for updates. ${message}` });
+    if (manual) {
+      const noRelease = /no published versions|latest\.yml|cannot find latest/i.test(message);
+      await showUpdateMessage({
+        type: noRelease ? "info" : "error",
+        title: noRelease ? "No updates" : "Update check failed",
+        message: noRelease ? "No updates available." : "Could not check for updates. Please try again later.",
+      });
+    }
   }
 }
 
@@ -481,11 +517,11 @@ function configureDesktopUpdates() {
   autoUpdater.on("update-available", (info) => {
     updateCheckInFlight = false;
     console.info(`[desktop-updater] Downloading version ${info.version}.`);
-    if (manualUpdateCheck) void showUpdateMessage({ type: "info", title: PRODUCT_NAME, message: `Version ${info.version} is available and will download in the background.` });
+    if (manualUpdateCheck) void showUpdateMessage({ type: "info", title: "Update available", message: `Version ${info.version} is downloading in the background.` });
   });
   autoUpdater.on("update-not-available", (info) => {
     updateCheckInFlight = false;
-    if (manualUpdateCheck) void showUpdateMessage({ type: "info", title: PRODUCT_NAME, message: `You are up to date (version ${info.version}).` });
+    if (manualUpdateCheck) void showUpdateMessage({ type: "info", title: "No updates", message: "No updates available." });
   });
   autoUpdater.on("download-progress", (progress) => {
     if (mainWindow && !mainWindow.isDestroyed()) mainWindow.setProgressBar(Math.max(0, Math.min(1, progress.percent / 100)));
@@ -496,7 +532,7 @@ function configureDesktopUpdates() {
     const result = await showUpdateMessage({
       type: "info",
       title: PRODUCT_NAME,
-      message: `Version ${info.version} is ready to install. Restart the app to finish updating.`,
+      message: `Version ${info.version} is ready. Restart now to finish updating.`,
       buttons: ["Restart now", "Later"],
       defaultId: 0,
       cancelId: 1,
@@ -506,26 +542,16 @@ function configureDesktopUpdates() {
   autoUpdater.on("error", (error) => {
     updateCheckInFlight = false;
     console.error("[desktop-updater] Update failed:", error);
-    if (manualUpdateCheck) void showUpdateMessage({ type: "error", title: PRODUCT_NAME, message: `The update could not be completed. ${error.message || error}` });
+    if (manualUpdateCheck) void showUpdateMessage({ type: "error", title: "Update failed", message: "The update could not be completed. Please try again later." });
   });
 
-  const menu = Menu.buildFromTemplate([
-    {
-      label: "DEXCARGO",
-      submenu: [
-        { label: "Check for updates…", click: () => void checkForDesktopUpdates(true) },
-        { type: "separator" },
-        { role: "quit" },
-      ],
-    },
-  ]);
-  Menu.setApplicationMenu(menu);
   void checkForDesktopUpdates();
   const updateTimer = setInterval(() => void checkForDesktopUpdates(), 6 * 60 * 60 * 1000);
   updateTimer.unref();
 }
 
 app.whenReady().then(async () => {
+  Menu.setApplicationMenu(null);
   const initSqlJs = require("sql.js");
   const wasmPath = app.isPackaged
     ? path.join(process.resourcesPath, "sql-wasm.wasm")

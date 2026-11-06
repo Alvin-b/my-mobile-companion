@@ -19,6 +19,13 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Read app version
+        id: app-version
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Install dependencies
         run: npm ci
 
@@ -28,7 +35,7 @@ jobs:
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          name: DEXCARGO-Desktop-Setup-1.2.0
-          path: release/DEXCARGO-Desktop-Setup-1.2.0.exe
+          name: DEXCARGO-Desktop-Setup-${{ steps.app-version.outputs.version }}
+          path: release/DEXCARGO-Desktop-Setup-${{ steps.app-version.outputs.version }}.exe
           if-no-files-found: error
           retention-days: 30

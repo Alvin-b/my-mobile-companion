@@ -2115,13 +2115,26 @@ adminRequest = async function (path, options = {}, retried = false) {
 
 previewManifest = async function (form, commit = false, retried = false) {
   if (!state.session?.access_token) throw new Error("Please sign in again before importing a manifest.");
+  const file = form.querySelector('input[type="file"]')?.files?.[0];
+  if (!file) throw new Error("Choose an Excel .xlsx manifest.");
+  if (!file.name.toLowerCase().endsWith(".xlsx")) throw new Error("Upload an Excel .xlsx manifest.");
+  if (file.size > 10 * 1024 * 1024) throw new Error("Manifest must be 10 MB or smaller.");
   const data = new FormData(form);
   data.set("commit", String(commit));
-  const response = await fetch(`${String(ADMIN_BACKEND).replace(/\/+$/, "")}/api/public/import-manifest`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${state.session.access_token}` },
-    body: data,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${String(ADMIN_BACKEND).replace(/\/+$/, "")}/api/public/import-manifest`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${state.session.access_token}` },
+      body: data,
+      signal: commit ? undefined : AbortSignal.timeout(75_000),
+    });
+  } catch (error) {
+    if (!commit && error instanceof Error && error.name === "TimeoutError") {
+      throw new Error("Manifest preview timed out. Try a smaller workbook or retry later.");
+    }
+    throw error;
+  }
   if (response.status === 401 && !retried && await dexRefreshAuthSessionAcrossTabs()) return previewManifest(form, commit, true);
   const text = await response.text();
   let result: ManifestApiResult = {};

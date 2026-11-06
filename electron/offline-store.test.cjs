@@ -46,6 +46,33 @@ test("SQLite snapshots are user-scoped and secure values survive reopening", asy
   }
 });
 
+test("a corrupt offline database is preserved and replaced with a fresh store", async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "dex-offline-corrupt-test-"));
+  const dbPath = path.join(directory, "cache.sqlite");
+  const corruptBytes = Buffer.from("not a SQLite database");
+  fs.writeFileSync(dbPath, corruptBytes);
+  const SQL = await initSqlJs({ locateFile: (file) => path.join(path.dirname(require.resolve("sql.js")), file) });
+  const safeStorage = {
+    isEncryptionAvailable: () => true,
+    encryptString: (value) => Buffer.from(value, "utf8").map((byte) => byte ^ 0x5a),
+    decryptString: (value) => Buffer.from(value).map((byte) => byte ^ 0x5a).toString("utf8"),
+  };
+  let store;
+  try {
+    store = new OfflineStore({ SQL, dbPath, safeStorage }).open();
+    assert.equal(store.syncStatus(null, true).online, true);
+    const backup = fs.readdirSync(directory).find((name) => name.startsWith("cache.sqlite.corrupt-"));
+    assert.ok(backup, "damaged database should be retained as a backup");
+    assert.deepEqual(fs.readFileSync(path.join(directory, backup)), corruptBytes);
+    const check = new SQL.Database(fs.readFileSync(dbPath));
+    assert.equal(check.exec("PRAGMA quick_check")[0].values[0][0], "ok");
+    check.close();
+  } finally {
+    store?.close();
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("location edits queue optimistically and merge repeated edits without changing the base version", async () => {
   const { store, directory } = await makeStore();
   try {

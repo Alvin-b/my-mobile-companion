@@ -2,12 +2,15 @@ const { app, BrowserWindow, dialog, ipcMain, Menu, net, safeStorage, shell } = r
 const { autoUpdater } = require("electron-updater");
 const fs = require("node:fs");
 const path = require("node:path");
+const { pathToFileURL } = require("node:url");
 const { createHash } = require("node:crypto");
 const { OfflineStore } = require("./offline-store.cjs");
 
 const DEFAULT_SUPABASE_URL = "https://bxbpuqzrbvkfrmwohqwd.supabase.co";
 const DEFAULT_SUPABASE_KEY = "sb_publishable_2aAwawQ3-zBwZTu3lE6n6Q__-g2fWsN";
 const DEFAULT_API_BASE = "https://project--5e9b81ad-6c63-4331-af7a-01008019e17f.lovable.app";
+const LIVE_UI_URL = "https://swift-creation-app.lovable.app/";
+const LIVE_UI_ORIGIN = new URL(LIVE_UI_URL).origin;
 const PRODUCT_NAME = "DEXCARGO Desktop";
 let mainWindow;
 let store;
@@ -34,8 +37,21 @@ function defaultConnection() {
   };
 }
 
+function senderUrlIsTrusted(rawUrl) {
+  try {
+    const url = new URL(String(rawUrl || ""));
+    if (url.protocol === "https:" && url.origin === LIVE_UI_ORIGIN) return true;
+    return url.href === pathToFileURL(path.join(app.getAppPath(), "public", "desktop-shell.html")).href;
+  } catch {
+    return false;
+  }
+}
+
 function senderIsApp(event) {
-  return Boolean(mainWindow && event.sender.id === mainWindow.webContents.id);
+  if (!mainWindow || event.sender.id !== mainWindow.webContents.id) return false;
+  const frame = event.senderFrame;
+  if (!frame || frame !== mainWindow.webContents.mainFrame) return false;
+  return senderUrlIsTrusted(frame.url);
 }
 
 function assertAppSender(event) {
@@ -129,6 +145,7 @@ async function handleRequest(event, input) {
     safeUrl(connection.url)?.origin,
     safeUrl(allowedApiBase)?.origin,
     safeUrl(process.env.DEX_API_BASE_URL || "")?.origin,
+    LIVE_UI_ORIGIN,
   ].filter(Boolean));
   if (!allowedOrigins.has(url.origin)) {
     return responsePayload(403, JSON.stringify({ error: "This API origin is not configured for DEXCARGO Desktop." }), { "content-type": "application/json" });
@@ -393,10 +410,22 @@ async function createWindow() {
     return { action: "deny" };
   });
   mainWindow.webContents.on("will-navigate", (event, target) => {
-    const local = `file://${path.join(app.getAppPath(), "public", "desktop-shell.html")}`;
-    if (!target.startsWith(local)) event.preventDefault();
+    if (!senderUrlIsTrusted(target)) event.preventDefault();
   });
-  await mainWindow.loadFile(path.join(app.getAppPath(), "public", "desktop-shell.html"));
+  mainWindow.webContents.on("will-redirect", (event, target) => {
+    if (!senderUrlIsTrusted(target)) event.preventDefault();
+  });
+  const localShellPath = path.join(app.getAppPath(), "public", "desktop-shell.html");
+  if (app.isPackaged) {
+    try {
+      await mainWindow.loadURL(LIVE_UI_URL);
+    } catch (error) {
+      console.warn("Published DEX UI could not be reached; opening bundled offline UI.", error);
+      await mainWindow.loadFile(localShellPath);
+    }
+  } else {
+    await mainWindow.loadFile(localShellPath);
+  }
   mainWindow.on("closed", () => { mainWindow = null; });
 }
 

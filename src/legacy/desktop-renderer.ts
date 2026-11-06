@@ -98,7 +98,9 @@ function overview() { const p=state.data.packages||[], n=state.data.notification
 async function commission(id, rpc) { try { const body = rpc === 'approve_commission' ? {_id:id} : {_id:id,_reference:prompt('M-Pesa/payment reference') || ''}; if (rpc !== 'approve_commission' && !body._reference) return; await request(`rest/v1/rpc/${rpc}`, {method:'POST',body:JSON.stringify(body)}); toast(rpc==='approve_commission'?'Commission approved.':'Commission marked paid.'); await refreshData(); } catch(e) { toast(`Action failed: ${e.message}`,'error'); } }
 async function openShipment(id) { const cargo=(state.data.packages||[]).find(x=>x.id===id); const next=prompt(`Update ${id}: registered, paid, or collected`, cargo?.status || 'registered'); if (!next || !['registered','paid','collected'].includes(next.toLowerCase())) return toast('Choose registered, paid, or collected.','error'); const patch={status:next.toLowerCase()}; if (patch.status==='paid') patch.paid_at=new Date().toISOString(); if (patch.status==='collected') patch.collected_at=new Date().toISOString(); try { await request(`rest/v1/cargo_packages?id=eq.${encodeURIComponent(id)}`, {method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(patch)}); toast(`Cargo ${id} updated.`); await refreshData(); } catch(e) { toast(`Status update failed: ${e.message}`,'error'); } }
 async function refreshData() {
-  state.busy=true; render();
+  const showInitialLoading = Object.keys(state.data || {}).length === 0;
+  state.busy = showInitialLoading;
+  if (showInitialLoading) render();
   const get = async path => { try { return await request(path); } catch (e) { console.warn(path,e); return []; } };
   const [packages, notifications, commissions, audits, broadcasts, directEmployees] = await Promise.all([
     get('rest/v1/cargo_packages?select=*&order=registered_at.desc&limit=500'), get('rest/v1/payment_notifications?select=*&order=uploaded_at.desc&limit=200'),
@@ -2085,7 +2087,7 @@ if (window.dexAdmin?.isElectron) {
     clearTimeout(window.__dexRemoteRefreshTimer);
     window.__dexRemoteRefreshTimer = setTimeout(() => {
       if (state.session) void refreshData();
-    }, 350);
+    }, 1200);
   });
   window.dexAdmin.onNetworkChange?.((online) => {
     if (online && state.session) void refreshData();
@@ -2096,7 +2098,7 @@ if (window.dexAdmin?.isElectron) {
   window.addEventListener("offline", () => void dexRenderSyncStatus());
   window.setInterval(() => {
     if (navigator.onLine && state.session && !dexRefreshInProgress) void refreshData();
-  }, 30000);
+  }, 5 * 60 * 1000);
 }
 
 

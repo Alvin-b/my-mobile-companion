@@ -22,9 +22,25 @@ class OfflineStore {
       throw new Error("Secure Windows storage is unavailable; encrypted offline data cannot be opened.");
     }
     fs.mkdirSync(path.dirname(this.dbPath), { recursive: true, mode: 0o700 });
-    this.db = fs.existsSync(this.dbPath)
-      ? new this.SQL.Database(fs.readFileSync(this.dbPath))
-      : new this.SQL.Database();
+    if (fs.existsSync(this.dbPath)) {
+      const existingBytes = fs.readFileSync(this.dbPath);
+      try {
+        this.db = new this.SQL.Database(existingBytes);
+        const integrity = this.db.exec("PRAGMA quick_check");
+        if (integrity[0]?.values?.[0]?.[0] !== "ok") {
+          throw new Error("Offline database integrity check failed.");
+        }
+      } catch (error) {
+        try { this.db?.close(); } catch {}
+        this.db = null;
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        const backupPath = `${this.dbPath}.corrupt-${timestamp}`;
+        fs.renameSync(this.dbPath, backupPath);
+        this.db = new this.SQL.Database();
+      }
+    } else {
+      this.db = new this.SQL.Database();
+    }
     this.db.run(`
       CREATE TABLE IF NOT EXISTS secure_values (
         key TEXT PRIMARY KEY,

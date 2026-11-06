@@ -7,6 +7,7 @@ type DesktopBridge = {
   __DEX_ADMIN_BACKEND__: string;
   __DEX_RENDERER_SCRIPT_STARTED__?: boolean;
   dexAdmin: {
+    isElectron?: boolean;
     getConnection: () => Promise<Partial<Connection>>;
     saveConnection: (value: unknown) => Promise<boolean>;
     getSession: () => Promise<unknown | null>;
@@ -54,7 +55,8 @@ function DesktopConsole() {
 
     const connectionKey = "dex-console.connection";
     const sessionKey = "dex-console.session";
-    bridge.dexAdmin = {
+    if (!bridge.dexAdmin?.isElectron) {
+      bridge.dexAdmin = {
       getConnection: async () => ({
         ...connection,
         ...readStoredValue(connectionKey, {}),
@@ -96,7 +98,8 @@ function DesktopConsole() {
         printWindow.document.title = fileName || "DEX-Commissions.pdf";
         return { canceled: false, filePath: fileName || "DEX-Commissions.pdf" };
       },
-    };
+      };
+    }
 
     const styleId = "dex-console-styles";
     if (!document.getElementById(styleId)) {

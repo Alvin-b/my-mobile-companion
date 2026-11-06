@@ -6,6 +6,7 @@ type DesktopBridge = {
   __DEX_CONFIG__: Connection;
   __DEX_ADMIN_BACKEND__: string;
   __DEX_RENDERER_SCRIPT_STARTED__?: boolean;
+  __DEX_HOSTED_UI_READY__?: boolean;
   dexAdmin: {
     isElectron?: boolean;
     getConnection: () => Promise<Partial<Connection>>;
@@ -111,12 +112,19 @@ function DesktopConsole() {
     }
 
     const scriptId = "dex-console-renderer";
-    if (!document.getElementById(scriptId) && !bridge.__DEX_RENDERER_SCRIPT_STARTED__) {
+    bridge.__DEX_HOSTED_UI_READY__ = false;
+    if (document.getElementById(scriptId) || bridge.__DEX_RENDERER_SCRIPT_STARTED__) {
+      bridge.__DEX_HOSTED_UI_READY__ = true;
+    } else {
       bridge.__DEX_RENDERER_SCRIPT_STARTED__ = true;
       const script = document.createElement("script");
       script.id = scriptId;
       script.src = "/desktop-renderer.js";
+      script.onload = () => {
+        bridge.__DEX_HOSTED_UI_READY__ = true;
+      };
       script.onerror = () => {
+        bridge.__DEX_HOSTED_UI_READY__ = false;
         const mount = document.getElementById("app");
         if (mount) {
           mount.innerHTML =

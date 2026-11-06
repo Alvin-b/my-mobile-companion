@@ -417,11 +417,31 @@ async function createWindow() {
   });
   const localShellPath = path.join(app.getAppPath(), "public", "desktop-shell.html");
   if (app.isPackaged) {
+    let timeoutId;
     try {
-      await mainWindow.loadURL(LIVE_UI_URL);
+      const navigation = mainWindow.loadURL(LIVE_UI_URL);
+      const deadline = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+          if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.stop();
+          reject(new Error("Published DEX UI did not load before the offline startup deadline."));
+        }, 7000);
+      });
+      await Promise.race([navigation, deadline]);
+      const bridgeReady = await mainWindow.webContents.executeJavaScript(`new Promise((resolve) => {
+        const started = Date.now();
+        const check = () => {
+          if (window.__DEX_HOSTED_UI_READY__ === true) return resolve(true);
+          if (Date.now() - started >= 5000) return resolve(false);
+          setTimeout(check, 100);
+        };
+        check();
+      })`);
+      if (!bridgeReady) throw new Error("Published DEX UI did not initialize the desktop bridge.");
     } catch (error) {
       console.warn("Published DEX UI could not be reached; opening bundled offline UI.", error);
       await mainWindow.loadFile(localShellPath);
+    } finally {
+      clearTimeout(timeoutId);
     }
   } else {
     await mainWindow.loadFile(localShellPath);

@@ -309,6 +309,9 @@ tbody tr:last-child td{border-bottom:0}
 .payment-control-head small{color:var(--muted)}
 .payment-control-total{display:flex;align-items:center;gap:12px}
 .payment-control-total>b{font:600 18px var(--display)}
+.payment-control-amount-edit{border:0;border-radius:4px;padding:4px 2px;background:transparent;color:var(--text);font:600 18px var(--display);cursor:pointer}
+.payment-control-amount-edit:hover{color:var(--orange);text-decoration:underline;text-decoration-style:dotted;text-underline-offset:4px}
+.payment-control-amount-edit:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
 .payment-control-details{display:flex;align-items:flex-start;gap:28px;flex-wrap:wrap}
 .payment-control-details>span{display:grid;gap:3px;min-width:120px;max-width:360px}
 .payment-control-details small{color:var(--muted)}

@@ -142,7 +142,7 @@
         }
       ],
       "icon": "public/assets/dexcargo.ico",
-      "signAndEditExecutable": false
+      "signAndEditExecutable": true
     },
     "nsis": {
       "oneClick": false,

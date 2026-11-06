@@ -374,6 +374,7 @@ async function createWindow() {
     height: 940,
     minWidth: 1024,
     minHeight: 700,
+    icon: path.join(app.getAppPath(), "public", "assets", "dexcargo.ico"),
     title: PRODUCT_NAME,
     backgroundColor: "#07131d",
     show: false,

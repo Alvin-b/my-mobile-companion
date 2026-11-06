@@ -123,7 +123,8 @@
       "public/desktop-console.css",
       "public/desktop-renderer.js",
       "public/favicon.ico",
-      "public/assets/dex-logo.png"
+      "public/assets/dex-logo.png",
+      "public/assets/dexcargo.ico"
     ],
     "extraResources": [
       {
@@ -140,13 +141,16 @@
           ]
         }
       ],
-      "icon": "public/favicon.ico",
+      "icon": "public/assets/dexcargo.ico",
       "signAndEditExecutable": false
     },
     "nsis": {
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
+      "installerIcon": "public/assets/dexcargo.ico",
+      "uninstallerIcon": "public/assets/dexcargo.ico",
+      "installerHeaderIcon": "public/assets/dexcargo.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "DEXCARGO Desktop"

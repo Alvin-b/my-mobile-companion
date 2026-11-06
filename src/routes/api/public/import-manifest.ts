@@ -186,7 +186,8 @@ export const Route = createFileRoute("/api/public/import-manifest")({ server: { 
   parsed.forEach((p) => { if (seen.has(p.id)) duplicateInFile.add(p.id); seen.add(p.id); });
   const ready = parsed.filter((p) => !p.issue && !exists.has(p.id) && !duplicateInFile.has(p.id));
   const invalid = parsed.filter((p) => p.issue || duplicateInFile.has(p.id)); const duplicates = parsed.filter((p) => exists.has(p.id));
-  const preview = { category, total_rows: parsed.length, ready_rows: ready.length, duplicate_rows: duplicates.length, invalid_rows: invalid.length, ready: ready.slice(0, 200), duplicates: duplicates.slice(0, 200), invalid: invalid.slice(0, 200) };
+  const previewRows = (items: Parsed[]) => items.slice(0, 50).map(({ row_number, tracking_number, consignee, pcs, weight, volume_cbm, cost }) => ({ row_number, tracking_number, consignee, pcs, weight, volume_cbm, cost }));
+  const preview = { category, total_rows: parsed.length, ready_rows: ready.length, duplicate_rows: duplicates.length, invalid_rows: invalid.length, ready: previewRows(ready), duplicates: previewRows(duplicates), invalid: previewRows(invalid) };
   if (!commit) return Response.json(preview, { headers: { "cache-control": "no-store" } });
   const manifestId = `${category.toUpperCase()}-${Date.now()}`;
   // Map only columns that actually belong to cargo_packages. Preview-only fields

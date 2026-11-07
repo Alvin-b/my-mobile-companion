@@ -420,7 +420,8 @@ async function createWindow() {
     if (!senderUrlIsTrusted(target)) event.preventDefault();
   });
   const localShellPath = path.join(app.getAppPath(), "public", "desktop-shell.html");
-  await mainWindow.loadFile(localShellPath);
+  // Try the hosted UI first; starting the bundled renderer here would issue a
+  // second set of authenticated requests and can race Supabase refresh tokens.
   if (app.isPackaged) {
     let timeoutId;
     let offlineShellLoad;

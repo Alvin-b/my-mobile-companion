@@ -209,7 +209,41 @@ function financeRows(){return state.data.finance||{invoices:[],expenses:[],close
 function amount(value){return Number(value||0)||0}
 function financeInvoiceTotal(){return financeRows().invoices.reduce((sum,x)=>sum+amount(x.total),0)}
 function financeExpensesTotal(){return financeRows().expenses.filter(x=>['approved','paid'].includes(String(x.status).toLowerCase())).reduce((sum,x)=>sum+amount(x.amount),0)}
-async function refreshData(){state.busy=true;render();const get=async p=>{try{return await request(p)}catch(e){console.warn(e);return[]}};const [packages,notifications,commissions,audits,broadcasts,employees,revenue,finance]=await Promise.all([get('rest/v1/cargo_packages?select=*&order=registered_at.desc&limit=500'),get('rest/v1/payment_notifications?select=*&order=uploaded_at.desc&limit=200'),get('rest/v1/commissions?select=*&order=created_at.desc&limit=300'),get('rest/v1/audit_logs?select=*&order=timestamp.desc&limit=150'),get('rest/v1/broadcast_messages?select=*&order=timestamp.desc&limit=50'),adminRequest('/api/public/admin/employees').then(x=>x.employees||[]).catch(()=>get('rest/v1/employees?select=*&order=full_name.asc')),adminRequest('/api/public/revenue-summary').catch(()=>null),(state.role==='finance_manager'||state.role==='admin')?financeRequest('workspace').catch(e=>{console.warn('Finance workspace unavailable',e);return null}):Promise.resolve(null)]);state.data={packages,notifications,commissions,audits,broadcasts,employees,revenue,finance};state.busy=false;render()}
+async function refreshData(){
+  const previous=state.data||{};
+  const errors=[];
+  state.busy=Object.keys(previous).length===0;
+  render();
+  const get=async(key,path)=>{
+    try{return await request(path)}
+    catch(error){errors.push({key,error});console.warn(`Could not refresh ${key}`,error);return Array.isArray(previous[key])?previous[key]:[]}
+  };
+  const loadEmployees=async()=>{
+    try{const result=await adminRequest('/api/public/admin/employees');return result.employees||[]}
+    catch(primaryError){
+      try{return await request('rest/v1/employees?select=*&order=full_name.asc')||[]}
+      catch(error){errors.push({key:'employees',error});console.warn('Could not refresh employees',error);return Array.isArray(previous.employees)?previous.employees:[]}
+    }
+  };
+  const [packages,notifications,commissions,audits,broadcasts,employees,revenue,finance]=await Promise.all([
+    get('packages','rest/v1/cargo_packages?select=*&order=registered_at.desc&limit=500'),
+    get('notifications','rest/v1/payment_notifications?select=*&order=uploaded_at.desc&limit=200'),
+    get('commissions','rest/v1/commissions?select=*&order=created_at.desc&limit=300'),
+    get('audits','rest/v1/audit_logs?select=*&order=timestamp.desc&limit=150'),
+    get('broadcasts','rest/v1/broadcast_messages?select=*&order=timestamp.desc&limit=50'),
+    loadEmployees(),
+    adminRequest('/api/public/revenue-summary').catch(error=>{errors.push({key:'revenue',error});console.warn('Could not refresh revenue summary',error);return previous.revenue??null}),
+    (state.role==='finance_manager'||state.role==='admin')?financeRequest('workspace').catch(error=>{errors.push({key:'finance',error});console.warn('Finance workspace unavailable',error);return previous.finance??null}):Promise.resolve(previous.finance??null)
+  ]);
+  state.data={packages,notifications,commissions,audits,broadcasts,employees,revenue,finance};
+  state.busy=false;
+  render();
+  if(errors.some(item=>item.error?.status===401)){
+    toast('Your session could not be refreshed. Existing data was kept; sign out and back in to reconnect.','error');
+  }else if(errors.length){
+    toast('Some live data could not be refreshed. Previously loaded records were kept.','error');
+  }
+}
 function financeModal(title,inner){const modal=document.createElement('div');modal.style.cssText='position:fixed;inset:0;background:#020a11d9;z-index:80;display:grid;place-items:center;padding:18px;overflow:auto';modal.innerHTML=`<div style="position:relative;width:min(620px,100%);max-height:92vh;overflow:auto;background:#0d1e2b;border:1px solid #34536a;border-radius:16px;padding:28px"><button class="modal-close" style="position:absolute;right:15px;top:10px;border:0;background:transparent;color:#fff;font-size:24px">×</button><p class="eyebrow">DEX LOGISTICS · FINANCE</p><h2>${esc(title)}</h2>${inner}</div>`;document.body.append(modal);modal.querySelector('.modal-close').onclick=()=>modal.remove();return modal}
 function packageOptions(selected=''){return (state.data.packages||[]).map(p=>`<option value="${esc(p.id)}" ${String(p.id)===String(selected)?'selected':''}>${esc(p.id)} · ${esc(p.consignee)} · ${money(packageValue(p))}</option>`).join('')}
 function newInvoice(){const modal=financeModal('Create package invoice',`<p class="muted">Create a draft invoice from a registered DEX package. It can be approved and submitted to Deitax afterwards.</p><form id="finance-invoice-form"><label>Package<select name="package_id" required><option value="">Choose package…</option>${packageOptions()}</select></label><label>Customer name<input name="customer_name" required placeholder="Client name"></label><label>Customer phone<input name="customer_phone" placeholder="07…"></label><label>Due date<input name="due_date" type="date"></label><label>Payment method<select name="payment_method"><option value="mpesa">M-Pesa</option><option value="bank">Bank transfer</option><option value="cash">Cash</option><option value="other">Other</option></select></label><label>VAT rate (%)<input name="tax_rate" type="number" min="0" step="0.01" value="0"></label><label>Notes<textarea name="notes" placeholder="Optional internal note"></textarea></label><button class="primary wide">Create draft invoice</button></form>`);modal.querySelector('#finance-invoice-form').onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target)),pkg=(state.data.packages||[]).find(p=>String(p.id)===String(f.package_id));if(!pkg)return toast('Select a package.','error');const customer=String(f.customer_name||pkg.consignee||'').trim();try{await financeRequest('invoices',{method:'POST',body:JSON.stringify({customer_name:customer,customer_phone:f.customer_phone||pkg.phone||null,due_date:f.due_date||null,payment_method:f.payment_method,tax_rate:Number(f.tax_rate||0),notes:f.notes||null,items:[{description:`DEX cargo package ${pkg.tracking_number||pkg.id}`,quantity:1,unit_price:packageValue(pkg),package_id:pkg.id}]})});modal.remove();toast('Draft invoice created in the shared finance ledger.');await refreshData()}catch(err){toast(`Invoice was not created: ${err.message}`,'error')}}}
@@ -2171,7 +2205,9 @@ request = async function (path, options = {}, retried = false) {
     const text = await response.text();
     let message = text || `Request failed (${response.status})`;
     try { const body = JSON.parse(text); message = body.error || body.message || message; } catch (error) { message = text || (error instanceof Error ? error.message : message); }
-    throw new Error(readableError(message));
+    const error = new Error(readableError(message));
+    (error as Error & { status?: number }).status = response.status;
+    throw error;
   }
   const text = await response.text();
   return text ? JSON.parse(text) : null;
@@ -2191,7 +2227,9 @@ adminRequest = async function (path, options = {}, retried = false) {
     const text = await response.text();
     let message = text || `Admin request failed (${response.status})`;
     try { const body = JSON.parse(text); message = body.error || body.message || message; } catch (error) { message = text || (error instanceof Error ? error.message : message); }
-    throw new Error(readableError(message));
+    const error = new Error(readableError(message));
+    (error as Error & { status?: number }).status = response.status;
+    throw error;
   }
   const text = await response.text();
   const result = text ? JSON.parse(text) : null;

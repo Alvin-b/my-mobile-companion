@@ -34,6 +34,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const style = document.createElement("style");
   style.textContent = `
     body{box-sizing:border-box!important;height:100vh!important;padding-top:36px!important}
+    #lovable-badge{display:none!important}
     #dex-desktop-bar{position:fixed;z-index:2147483000;inset:0 0 auto;height:36px;background:#07131d;color:#e7f0f8;display:flex;align-items:center;padding:0 8px;-webkit-app-region:drag;font:13px 'Segoe UI',Arial,sans-serif;border-bottom:1px solid #102736}
     #dex-desktop-bar button{font:inherit;color:inherit;border:0;background:transparent;cursor:pointer;-webkit-app-region:no-drag}
     #dex-brand-menu{height:29px;padding:0 13px;border-radius:5px;font-weight:700;letter-spacing:.04em}

@@ -420,8 +420,24 @@ async function createWindow() {
     if (!senderUrlIsTrusted(target)) event.preventDefault();
   });
   const localShellPath = path.join(app.getAppPath(), "public", "desktop-shell.html");
+  await mainWindow.loadFile(localShellPath);
   if (app.isPackaged) {
     let timeoutId;
+    let offlineShellLoad;
+    const restoreOfflineShell = () => {
+      if (!mainWindow || mainWindow.isDestroyed()) return Promise.resolve();
+      if (!offlineShellLoad) {
+        offlineShellLoad = mainWindow.loadFile(localShellPath)
+          .catch((error) => console.error("[desktop-startup] Bundled UI could not be restored:", error))
+          .finally(() => { offlineShellLoad = null; });
+      }
+      return offlineShellLoad;
+    };
+    mainWindow.webContents.on("did-fail-load", (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+      if (!isMainFrame || !String(validatedURL || "").startsWith("https://")) return;
+      console.warn(`[desktop-startup] Hosted UI load failed (${errorCode}): ${errorDescription}; restoring bundled UI.`);
+      void restoreOfflineShell();
+    });
     try {
       const navigation = mainWindow.loadURL(LIVE_UI_URL);
       const deadline = new Promise((_, reject) => {
@@ -442,8 +458,8 @@ async function createWindow() {
       })`);
       if (!bridgeReady) throw new Error("Published DEX UI did not initialize the desktop bridge.");
     } catch (error) {
-      console.warn("Published DEX UI could not be reached; opening bundled offline UI.", error);
-      await mainWindow.loadFile(localShellPath);
+      console.warn("Published DEX UI could not be reached; keeping the bundled offline UI open.", error);
+      await restoreOfflineShell();
     } finally {
       clearTimeout(timeoutId);
     }

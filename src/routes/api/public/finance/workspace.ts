@@ -13,7 +13,7 @@ export const Route = createFileRoute("/api/public/finance/workspace")({
         supabaseAdmin.from("finance_expenses").select("*").order("expense_date", { ascending: false }).limit(150),
         supabaseAdmin.from("finance_month_closes").select("*").order("period", { ascending: false }).limit(24),
         supabaseAdmin.from("finance_approvals").select("*").order("created_at", { ascending: false }).limit(150),
-        supabaseAdmin.from("cargo_packages").select("id,tracking_number,consignee,phone,cost,status,paid_at,cleared_at,registered_at,mode,origin,dest").order("registered_at", { ascending: false }).limit(500),
+        supabaseAdmin.from("cargo_packages").select("id,tracking_number,consignee,phone,cost,status,paid_at,collected_at,registered_at,mode,origin,dest").order("registered_at", { ascending: false }).limit(500),
         supabaseAdmin.from("payment_notifications").select("id,notification_number,evidence_type,text_content,image_url,amount,status,uploaded_at").order("uploaded_at", { ascending: false }).limit(200),
       ]);
       for (const result of [settings, invoices, expenses, closes, approvals, packages, notifications]) {

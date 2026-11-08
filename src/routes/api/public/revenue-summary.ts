@@ -28,7 +28,7 @@ export const Route = createFileRoute("/api/public/revenue-summary")({
 
         const { data: packages, error } = await supabaseAdmin
           .from("cargo_packages")
-          .select("id, tracking_number, status, payment_status, cost, total_price_kes, billing_amount, billing_currency, paid_at, registered_at, imported_at, created_at, collected_at");
+          .select("id, tracking_number, status, cost, total_price_kes, billing_amount, billing_currency, paid_at, registered_at, imported_at, created_at, collected_at");
         if (error) return new Response(error.message, { status: 500 });
 
         const { data: allocations, error: allocationError } = await supabaseAdmin
@@ -53,7 +53,10 @@ export const Route = createFileRoute("/api/public/revenue-summary")({
         ).getTime();
 
         const rows = packages ?? [];
-        const paid = rows.filter((row) => row.payment_status === "paid" || Boolean(row.paid_at));
+        const paidStatuses = new Set(["paid", "cleared", "collected", "released"]);
+        const isPaid = (row: (typeof rows)[number]) =>
+          paidStatuses.has(String(row.status ?? "").toLowerCase()) || Boolean(row.paid_at);
+        const paid = rows.filter(isPaid);
         const value = (row: (typeof rows)[number]) => {
           const primary = row.total_price_kes ?? row.cost;
           if (primary != null) return Number(primary) || 0;
@@ -89,7 +92,7 @@ export const Route = createFileRoute("/api/public/revenue-summary")({
             (allocatedByPackage.get(id) ?? 0) + Number(allocation.allocated_amount ?? 0),
           );
         }
-        const awaitingPayment = rows.filter((row) => row.payment_status !== "paid" && !row.paid_at);
+        const awaitingPayment = rows.filter((row) => !isPaid(row));
         const outstanding = awaitingPayment.reduce(
           (total, row) =>
             total + Math.max(0, value(row) - (allocatedByPackage.get(String(row.id)) ?? 0)),

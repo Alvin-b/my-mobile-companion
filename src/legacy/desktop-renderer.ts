@@ -740,7 +740,7 @@ const originalRoleContent=roleContent;
 roleContent=function(){if(state.role==='admin'&&state.page==='payment_control')return paymentControlView();return originalRoleContent()};
 
 // Keep the screenshot-matching paginated table before later legacy overrides replace it.
-const paginatedPackagesTable = packageTable;
+const dexPaginatedPackagesTableSnapshot = packageTable;
 
 packageTable=function(rows,title='Packages'){
 	 const role=String(state.role||'').toLowerCase(),canSales=['admin','sales_manager','sales_rep'].includes(role),canEditLocation=['admin','logistics_manager','sales_manager'].includes(role);
@@ -1223,7 +1223,7 @@ function shipments() {
     ["invoice", "Invoice"],
     ["released", "Released"],
   ];
-  const packagesMarkup = paginatedPackagesTable(rows, "Live packages").replace(
+  const packagesMarkup = dexPaginatedPackagesTableSnapshot(rows, "Live packages").replace(
     /onclick="editPackageLocation\('([^']*)'\)"/g,
     'data-edit-package-location="$1"',
   );
@@ -2301,7 +2301,7 @@ function dexAdminOperationsOverview() {
   const max = Math.max(1, registeredThisMonth, pendingCount, paidCount);
   const flow = [["this month registered", registeredThisMonth], ["still unpaid / part paid", pendingCount], ["paid / released", paidCount]];
   const latest = [...packages].sort((a, b) => new Date(b.registered_at || b.imported_at || b.created_at || 0).valueOf() - new Date(a.registered_at || a.imported_at || a.created_at || 0).valueOf()).slice(0, 6);
-  const latestView = paginatedPackagesTable(latest, "Latest packages").replace(
+  const latestView = dexPaginatedPackagesTableSnapshot(latest, "Latest packages").replace(
     /onclick="editPackageLocation\('([^']*)'\)"/g,
     'data-edit-package-location="$1"',
   );

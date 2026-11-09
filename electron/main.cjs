@@ -451,7 +451,10 @@ async function createWindow() {
       const bridgeReady = await mainWindow.webContents.executeJavaScript(`new Promise((resolve) => {
         const started = Date.now();
         const check = () => {
-          if (window.__DEX_HOSTED_UI_READY__ === true) return resolve(true);
+          const appRoot = document.getElementById("app");
+          const bridgeReady = window.dexAdmin && window.dexAdmin.isElectron === true;
+          const uiMounted = appRoot && appRoot.children.length > 0;
+          if (window.__DEX_HOSTED_UI_READY__ === true && bridgeReady && uiMounted) return resolve(true);
           if (Date.now() - started >= 5000) return resolve(false);
           setTimeout(check, 100);
         };

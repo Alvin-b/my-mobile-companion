@@ -30,11 +30,67 @@ contextBridge.exposeInMainWorld("dexAdmin", Object.freeze({
 }));
 
 window.addEventListener("DOMContentLoaded", () => {
-  if (!window.dexAdmin?.isElectron || document.getElementById("dex-desktop-bar")) return;
+  if (!window.dexAdmin?.isElectron) return;
+  const badgeSelectors = [
+    "#lovable-badge",
+    "[id*='lovable' i]",
+    "[class*='lovable' i]",
+    "[data-lovable-badge]",
+    "lovable-badge",
+    "a[href*='lovable.dev']",
+    "a[href*='lovable.app']",
+    "iframe[src*='lovable.dev']",
+    "iframe[src*='lovable.app']",
+  ].join(",");
+  const hideLovableBadge = () => {
+    document.querySelectorAll(badgeSelectors).forEach((node) => node.remove());
+    document.querySelectorAll("a,button,[role='button'],[aria-label],[title],span,div").forEach((node) => {
+      const label = [node.innerText, node.getAttribute("aria-label"), node.getAttribute("title")]
+        .filter(Boolean)
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (label.length > 120 || !/\bedit\s+with\s+lovable\b/i.test(label)) return;
+      let target = node;
+      for (let depth = 0; depth < 5; depth += 1) {
+        const parent = target.parentElement;
+        if (!parent || parent === document.body) break;
+        const style = window.getComputedStyle(parent);
+        const bounds = parent.getBoundingClientRect();
+        const overlay = style.position === "fixed" || style.position === "absolute" || Number(style.zIndex) > 100;
+        if (!overlay || bounds.width > 480 || bounds.height > 220) break;
+        target = parent;
+      }
+      target.remove();
+    });
+  };
+  const scheduleBadgeSweep = (() => {
+    let queued = false;
+    return () => {
+      if (queued) return;
+      queued = true;
+      window.requestAnimationFrame(() => {
+        queued = false;
+        hideLovableBadge();
+      });
+    };
+  })();
+  const badgeStyle = document.createElement("style");
+  badgeStyle.textContent = `${badgeSelectors}{display:none!important;visibility:hidden!important;pointer-events:none!important}`;
+  document.head.appendChild(badgeStyle);
+  hideLovableBadge();
+  const badgeObserver = new MutationObserver(scheduleBadgeSweep);
+  badgeObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["aria-label", "class", "href", "id", "src", "title"],
+    childList: true,
+    subtree: true,
+  });
+
+  if (document.getElementById("dex-desktop-bar")) return;
   const style = document.createElement("style");
   style.textContent = `
     body{box-sizing:border-box!important;height:100vh!important;padding-top:36px!important}
-    #lovable-badge{display:none!important}
     #dex-desktop-bar{position:fixed;z-index:2147483000;inset:0 0 auto;height:36px;background:#07131d;color:#e7f0f8;display:flex;align-items:center;padding:0 8px;-webkit-app-region:drag;font:13px 'Segoe UI',Arial,sans-serif;border-bottom:1px solid #102736}
     #dex-desktop-bar button{font:inherit;color:inherit;border:0;background:transparent;cursor:pointer;-webkit-app-region:no-drag}
     #dex-brand-menu{height:29px;padding:0 13px;border-radius:5px;font-weight:700;letter-spacing:.04em}

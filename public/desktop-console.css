@@ -226,9 +226,11 @@ tbody tr:last-child td{border-bottom:0}
 /* ---------- Status badges: a dot plus a word, so color is never the only signal ---------- */
 .badge{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:4px 10px 4px 9px;font:600 12px/1.2 var(--ui);text-transform:capitalize;background:var(--raised);color:var(--muted);white-space:nowrap}
 .badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
-.badge.pending,.badge.received,.badge.unpaid,.badge.registered,.badge.awaiting-payment{background:#ffc65c1c;color:var(--amber)}
+.badge.pending,.badge.received,.badge.registered,.badge.awaiting-payment{background:#ffc65c1c;color:var(--amber)}
+.badge.unpaid{background:#ff74821c;color:var(--red)}
 .badge.part-paid,.badge.part_paid,.badge.invoice,.badge.approved{background:#6c92ff1f;color:var(--cobalt)}
-.badge.paid,.badge.cleared,.badge.active,.badge.linked,.badge.settled{background:#46d9a41c;color:var(--green)}
+.badge.paid{background:#56d8ff1c;color:#56d8ff}
+.badge.cleared,.badge.active,.badge.linked,.badge.settled{background:#46d9a41c;color:var(--green)}
 .badge.collected,.badge.released{background:#a58bff1f;color:var(--violet)}
 .badge.admin{background:#ff93301f;color:var(--orange)}
 .badge.rejected,.badge.inactive,.badge.failed{background:#ff74821c;color:var(--red)}

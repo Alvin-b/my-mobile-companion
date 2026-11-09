@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain, Menu, net, safeStorage, shell } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, Menu, net, safeStorage, screen, shell } = require("electron");
 const { autoUpdater } = require("electron-updater");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -388,11 +388,16 @@ function registerIpc() {
 }
 
 async function createWindow() {
+  const { width: workAreaWidth, height: workAreaHeight } = screen.getPrimaryDisplay().workAreaSize;
+  const minWidth = Math.min(520, workAreaWidth);
+  const minHeight = Math.min(420, workAreaHeight);
+  const width = Math.min(1480, Math.max(minWidth, workAreaWidth - 40));
+  const height = Math.min(940, Math.max(minHeight, workAreaHeight - 60));
   mainWindow = new BrowserWindow({
-    width: 1480,
-    height: 940,
-    minWidth: 1024,
-    minHeight: 700,
+    width,
+    height,
+    minWidth,
+    minHeight,
     icon: path.join(app.getAppPath(), "public", "assets", "dexcargo.ico"),
     title: PRODUCT_NAME,
     titleBarStyle: "hidden",

@@ -214,6 +214,10 @@ tbody tr:last-child td{border-bottom:0}
 .package-table-wrap th:last-child,.package-table-wrap td:last-child{position:sticky;right:0;background:var(--surface);box-shadow:-12px 0 12px -12px #000a}
 .package-table-wrap th:last-child{background:var(--raised);z-index:3}
 .package-table-wrap tbody tr:hover td:last-child{background:#19163b}
+.package-table-wrap tbody tr.payment-paid>td{background:#56d8ff0b}
+.package-table-wrap tbody tr.payment-unpaid>td{background:#ff74820b}
+.package-table-wrap tbody tr.payment-paid:hover>td{background:#56d8ff18}
+.package-table-wrap tbody tr.payment-unpaid:hover>td{background:#ff748218}
 .package-list-panel{padding:18px}
 .package-location{display:block;min-width:100px;max-width:160px;overflow-wrap:anywhere}
 .location-edit{margin-top:4px;padding:2px 0;border:0;background:transparent;color:var(--cobalt);font-size:12px}

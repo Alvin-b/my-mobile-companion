@@ -1278,7 +1278,11 @@ roleContent = function () {
 
 const departmentPackagesBeforeDesktopImprovements = departmentPackages;
 departmentPackages = function (title, rows) {
-  return `<section class="role-banner compact"><div><span>${esc(roleLabel(state.role))}</span><h2>${esc(title)}</h2></div><button class="text-btn" data-goto="overview">Back to overview →</button></section><section class="package-workspace">${packageSearchToolbar("Search all visible packages")}${packageTable(rows, title)}</section>`;
+  const packagesMarkup = dexPaginatedPackagesTableSnapshot(rows, title).replace(
+    /onclick="editPackageLocation\('([^']*)'\)"/g,
+    'data-edit-package-location="$1"',
+  );
+  return `<section class="role-banner compact"><div><span>${esc(roleLabel(state.role))}</span><h2>${esc(title)}</h2></div><button class="text-btn" data-goto="overview">Back to overview →</button></section><section class="package-workspace">${packageSearchToolbar("Search all visible packages")}${packagesMarkup}</section>`;
 };
 
 releaseQueue = function () {

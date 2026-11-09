@@ -499,13 +499,16 @@ input[type=file]::file-selector-button{margin-right:10px;border:1px solid var(--
 .package-actions {
   width: 235px;
   min-width: 235px;
+  white-space: normal;
+  vertical-align: top;
+}
+.package-action-buttons {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 5px;
-  white-space: normal;
 }
-.package-actions .row-btn { margin: 0; padding: 6px 8px; }
+.package-action-buttons .row-btn { margin: 0; padding: 6px 8px; }
 .package-empty { padding: 30px 16px; text-align: center; }
 .package-pagination {
   display: flex;

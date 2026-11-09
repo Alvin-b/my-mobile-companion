@@ -225,6 +225,7 @@ async function refreshData(){
       catch(error){errors.push({key:'employees',error});console.warn('Could not refresh employees',error);return Array.isArray(previous.employees)?previous.employees:[]}
     }
   };
+  const canLoadRevenue = ['admin','finance_manager'].includes(String(state.role || '').toLowerCase());
   const [packages,notifications,commissions,audits,broadcasts,employees,revenue,finance]=await Promise.all([
     get('packages','rest/v1/cargo_packages?select=*&order=registered_at.desc&limit=500'),
     get('notifications','rest/v1/payment_notifications?select=*&order=uploaded_at.desc&limit=200'),
@@ -232,7 +233,7 @@ async function refreshData(){
     get('audits','rest/v1/audit_logs?select=*&order=timestamp.desc&limit=150'),
     get('broadcasts','rest/v1/broadcast_messages?select=*&order=timestamp.desc&limit=50'),
     loadEmployees(),
-    adminRequest('/api/public/revenue-summary').catch(error=>{errors.push({key:'revenue',error});console.warn('Could not refresh revenue summary',error);return previous.revenue??null}),
+    canLoadRevenue?adminRequest('/api/public/revenue-summary').catch(error=>{errors.push({key:'revenue',error});console.warn('Could not refresh revenue summary',error);return previous.revenue??null}):Promise.resolve(previous.revenue??null),
     (state.role==='finance_manager'||state.role==='admin')?financeRequest('workspace').catch(error=>{errors.push({key:'finance',error});console.warn('Finance workspace unavailable',error);return previous.finance??null}):Promise.resolve(previous.finance??null)
   ]);
   state.data={packages,notifications,commissions,audits,broadcasts,employees,revenue,finance};

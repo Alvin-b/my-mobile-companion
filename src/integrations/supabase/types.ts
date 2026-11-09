@@ -109,6 +109,7 @@ export type Database = {
           payment_method: string | null
           payment_mode: string | null
           payment_ref: string | null
+          payment_status: string
           pcs: number | null
           phone: string | null
           registered_at: string
@@ -166,6 +167,7 @@ export type Database = {
           payment_method?: string | null
           payment_mode?: string | null
           payment_ref?: string | null
+          payment_status?: string
           pcs?: number | null
           phone?: string | null
           registered_at?: string
@@ -223,6 +225,7 @@ export type Database = {
           payment_method?: string | null
           payment_mode?: string | null
           payment_ref?: string | null
+          payment_status?: string
           pcs?: number | null
           phone?: string | null
           registered_at?: string
@@ -1892,6 +1895,14 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_finance_manager: { Args: { _user_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      link_payment_allocations: {
+        Args: {
+          _allocations: Json
+          _linked_by?: string
+          _payment_notification_id: string
+        }
+        Returns: Json
+      }
       mark_commission_paid: {
         Args: { _id: string; _reference: string }
         Returns: {
@@ -1915,6 +1926,22 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      recalculate_cargo_payment_state: {
+        Args: { _package_id: string }
+        Returns: undefined
+      }
+      reconcile_finance_invoice_package: {
+        Args: { _package_id: string }
+        Returns: undefined
+      }
+      release_cargo_package: {
+        Args: {
+          _actor?: string
+          _actor_employee_id: string
+          _package_id: string
+        }
+        Returns: Json
+      }
       resolve_employee_for_cargo: {
         Args: { _sales_rep: string }
         Returns: {
@@ -1936,6 +1963,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      sync_finance_invoice_package_states: {
+        Args: { _invoice_id: string }
+        Returns: undefined
       }
       transition_package_status: {
         Args: {

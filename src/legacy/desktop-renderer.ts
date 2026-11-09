@@ -1181,7 +1181,7 @@ packageTable = function (rows, title = "Packages") {
       employee.is_active !== false &&
       !["admin", "finance_manager"].includes(String(employee.role || "").toLowerCase()),
   );
-  return `<section class="panel package-list-panel"><div class="panel-head"><div><h2>${esc(title)}</h2><p>${rows.length} live package${rows.length === 1 ? "" : "s"} · scroll this list independently</p></div>${packageScrollToolbar()}</div><div class="table-wrap package-table-wrap" tabindex="0" aria-label="Scrollable package list"><table><thead><tr><th>Payment status</th><th>Tracking</th><th>Customer</th><th>Category</th><th>Location</th><th>Pieces</th><th>Weight / CBM</th><th>Package value</th><th>Assigned staff</th><th>Actions</th></tr></thead><tbody>${
+  return `<section class="panel package-list-panel"><div class="panel-head"><div><h2>${esc(title)}</h2><p>${rows.length} live package${rows.length === 1 ? "" : "s"} · scroll this list independently</p></div>${packageScrollToolbar()}</div><div class="table-wrap package-table-wrap" tabindex="0" aria-label="Scrollable package list"><table class="package-table-wide"><thead><tr><th>Payment status</th><th>Tracking</th><th>Customer</th><th>Category</th><th>Location</th><th>Pieces</th><th>Weight / CBM</th><th>Package value</th><th>Assigned staff</th><th>Actions</th></tr></thead><tbody>${
     rows
       .map((pkg) => {
         const id = String(pkg.id || pkg.tracking_number || "");

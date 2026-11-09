@@ -387,6 +387,32 @@ function registerIpc() {
   ipcMain.handle("dex:report:pdf", savePdf);
 }
 
+function installLovableBadgeGuard(webContents) {
+  const badgeSelectors = "#lovable-badge, #lovable-badge-cta, #lovable-badge-close, [id^='lovable-badge-']";
+  const badgeCss = `${badgeSelectors}{display:none!important;visibility:hidden!important;pointer-events:none!important}`;
+  const badgeCleanup = `(() => {
+    const selectors = ${JSON.stringify(badgeSelectors)};
+    const removeBadge = () => document.querySelectorAll(selectors).forEach((node) => node.remove());
+    removeBadge();
+    if (!window.__dexLovableBadgeObserver && document.documentElement) {
+      const observer = new MutationObserver(removeBadge);
+      observer.observe(document.documentElement, { childList: true, subtree: true });
+      Object.defineProperty(window, "__dexLovableBadgeObserver", { value: observer, configurable: true });
+    }
+  })()`;
+  const applyGuard = async () => {
+    if (webContents.isDestroyed()) return;
+    try {
+      await webContents.insertCSS(badgeCss);
+      await webContents.executeJavaScript(badgeCleanup);
+    } catch (error) {
+      console.warn("[desktop-branding] Lovable badge guard could not be applied:", error);
+    }
+  };
+  webContents.on("dom-ready", () => void applyGuard());
+  webContents.on("did-finish-load", () => void applyGuard());
+}
+
 async function createWindow() {
   const { width: workAreaWidth, height: workAreaHeight } = screen.getPrimaryDisplay().workAreaSize;
   const minWidth = Math.min(520, workAreaWidth);
@@ -412,6 +438,7 @@ async function createWindow() {
       webSecurity: true,
     },
   });
+  installLovableBadgeGuard(mainWindow.webContents);
   mainWindow.once("ready-to-show", () => mainWindow.show());
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     const parsed = safeUrl(url);

@@ -1,7 +1,7 @@
 Unicode True
 Name "DEXCARGO Desktop"
 Caption "DEXCARGO Desktop Setup"
-OutFile "release/DEXCARGO-Desktop-Setup-1.2.4-NSIS.exe"
+OutFile "release/DEXCARGO-Desktop-Setup-1.2.4-Badge-Fix.exe"
 InstallDir "$LOCALAPPDATA\Programs\DEXCARGO Desktop"
 InstallDirRegKey HKCU "Software\DEXCARGO Desktop" "InstallLocation"
 RequestExecutionLevel user

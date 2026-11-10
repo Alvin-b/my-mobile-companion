@@ -175,6 +175,7 @@ export const Route = createFileRoute("/api/public/import-manifest")({ server: { 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: employee } = await supabaseAdmin.from("employees").select("role,is_active").eq("user_id", user.id).maybeSingle();
   if (!employee?.is_active) return Response.json({ error: "An active DEX employee account is required" }, { status: 403 });
+  if (String(employee.role ?? "").toLowerCase() !== "admin") return Response.json({ error: "Only administrators can import manifests." }, { status: 403 });
   const form = await request.formData(); const category = clean(form.get("category")) as Category; const upload = form.get("file"); const commit = clean(form.get("commit")) === "true";
   if (!["general", "special", "sea"].includes(category)) return Response.json({ error: "Choose General, Special, or Sea cargo." }, { status: 400 });
   if (!(upload instanceof File) || !upload.name.toLowerCase().endsWith(".xlsx")) return Response.json({ error: "Upload an Excel .xlsx manifest." }, { status: 400 });

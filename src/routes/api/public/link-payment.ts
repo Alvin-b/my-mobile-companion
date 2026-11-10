@@ -47,13 +47,19 @@ export const Route = createFileRoute("/api/public/link-payment")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: employee, error: employeeError } = await supabaseAdmin
           .from("employees")
-          .select("id,is_active")
+          .select("id,is_active,role")
           .eq("user_id", user.id)
           .maybeSingle();
         if (employeeError) return Response.json({ error: employeeError.message }, { status: 500 });
         if (!employee?.is_active) {
           return Response.json(
             { error: "An active employee account is required" },
+            { status: 403 },
+          );
+        }
+        if (String(employee.role ?? "").toLowerCase() !== "admin") {
+          return Response.json(
+            { error: "Only administrators can link payment evidence to packages." },
             { status: 403 },
           );
         }

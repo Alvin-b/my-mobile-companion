@@ -101,8 +101,10 @@ input[type=checkbox],input[type=radio]{accent-color:var(--orange)}
 .topbar h1{font-size:26px}
 .top-actions{display:flex;align-items:center;gap:10px}
 .refresh-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.content{max-width:1480px}
-.app-shell.page-shipments .content,.app-shell.page-payment_control .content{max-width:none}
+.content{width:100%;max-width:1480px;min-width:0}
+.content>*{min-width:0}
+.grid.two>*,.broadcast-grid>*{min-width:0}
+.app-shell.page-shipments .content,.app-shell.page-payment_control .content,.app-shell.page-payments .content{max-width:none}
 
 /* ---------- Surfaces ---------- */
 .panel,.toolbar,.metric,.role-banner{background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--r-lg)}
@@ -187,8 +189,9 @@ input[type=checkbox],input[type=radio]{accent-color:var(--orange)}
 .package-scroll-controls button:hover{background:var(--raised);color:var(--text)}
 
 /* ---------- Tables ---------- */
-.table-wrap{overflow:auto}
+.table-wrap{width:100%;max-width:100%;min-width:0;overflow:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
 table{width:100%;border-collapse:separate;border-spacing:0;text-align:left}
+.table-wrap>table{width:max-content;min-width:100%;table-layout:auto}
 th{position:sticky;top:0;z-index:2;background:var(--surface);padding:10px 14px;font:600 12.5px var(--ui);color:var(--muted);border-bottom:1px solid var(--line);white-space:nowrap}
 td{padding:13px 14px;border-bottom:1px solid var(--line-soft);font-size:13.5px;vertical-align:middle}
 td b{font-size:13.5px}
@@ -357,11 +360,15 @@ tbody tr:last-child td{border-bottom:0}
 .login-card .mark-sm{width:44px;height:44px;border-radius:12px;margin-bottom:22px}
 
 /* ---------- Responsive ---------- */
-@media(max-width:1180px){
-  .metrics{grid-template-columns:repeat(2,1fr)}
+@media(max-width:1400px){
+  .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
   .metrics .metric:nth-child(3){border-left:0}
   .metrics .metric:nth-child(n+3){border-top:1px solid var(--line-soft)}
-  .grid.two,.broadcast-grid{grid-template-columns:1fr}
+  .grid.two,.broadcast-grid{grid-template-columns:minmax(0,1fr)}
+  .panel{padding:18px}
+  .panel-head{gap:12px;flex-wrap:wrap}
+  .app-shell>main{padding:0 24px 32px}
+  .topbar{margin:0 -24px 20px;padding:16px 24px 14px}
 }
 @media(max-width:1000px){
   .app-shell{grid-template-columns:72px minmax(0,1fr)}
@@ -390,7 +397,7 @@ tbody tr:last-child td{border-bottom:0}
   .metrics .metric{border-left:0;border-top:1px solid var(--line-soft)}
   .metrics .metric:first-child{border-top:0}
   .role-banner{flex-direction:column;align-items:flex-start}
-  .quick-grid,.package-detail-grid,.payment-control-metrics,.employee-overview-metrics,.treasury-grid{grid-template-columns:1fr}
+  .quick-grid,.package-detail-grid,.payment-control-metrics,.employee-overview-grid,.employee-overview-metrics,.treasury-grid{grid-template-columns:1fr}
   .staff-performance{grid-template-columns:1fr 1fr}
   .linked-package-row{grid-template-columns:1fr auto}
   .category-tabs{width:100%;overflow-x:auto;flex-wrap:nowrap}
@@ -398,25 +405,46 @@ tbody tr:last-child td{border-bottom:0}
   .search{max-width:none}
 }
 
-
-/* Payments: the evidence queue is the daily work, so it leads; the upload form sits beside it. */
-@media(min-width:1181px){
-  .page-payments .content:has(>.compose){display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
-  .page-payments .content:has(>.compose)>.compose{grid-column:2;grid-row:1;position:sticky;top:84px;margin:0;max-height:calc(100vh - 110px);overflow:auto}
-  .page-payments .content:has(>.compose)>:not(.compose){grid-column:1;grid-row:1;margin:0}
-  .page-payments .compose textarea{min-height:90px}
+@media(max-width:850px){
+  .topbar{flex-wrap:wrap;align-items:flex-start}
+  .top-actions{flex-wrap:wrap}
 }
+
+/* Payments reflows by effective CSS viewport (including Windows DPI scaling). */
+.page-payments .content:has(>.compose){display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:start}
+.page-payments .content:has(>.compose)>*{min-width:0;margin-bottom:0}
+.page-payments .content:has(>.compose)>.role-banner{grid-column:1/-1;order:0}
+.page-payments .content:has(>.compose)>:not(.compose):not(.role-banner){grid-column:1;order:1}
+.page-payments .content:has(>.compose)>.compose{grid-column:1;order:2;position:static;top:auto;max-height:none;overflow:visible;margin:0}
+.page-payments .compose textarea{min-height:90px}
+@media(min-width:1440px){
+  .page-payments .content:has(>.compose){grid-template-columns:minmax(0,1fr) minmax(300px,340px)}
+  .page-payments .content:has(>.compose)>.compose{grid-column:2;position:sticky;top:84px;max-height:calc(100vh - 110px);overflow:auto}
+}
+
+.page-payments .table-wrap{min-width:0;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain}
+.page-payments .table-wrap>table{width:max-content;min-width:1120px;table-layout:auto}
+.page-payments .table-wrap th:nth-child(1),.page-payments .table-wrap td:nth-child(1){min-width:150px}
+.page-payments .table-wrap th:nth-child(2),.page-payments .table-wrap td:nth-child(2){min-width:180px}
+.page-payments .table-wrap th:nth-child(3),.page-payments .table-wrap td:nth-child(3){min-width:270px}
+.page-payments .table-wrap th:nth-child(4),.page-payments .table-wrap td:nth-child(4){min-width:110px}
+.page-payments .table-wrap th:nth-child(5),.page-payments .table-wrap td:nth-child(5){min-width:120px}
+.page-payments .table-wrap th:last-child,.page-payments .table-wrap td:last-child{position:sticky;right:0;min-width:220px;white-space:nowrap;background:var(--surface);box-shadow:-12px 0 12px -12px #000a}
+.page-payments .table-wrap th:last-child{background:var(--raised);z-index:3}
+.page-payments .table-wrap tbody tr:hover td:last-child{background:#19163b}
+.page-payments .table-wrap td:last-child .row-btn{white-space:nowrap}
+.page-payments .table-wrap .evidence-note{max-width:320px}
 td .empty,.table-wrap .empty{min-height:140px}
 input[type=date],input[type=month]{height:42px}
 
-/* Wide-table pages collapse the sidebar to a rail on laptop screens so every column fits. */
+/* Collapse to an icon rail on medium desktop viewports so every page gets the space. */
 @media(min-width:1001px) and (max-width:1599px){
-  .app-shell.page-shipments,.app-shell.page-payment_control{grid-template-columns:72px minmax(0,1fr)}
-  .page-shipments .brand div,.page-payment_control .brand div,.page-shipments .nav-item .label,.page-payment_control .nav-item .label,.page-shipments .sidebar-bottom .who,.page-payment_control .sidebar-bottom .who{display:none}
-  .page-shipments .nav-item,.page-payment_control .nav-item{justify-content:center;padding:12px}
-  .page-shipments .brand,.page-payment_control .brand{justify-content:center;padding:2px 0 16px}
-  .page-shipments .sidebar,.page-payment_control .sidebar{padding:18px 10px 12px}
-  .page-shipments .sidebar-bottom,.page-payment_control .sidebar-bottom{flex-direction:column;padding-top:12px}
+  .app-shell{grid-template-columns:72px minmax(0,1fr)}
+  .app-shell .brand div,.app-shell .role-chip,.app-shell .nav-item .label,.app-shell .sidebar-bottom .who{display:none}
+  .app-shell .nav-item{justify-content:center;padding:12px}
+  .app-shell .brand{justify-content:center;padding:2px 0 16px}
+  .app-shell .sidebar{padding:18px 10px 12px}
+  .app-shell .sidebar-bottom{flex-direction:column;padding-top:12px}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 input[type=file]::file-selector-button{margin-right:10px;border:1px solid var(--line);border-radius:6px;background:var(--raised);color:var(--text);padding:6px 10px;font:600 12px var(--ui);cursor:pointer}

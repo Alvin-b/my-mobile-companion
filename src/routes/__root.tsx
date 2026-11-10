@@ -77,7 +77,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { name: "theme-color", content: "#070A12" },
       { title: "DEXCARGO Ops — Kenya Logistics" },
       { name: "description", content: "Mobile operations app for DEXCARGO Kenya: package intake, M-Pesa payments, warehouse tracking, WhatsApp updates, and staff commissions." },

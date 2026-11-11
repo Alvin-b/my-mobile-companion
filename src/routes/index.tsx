@@ -128,7 +128,7 @@ function DesktopConsole() {
         const mount = document.getElementById("app");
         if (mount) {
           mount.innerHTML =
-            '<div class="empty">The desktop console could not load. Refresh and try again.</div>';
+            '<div style="min-height:100vh;display:grid;place-items:center;padding:24px;background:#0c0a1d;color:#f7f5ff;font:500 16px/1.5 system-ui,sans-serif;text-align:center"><div><strong style="display:block;font-size:20px;margin-bottom:8px">DEX Admin Console could not load</strong><span style="color:#aaa5c7">Refresh the page to retry loading the desktop interface.</span></div></div>';
         }
       };
       document.body.appendChild(script);

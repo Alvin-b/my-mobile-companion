@@ -417,7 +417,10 @@ tbody tr:last-child td{border-bottom:0}
 .page-payments .content:has(>.compose)>:not(.compose):not(.role-banner){grid-column:1;order:1}
 .page-payments .content:has(>.compose)>.compose{grid-column:1;order:2;position:static;top:auto;max-height:none;overflow:visible;margin:0}
 .page-payments .compose textarea{min-height:90px}
-@media(min-width:1440px){
+/* Keep the reference two-column payment workspace on laptops as well as
+   desktops. Windows display scaling reduces the effective CSS viewport, so
+   1440px was too high for many otherwise-usable laptop windows. */
+@media(min-width:1180px){
   .page-payments .content:has(>.compose){grid-template-columns:minmax(0,1fr) minmax(300px,340px)}
   .page-payments .content:has(>.compose)>.compose{grid-column:2;position:sticky;top:84px;max-height:calc(100vh - 110px);overflow:auto}
 }
@@ -437,14 +440,16 @@ tbody tr:last-child td{border-bottom:0}
 td .empty,.table-wrap .empty{min-height:140px}
 input[type=date],input[type=month]{height:42px}
 
-/* Collapse to an icon rail on medium desktop viewports so every page gets the space. */
-@media(min-width:1001px) and (max-width:1599px){
-  .app-shell{grid-template-columns:72px minmax(0,1fr)}
-  .app-shell .brand div,.app-shell .role-chip,.app-shell .nav-item .label,.app-shell .sidebar-bottom .who{display:none}
-  .app-shell .nav-item{justify-content:center;padding:12px}
-  .app-shell .brand{justify-content:center;padding:2px 0 16px}
-  .app-shell .sidebar{padding:18px 10px 12px}
-  .app-shell .sidebar-bottom{flex-direction:column;padding-top:12px}
+/* Keep the labeled navigation on laptops. The icon rail is reserved for
+   genuinely narrow tablet-sized CSS viewports; physical monitor resolution
+   is not reliable here because Windows DPI scaling changes CSS pixels. */
+@media(min-width:901px){
+  .app-shell{grid-template-columns:236px minmax(0,1fr)}
+  .app-shell .brand div,.app-shell .role-chip,.app-shell .nav-item .label,.app-shell .sidebar-bottom .who{display:block}
+  .app-shell .nav-item{justify-content:flex-start;padding:10px 12px}
+  .app-shell .brand{justify-content:flex-start;padding:2px 8px 18px}
+  .app-shell .sidebar{padding:20px 12px 14px}
+  .app-shell .sidebar-bottom{flex-direction:row;padding-top:14px}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 input[type=file]::file-selector-button{margin-right:10px;border:1px solid var(--line);border-radius:6px;background:var(--raised);color:var(--text);padding:6px 10px;font:600 12px var(--ui);cursor:pointer}

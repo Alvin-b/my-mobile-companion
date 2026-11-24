@@ -73,7 +73,15 @@ function exportAudit(){const rows=state.data.audits||[];const csv=['Time,Action,
 function legacy_openShipment_1(track){const p=(state.data.packages||[]).find(x=>x.tracking_number===track);if(p)toast(`${track}: ${p.status} · ${money(p.amount_due)}`);}
 function addStaff(){toast('Use the mobile admin workflow to create staff accounts; this keeps account provisioning behind the existing protected endpoint.','error');}
 function renderLogin() {
-  app.innerHTML = `<div class="login"><div class="login-art"><div class="orb"></div><div class="login-brand"><img style="width:240px;border-radius:12px" src="assets/dex-logo.png" alt="DEX Logistics"></div><h1>Move faster.<br><em>See everything.</em></h1><p>A focused operations workspace for the people keeping DEX Logistics cargo moving.</p><div class="feature-list"><span>◉ Live backend data</span><span>◈ Role-protected actions</span><span>◷ Secure local session</span></div></div><div class="login-card"><img style="width:96px;border-radius:10px;margin-bottom:18px" src="assets/dex-logo.png" alt="DEX Logistics"><p class="eyebrow">DEX ADMIN</p><h2>Welcome back</h2><p>Sign in with your active DEX administrator account.</p><form id="login-form"><label>Email<input required type="email" name="email" placeholder="admin@dexcargo.com"></label><label>Password<input required type="password" name="password" placeholder="••••••••"></label><button class="primary wide">Sign in to console →</button></form></div></div>`;
+  app.innerHTML = `<div class="login"><div class="login-art"><div class="orb"></div><div class="login-brand"><img style="width:240px;border-radius:12px" src="assets/dex-logo.png" alt="DEX Logistics"></div><h1>Move faster.<br><em>See everything.</em></h1><p>A focused operations workspace for the people keeping DEX Logistics cargo moving.</p><div class="feature-list"><span>◉ Live backend data</span><span>◈ Role-protected actions</span><span>◷ Secure local session</span></div></div><div class="login-card"><img style="width:96px;border-radius:10px;margin-bottom:18px" src="assets/dex-logo.png" alt="DEX Logistics"><p class="eyebrow">DEX ADMIN</p><h2>Welcome back</h2><p>Sign in with your active DEX administrator account.</p><form id="login-form"><label>Email<input required type="email" name="email" placeholder="admin@dexcargo.com"></label><label>Password<div class="password-field"><input required type="password" name="password" placeholder="••••••••" autocomplete="current-password"><button class="password-toggle" type="button" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path><circle cx="12" cy="12" r="2.5"></circle></svg></button></div></label><button class="primary wide">Sign in to console →</button></form></div></div>`;
+  const password = document.querySelector('#login-form input[name="password"]');
+  const passwordToggle = document.querySelector('#login-form .password-toggle');
+  passwordToggle?.addEventListener('click', () => {
+    const visible = password.type === 'text';
+    password.type = visible ? 'password' : 'text';
+    passwordToggle.setAttribute('aria-label', visible ? 'Show password' : 'Hide password');
+    passwordToggle.setAttribute('aria-pressed', String(!visible));
+  });
   $('#login-form').addEventListener('submit', async e => { e.preventDefault(); const f = new FormData(e.target); try { await authenticate(f.get('email'), f.get('password')); await refreshData(); } catch (err) { toast(err.message, 'error'); } });
 }
 async function request(path, options = {}, retried = false) {
@@ -1579,6 +1587,7 @@ assignPackageSale = function (id) {
     const form = event.currentTarget;
     const button = form.querySelector('[type="submit"]');
     const employeeId = new FormData(form).get("commission_employee_id") || null;
+    const packagePage = Math.max(0, Number(state.packagePage) || 0);
     button.disabled = true;
     button.textContent = "Saving link…";
     modal.querySelector("[data-sales-progress]").textContent = "Saving the customer-to-staff link…";
@@ -1590,6 +1599,8 @@ assignPackageSale = function (id) {
       modal.remove();
       toast("Customer linked to staff; the commission view is refreshed.");
       await refreshData();
+      state.packagePage = packagePage;
+      render();
     } catch (error) {
       button.disabled = false;
       button.textContent = "Save staff link";

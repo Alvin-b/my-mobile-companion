@@ -357,6 +357,11 @@ tbody tr:last-child td{border-bottom:0}
 .login-card h2{font-size:28px;margin:0 0 8px}
 .login-card>p{line-height:1.6;margin-bottom:26px}
 .login-card form{display:flex;flex-direction:column;gap:16px}
+.password-field{position:relative}
+.password-field input{width:100%;padding-right:46px}
+.password-toggle{position:absolute;right:8px;top:50%;display:inline-flex;width:32px;height:32px;align-items:center;justify-content:center;transform:translateY(-50%);border:0;border-radius:6px;background:transparent;color:var(--muted);padding:0}
+.password-toggle:hover{background:var(--raised);color:var(--text)}
+.password-toggle svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .login-card .mark-sm{width:44px;height:44px;border-radius:12px;margin-bottom:22px}
 
 /* ---------- Responsive ---------- */

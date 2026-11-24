@@ -214,9 +214,9 @@ tbody tr:last-child td{border-bottom:0}
 .package-table-wrap td{white-space:nowrap}
 .package-table-wrap td.package-actions{white-space:normal}
 /* Actions stay visible no matter how wide the table is. */
-.package-table-wrap th:last-child,.package-table-wrap td:last-child{position:sticky;right:0;background:var(--surface);box-shadow:-12px 0 12px -12px #000a}
+.package-table-wrap th:last-child,.package-table-wrap td:last-child{position:sticky;right:0;background:var(--surface) !important;box-shadow:-12px 0 12px -12px #000a}
 .package-table-wrap th:last-child{background:var(--raised);z-index:3}
-.package-table-wrap tbody tr:hover td:last-child{background:#19163b}
+.package-table-wrap tbody tr:hover td:last-child{background:#19163b !important}
 .package-table-wrap tbody tr.payment-paid>td{background:#56d8ff0b}
 .package-table-wrap tbody tr.payment-unpaid>td{background:#ff74820b}
 .package-table-wrap tbody tr.payment-paid:hover>td{background:#56d8ff18}
@@ -437,9 +437,9 @@ tbody tr:last-child td{border-bottom:0}
 .page-payments .table-wrap th:nth-child(3),.page-payments .table-wrap td:nth-child(3){min-width:270px}
 .page-payments .table-wrap th:nth-child(4),.page-payments .table-wrap td:nth-child(4){min-width:110px}
 .page-payments .table-wrap th:nth-child(5),.page-payments .table-wrap td:nth-child(5){min-width:120px}
-.page-payments .table-wrap th:last-child,.page-payments .table-wrap td:last-child{position:sticky;right:0;min-width:220px;white-space:nowrap;background:var(--surface);box-shadow:-12px 0 12px -12px #000a}
+.page-payments .table-wrap th:last-child,.page-payments .table-wrap td:last-child{position:sticky;right:0;min-width:220px;white-space:nowrap;background:var(--surface) !important;box-shadow:-12px 0 12px -12px #000a}
 .page-payments .table-wrap th:last-child{background:var(--raised);z-index:3}
-.page-payments .table-wrap tbody tr:hover td:last-child{background:#19163b}
+.page-payments .table-wrap tbody tr:hover td:last-child{background:#19163b !important}
 .page-payments .table-wrap td:last-child .row-btn{white-space:nowrap}
 .page-payments .table-wrap .evidence-note{max-width:320px}
 td .empty,.table-wrap .empty{min-height:140px}

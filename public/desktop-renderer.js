@@ -2228,8 +2228,27 @@ roleContent = function () {
 };
 const departmentPackagesBeforeDesktopImprovements = departmentPackages;
 departmentPackages = function (title, rows) {
-    const packagesMarkup = dexPaginatedPackagesTableSnapshot(rows, title).replace(/onclick="editPackageLocation\('([^']*)'\)"/g, 'data-edit-package-location="$1"');
-    return `<section class="role-banner compact"><div><span>${esc(roleLabel(state.role))}</span><h2>${esc(title)}</h2></div><button class="text-btn" data-goto="overview">Back to overview →</button></section><section class="package-workspace">${packageSearchToolbar("Search all visible packages")}${packagesMarkup}</section>`;
+    const selected = state.packageCategory || "all";
+    const filteredRows = selected === "all"
+        ? rows
+        : ["unpaid", "part_paid", "paid", "invoice"].includes(selected)
+            ? rows.filter((pkg) => packagePaymentStatus(pkg) === selected)
+            : selected === "released"
+                ? rows.filter(packageIsReleased)
+                : rows.filter((pkg) => String(pkg.cargo_category || "general").toLowerCase() === selected);
+    const tabs = [
+        ["all", "All"],
+        ["general", "General"],
+        ["special", "Special"],
+        ["sea", "Sea"],
+        ["unpaid", "Unpaid"],
+        ["part_paid", "Part paid"],
+        ["paid", "Paid"],
+        ["invoice", "Invoice"],
+        ["released", "Released"],
+    ];
+    const packagesMarkup = dexPaginatedPackagesTableSnapshot(filteredRows, title).replace(/onclick="editPackageLocation\('([^']*)'\)"/g, 'data-edit-package-location="$1"');
+    return `<section class="role-banner compact"><div><span>${esc(roleLabel(state.role))}</span><h2>${esc(title)}</h2></div><button class="text-btn" data-goto="overview">Back to overview →</button></section><section class="toolbar package-toolbar"><label class="search"><span>⌕</span><input type="search" placeholder="Search all visible packages" value="${esc(state.packageSearchTerm || "")}" oninput="filterPackageRows(this)"></label><div class="category-tabs">${tabs.map(([key, label]) => `<button class="${selected === key ? "active" : ""}" onclick="state.packageCategory='${key}';state.packagePage=0;render()">${label}</button>`).join("")}</div></section><section class="package-workspace">${packagesMarkup}</section>`;
 };
 releaseQueue = function () {
     const rows = (state.data?.packages || []).filter((pkg) => packagePaymentStatus(pkg) === "paid" && !packageIsReleased(pkg));

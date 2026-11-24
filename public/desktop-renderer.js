@@ -1358,7 +1358,8 @@ function navItems(role) { const manifest = ['manifests', 'Import manifest', '⇧
 function pageTitle() { const labels = { tracking: 'Track package', overview: 'Overview', manifests: 'Manifest import', my_packages: 'My packages', reminders: 'Client reminders', my_commissions: 'My commissions', sales_packages: 'Sales packages', team_performance: 'Team performance', warehouse_packages: 'Warehouse packages', release_queue: 'Release queue', finance_invoices: 'Invoices & billing', finance_receivables: 'Receivables', finance_expenses: 'Expenses', finance_payables: 'Payables', finance_profitability: 'Package profitability', finance_tax: 'KRA & tax', finance_reports: 'Reports', shipments: 'Packages', payments: 'Payments', staff: 'Staff', commissions: 'Commissions', announcements: 'Announcements', audit: 'Audit log' }; return labels[state.page] || 'DEX Admin'; }
 function roleContent() { const role = state.role; if (state.page === 'tracking' && role !== 'finance_manager')
     return trackerView(); if (state.page === 'manifests')
-    return manifestView(); if (role === 'admin') {
+    return manifestView(); if (state.page === 'announcements')
+    return broadcasts(); if (role === 'admin') {
     const views = { overview, shipments, payments, staff, commissions, announcements, audit };
     return (views[state.page] || overview)();
 } if (state.page === 'overview')
